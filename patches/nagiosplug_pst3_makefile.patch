@@ -1,0 +1,11 @@
+diff -ur nagios-plugins-trunk-200804011200.original/plugins-root/Makefile.am nagios-plugins-trunk-200804011200/plugins-root/Makefile.am
+--- nagios-plugins-trunk-200804011200.original/plugins-root/Makefile.am	2008-03-14 16:44:27.000000000 +0100
++++ nagios-plugins-trunk-200804011200/plugins-root/Makefile.am	2008-07-23 15:04:34.160511008 +0200
+@@ -71,7 +71,6 @@
+ # -m64 needed at compiler and linker phase
+ pst3_CFLAGS = @PST3CFLAGS@
+ pst3_LDFLAGS = @PST3CFLAGS@
+-pst3_LDADD = -lkvm
+ 
+ check_dhcp_DEPENDENCIES = check_dhcp.c $(NETOBJS) $(DEPLIBS) 
+ check_icmp_DEPENDENCIES = check_icmp.c $(NETOBJS)

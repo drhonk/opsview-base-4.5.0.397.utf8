@@ -1,0 +1,35 @@
+diff -ur nagiosgraph-0.8.2.orig/show.cgi nagiosgraph-0.8.2/show.cgi
+--- nagiosgraph-0.8.2.orig/show.cgi	2007-04-05 09:09:29.000000000 +0100
++++ nagiosgraph-0.8.2/show.cgi	2007-04-05 09:37:16.000000000 +0100
+@@ -140,13 +140,24 @@
+ 
+ # Choose a color for service
+ #
+-sub hashcolor {
+-  my$c=$Config{colorscheme};map{$c=(51*$c+ord)%(216)}split//,"$_[0]x";
+-  my($i,$n,$m,@h);@h=(51*int$c/36,51*int$c/6%6,51*($c%6));
+-  for$i(0..2){$m=$i if$h[$i]<$h[$m];$n=$i if$h[$i]>$h[$n]}
+-  $h[$m]=102if$h[$m]>102;$h[$n]=153if$h[$n]<153;
+-  $c=sprintf"%06X",$h[2]+$h[1]*256+$h[0]*16**4;
+-  return $c;
++{
++	my @colours=(qw/
++    CC0000 FF9900 00CC00 0000CC 336699 993300 FF3300 99CC00 3366FF 660099 999999 CC6600
++	/);
++	my %used_name;
++
++	sub hashcolor {
++    my $name=shift;
++    return $used_name{$name} if($used_name{$name});
++
++    foreach my $c (@colours)
++    {
++      next if(!defined($c) or !$c);
++      $used_name{$name}=$c;
++      $c=undef;
++      return $used_name{$name};
++    }
++	}
+ }
+ 
+ 

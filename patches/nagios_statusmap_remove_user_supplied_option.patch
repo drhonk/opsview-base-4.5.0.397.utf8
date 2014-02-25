@@ -1,0 +1,13 @@
+diff -ur nagios-4.0.20130107.original//cgi/statusmap.c nagios-4.0.20130107/cgi/statusmap.c
+--- nagios-4.0.20130107.original//cgi/statusmap.c	2013-01-21 13:44:50.000000000 +0000
++++ nagios-4.0.20130107/cgi/statusmap.c	2013-01-21 16:00:39.000000000 +0000
+@@ -725,7 +725,8 @@
+ 		printf("Layout Method:<br>\n");
+ 		printf("<select name='layout'>\n");
+ #ifndef DUMMY_INSTALL
+-		printf("<option value=%d %s>User-supplied coords\n", LAYOUT_USER_SUPPLIED, (layout_method == LAYOUT_USER_SUPPLIED) ? "selected" : "");
++		// Opsview patch: Remove user-supplied option, as we don't provide a way to set these coordinates
++		//printf("<option value=%d %s>User-supplied coords\n", LAYOUT_USER_SUPPLIED, (layout_method == LAYOUT_USER_SUPPLIED) ? "selected" : "");
+ #endif
+ 		printf("<option value=%d %s>Depth layers\n", LAYOUT_SUBLAYERS, (layout_method == LAYOUT_SUBLAYERS) ? "selected" : "");
+ 		printf("<option value=%d %s>Collapsed tree\n", LAYOUT_COLLAPSED_TREE, (layout_method == LAYOUT_COLLAPSED_TREE) ? "selected" : "");

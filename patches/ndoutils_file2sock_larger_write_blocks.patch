@@ -1,0 +1,11 @@
+diff -ur ndoutils-1.4b3.original/src/ndo2db.c ndoutils-1.4b3/src/ndo2db.c
+--- ndoutils-1.4b3.original/src/ndo2db.c	2008-08-13 23:56:14.567617472 +0100
++++ ndoutils-1.4b3/src/ndo2db.c	2008-08-13 23:20:05.121535184 +0100
+@@ -762,6 +762,7 @@
+ 		default:
+ 			/* parent keeps on going... */
+ 			close(new_sd);
++			waitpid(new_pid,NULL,0);	/* Opsview: Wait for child to finish before accepting the next connection */
+ 			break;
+ 		        }
+ #endif

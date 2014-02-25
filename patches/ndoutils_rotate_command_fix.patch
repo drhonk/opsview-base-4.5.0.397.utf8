@@ -1,0 +1,31 @@
+diff -ur ndoutils-1.4b7/src/ndomod.c ndoutils-1.4b7.with_rotate_command_fix/src/ndomod.c
+--- ndoutils-1.4b7/src/ndomod.c	2008-10-23 14:06:39.000000000 +0200
++++ ndoutils-1.4b7.with_rotate_command_fix/src/ndomod.c	2008-10-23 15:00:27.466033336 +0200
+@@ -591,20 +591,25 @@
+ 	/* get the raw command line */
+ #ifdef BUILD_NAGIOS_2X
+ 	get_raw_command_line(ndomod_sink_rotation_command,raw_command_line,sizeof(raw_command_line),STRIP_ILLEGAL_MACRO_CHARS|ESCAPE_MACRO_CHARS);
++	strip(raw_command_line);
+ #else
+ 	get_raw_command_line(find_command(ndomod_sink_rotation_command),ndomod_sink_rotation_command,&raw_command_line_3x,STRIP_ILLEGAL_MACRO_CHARS|ESCAPE_MACRO_CHARS);
++	strip(raw_command_line_3x);
+ #endif
+-	strip(raw_command_line);
+ 
+ 	/* process any macros in the raw command line */
+ #ifdef BUILD_NAGIOS_2X
+ 	process_macros(raw_command_line,processed_command_line,(int)sizeof(processed_command_line),STRIP_ILLEGAL_MACRO_CHARS|ESCAPE_MACRO_CHARS);
+ #else
+-	process_macros(raw_command_line,&processed_command_line_3x,STRIP_ILLEGAL_MACRO_CHARS|ESCAPE_MACRO_CHARS);
++	process_macros(raw_command_line_3x,&processed_command_line_3x,STRIP_ILLEGAL_MACRO_CHARS|ESCAPE_MACRO_CHARS);
+ #endif
+ 
+ 	/* run the command */
++#ifdef BUILD_NAGIOS_2X
+ 	my_system(processed_command_line,ndomod_sink_rotation_timeout,&early_timeout,&exectime,NULL,0);
++#else
++	my_system(processed_command_line_3x,ndomod_sink_rotation_timeout,&early_timeout,&exectime,NULL,0);
++#endif
+ 
+ 
+ 	/* allow data to be written to the sink */

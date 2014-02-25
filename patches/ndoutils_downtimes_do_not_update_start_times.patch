@@ -1,0 +1,25 @@
+diff -ur ndoutils-1.4b7.original/src/dbhandlers.c ndoutils-1.4b7/src/dbhandlers.c
+--- ndoutils-1.4b7.original/src/dbhandlers.c	2011-05-13 09:28:41.476700000 +0000
++++ ndoutils-1.4b7/src/dbhandlers.c	2011-05-13 09:32:10.305339564 +0000
+@@ -1922,8 +1922,8 @@
+ 	/* save a record of scheduled downtime that starts */
+ 	if(type==NEBTYPE_DOWNTIME_START){
+ 
+-		/* save entry to db */
+-		if(asprintf(&buf,"UPDATE %s SET actual_start_time=%s, actual_start_time_usec='%lu', was_started='%d' WHERE instance_id='%lu' AND downtime_type='%d' AND object_id='%lu' AND entry_time=%s AND scheduled_start_time=%s AND scheduled_end_time=%s"
++		/* save entry to db - do not update entries already marked as started */
++		if(asprintf(&buf,"UPDATE %s SET actual_start_time=%s, actual_start_time_usec='%lu', was_started='%d' WHERE instance_id='%lu' AND downtime_type='%d' AND object_id='%lu' AND entry_time=%s AND scheduled_start_time=%s AND scheduled_end_time=%s AND was_started=0"
+ 			    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_DOWNTIMEHISTORY]
+ 			    ,ts[0]
+ 			    ,tstamp.tv_usec
+@@ -2001,8 +2001,8 @@
+ 	/* save a record of scheduled downtime that starts */
+ 	if(type==NEBTYPE_DOWNTIME_START && tstamp.tv_sec>=idi->dbinfo.latest_realtime_data_time){
+ 
+-		/* save entry to db */
+-		if(asprintf(&buf,"UPDATE %s SET actual_start_time=%s, actual_start_time_usec='%lu', was_started='%d' WHERE instance_id='%lu' AND downtime_type='%d' AND object_id='%lu' AND entry_time=%s AND scheduled_start_time=%s AND scheduled_end_time=%s"
++		/* save entry to db - do not update entries already marked as started */
++		if(asprintf(&buf,"UPDATE %s SET actual_start_time=%s, actual_start_time_usec='%lu', was_started='%d' WHERE instance_id='%lu' AND downtime_type='%d' AND object_id='%lu' AND entry_time=%s AND scheduled_start_time=%s AND scheduled_end_time=%s AND was_started=0"
+ 			    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_SCHEDULEDDOWNTIME]
+ 			    ,ts[0]
+ 			    ,tstamp.tv_usec

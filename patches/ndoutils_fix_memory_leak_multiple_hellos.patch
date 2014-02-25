@@ -1,0 +1,39 @@
+diff -ur ndoutils-1.4b7/src/dbhandlers.c ndoutils-1.4b7.perfimprovements/src/dbhandlers.c
+--- ndoutils-1.4b7/src/dbhandlers.c	2011-10-04 19:41:43.000000000 +0000
++++ ndoutils-1.4b7.perfimprovements/src/dbhandlers.c	2011-10-04 20:31:25.000000000 +0000
+@@ -337,6 +339,18 @@
+ 			idi->dbinfo.object_hashlist[x]=NULL;
+ 	        }
+ 
++	hashslot=ndo2db_object_hashfunc(name1,name2,NDO2DB_OBJECT_HASHSLOTS);
++
++	lastpointer=NULL;
++	for(temp_object=idi->dbinfo.object_hashlist[hashslot],y=0;temp_object!=NULL;temp_object=temp_object->nexthash,y++){
++		compare=ndo2db_compare_object_hashdata(temp_object->name1,temp_object->name2,name1,name2);
++		if(compare<0)
++			break;
++		if(compare==0)
++			return result;
++		lastpointer=temp_object;
++	        }
++
+ 	/* allocate and populate new object */
+ 	if((new_object=(ndo2db_dbobject *)malloc(sizeof(ndo2db_dbobject)))==NULL)
+ 		return NDO_ERROR;
+@@ -349,16 +363,6 @@
+ 	if(name2)
+ 		new_object->name2=strdup(name2);
+ 
+-	hashslot=ndo2db_object_hashfunc(new_object->name1,new_object->name2,NDO2DB_OBJECT_HASHSLOTS);
+-
+-	lastpointer=NULL;
+-	for(temp_object=idi->dbinfo.object_hashlist[hashslot],y=0;temp_object!=NULL;temp_object=temp_object->nexthash,y++){
+-		compare=ndo2db_compare_object_hashdata(temp_object->name1,temp_object->name2,new_object->name1,new_object->name2);
+-		if(compare<0)
+-			break;
+-		lastpointer=temp_object;
+-	        }
+-
+ 	if(lastpointer)
+ 		lastpointer->nexthash=new_object;
+ 	else

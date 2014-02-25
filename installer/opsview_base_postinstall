@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+#
+# SYNTAX:
+#   opsview_base_postinstall [-d]
+#
+# DESCRIPTION:
+#   Postinstall script for opsview-base.
+#   -d    - show steps being taken
+#
+# AUTHORS:
+#   Copyright (C) 2003-2013 Opsview Limited. All rights reserved
+#
+#    This file is part of Opsview
+#
+#    Opsview is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    Opsview is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with Opsview; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+
+use strict;
+use warnings;
+
+use FindBin qw($Bin $Script);
+use Getopt::Std;
+use File::Copy;
+
+####################
+# NOTES: this script has to run without any dependancy on opsview-perl
+# i.e. only core modules can be used here
+####################
+
+my %options;
+getopts( 'd', \%options ) or die 'Incorrect options', $/;
+
+# useful variables
+my $install_base = '/usr/local/nagios';
+my ( $nagios_id, $nagios_gid ) = ( getpwnam("nagios") )[ 2, 3 ];
+my $nagcmd_gid = getgrnam("nagcmd");
+
+# ensure nagvis default config file is available
+{
+    logmsg('Checking if nagvis configuration file exists');
+    my $nagvis_config = $install_base . '/nagvis/etc/nagvis.ini.php';
+
+    if ( !-f $nagvis_config ) {
+        logmsg('Installing default nagvis configuration file');
+        copy( $nagvis_config . '-sample', $nagvis_config );
+        chmod 0660, $nagvis_config || die 'Cannot reset permissions on ', $nagvis_config, ': ', $!, $/;
+        chown $nagios_id, $nagcmd_gid, $nagvis_config || die 'Cannot reset group ownership on ', $nagvis_config, ': ', $!, $/;
+    }
+}
+
+# upgrade nagvis file as necessary
+{
+    my $extra_output = '';
+    $extra_output = '-d' if ( $options{d} );
+    logmsg('Checking nagvis configuration file for any necessary upgrades');
+    if ( system( $install_base . '/installer/opsview_base_upgrade_nagvis_config ' . $extra_output ) != 0 ) {
+        die( 'WARNING: ', $Script, ' - nagvis configuration update failed' );
+    }
+}
+
+# We don't care if this fails - changing where possible is sufficient
+logmsg("Making sure the web server can write where it needs to");
+system(
+'chgrp -R nagcmd /usr/local/nagios/nagvis/var /usr/local/nagios/nagvis/etc/maps > /dev/null 2>&1'
+  );
+
+# == == == == == == == == == ==
+sub logmsg {
+    print $Script, ': ', @_, $/ if ( $options{d} );
+}

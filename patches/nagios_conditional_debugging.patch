@@ -1,0 +1,337 @@
+diff -Bbur nagios-4.0.20121116.orig/base/checks.c nagios-4.0.20121116/base/checks.c
+--- nagios-4.0.20121116.orig/base/checks.c	2012-11-28 14:57:16.000000000 +0000
++++ nagios-4.0.20121116/base/checks.c	2012-11-28 16:07:29.000000000 +0000
+@@ -135,7 +135,7 @@
+ 				svc->next_check = next_valid_time;
+ 				svc->should_be_scheduled = TRUE;
+ 
+-				log_debug_info(DEBUGL_CHECKS, 1, "Rescheduled next service check for %s", ctime(&next_valid_time));
++				if(log_level(DEBUGL_CHECKS, 1)) { log_debug_info(DEBUGL_CHECKS, 1, "Rescheduled next service check for %s", ctime(&next_valid_time)); }
+ 				}
+ 			}
+ 
+@@ -995,7 +995,7 @@
+ 	/* reschedule the next service check ONLY for active, scheduled checks */
+ 	if(reschedule_check == TRUE) {
+ 
+-		log_debug_info(DEBUGL_CHECKS, 1, "Rescheduling next check of service at %s", ctime(&next_service_check));
++		if(log_level(DEBUGL_CHECKS, 1)) { log_debug_info(DEBUGL_CHECKS, 1, "Rescheduling next check of service at %s", ctime(&next_service_check)); }
+ 
+ 		/* default is to reschedule service check unless a test below fails... */
+ 		temp_service->should_be_scheduled = TRUE;
+@@ -1095,7 +1095,7 @@
+ 	if(svc == NULL)
+ 		return;
+ 
+-	log_debug_info(DEBUGL_CHECKS, 0, "Scheduling a %s, active check of service '%s' on host '%s' @ %s", (options & CHECK_OPTION_FORCE_EXECUTION) ? "forced" : "non-forced", svc->description, svc->host_name, ctime(&check_time));
++	if(log_level(DEBUGL_CHECKS, 0)) { log_debug_info(DEBUGL_CHECKS, 0, "Scheduling a %s, active check of service '%s' on host '%s' @ %s", (options & CHECK_OPTION_FORCE_EXECUTION) ? "forced" : "non-forced", svc->description, svc->host_name, ctime(&check_time)); }
+ 
+ 	/* don't schedule a check if active checks of this service are disabled */
+ 	if(svc->checks_enabled == FALSE && !(options & CHECK_OPTION_FORCE_EXECUTION)) {
+@@ -1114,7 +1114,7 @@
+ 	 */
+ 	if(temp_event != NULL) {
+ 
+-		log_debug_info(DEBUGL_CHECKS, 2, "Found another service check event for this service @ %s", ctime(&temp_event->run_time));
++		if(log_level(DEBUGL_CHECKS, 2)) { log_debug_info(DEBUGL_CHECKS, 2, "Found another service check event for this service @ %s", ctime(&temp_event->run_time)); }
+ 
+ 		/* use the originally scheduled check unless we decide otherwise */
+ 		use_original_event = TRUE;
+@@ -1579,7 +1579,7 @@
+ 	if(hst == NULL)
+ 		return;
+ 
+-	log_debug_info(DEBUGL_CHECKS, 0, "Scheduling a %s, active check of host '%s' @ %s", (options & CHECK_OPTION_FORCE_EXECUTION) ? "forced" : "non-forced", hst->name, ctime(&check_time));
++	if(log_level(DEBUGL_CHECKS, 0)) { log_debug_info(DEBUGL_CHECKS, 0, "Scheduling a %s, active check of host '%s' @ %s", (options & CHECK_OPTION_FORCE_EXECUTION) ? "forced" : "non-forced", hst->name, ctime(&check_time)); }
+ 
+ 	/* don't schedule a check if active checks of this host are disabled */
+ 	if(hst->checks_enabled == FALSE && !(options & CHECK_OPTION_FORCE_EXECUTION)) {
+@@ -1598,7 +1598,7 @@
+ 	 */
+ 	if(temp_event != NULL) {
+ 
+-		log_debug_info(DEBUGL_CHECKS, 2, "Found another host check event for this host @ %s", ctime(&temp_event->run_time));
++		if(log_level(DEBUGL_CHECKS, 2)) { log_debug_info(DEBUGL_CHECKS, 2, "Found another host check event for this host @ %s", ctime(&temp_event->run_time)); }
+ 
+ 		/* use the originally scheduled check unless we decide otherwise */
+ 		use_original_event = TRUE;
+@@ -2300,7 +2300,7 @@
+ 				hst->next_check = next_valid_time;
+ 				hst->should_be_scheduled = TRUE;
+ 
+-				log_debug_info(DEBUGL_CHECKS, 1, "Rescheduled next host check for %s", ctime(&next_valid_time));
++				if(log_level(DEBUGL_CHECKS, 1)) { log_debug_info(DEBUGL_CHECKS, 1, "Rescheduled next host check for %s", ctime(&next_valid_time)); }
+ 				}
+ 			}
+ 
+@@ -3043,7 +3043,7 @@
+ 	/* reschedule the next check of the host (usually ONLY for scheduled, active checks, unless overridden above) */
+ 	if(reschedule_check == TRUE) {
+ 
+-		log_debug_info(DEBUGL_CHECKS, 1, "Rescheduling next check of host at %s", ctime(&next_check));
++		if(log_level(DEBUGL_CHECKS, 1)) { log_debug_info(DEBUGL_CHECKS, 1, "Rescheduling next check of host at %s", ctime(&next_check)); }
+ 
+ 		/* default is to reschedule host check unless a test below fails... */
+ 		hst->should_be_scheduled = TRUE;
+diff -Bbur nagios-4.0.20121116.orig/base/events.c nagios-4.0.20121116/base/events.c
+--- nagios-4.0.20121116.orig/base/events.c	2012-11-27 11:39:42.000000000 +0000
++++ nagios-4.0.20121116/base/events.c	2012-11-28 16:07:29.000000000 +0000
+@@ -300,7 +300,7 @@
+ 			 */
+ 			check_delay = temp_service->next_check - current_time;
+ 			if(check_delay > 0 && check_delay < check_window(temp_service)) {
+-				log_debug_info(DEBUGL_EVENTS, 2, "Service is already scheduled to be checked in the future: %s\n", ctime(&temp_service->next_check));
++				if(log_level(DEBUGL_EVENTS, 2)) { log_debug_info(DEBUGL_EVENTS, 2, "Service is already scheduled to be checked in the future: %s\n", ctime(&temp_service->next_check)); }
+ 				continue;
+ 				}
+ 
+@@ -328,18 +328,18 @@
+ 				log_debug_info(DEBUGL_EVENTS, 0, "  New check offset: %lu\n", temp_service->next_check - current_time);
+ 				}
+ 
+-			log_debug_info(DEBUGL_EVENTS, 2, "Preferred Check Time: %lu --> %s", (unsigned long)temp_service->next_check, ctime(&temp_service->next_check));
++			if(log_level(DEBUGL_EVENTS, 2)) { log_debug_info(DEBUGL_EVENTS, 2, "Preferred Check Time: %lu --> %s", (unsigned long)temp_service->next_check, ctime(&temp_service->next_check)); }
+ 
+ 
+ 			/* make sure the service can actually be scheduled when we want */
+ 			is_valid_time = check_time_against_period(temp_service->next_check, temp_service->check_period_ptr);
+ 			if(is_valid_time == ERROR) {
+-				log_debug_info(DEBUGL_EVENTS, 2, "Preferred Time is Invalid In Timeperiod '%s': %lu --> %s", temp_service->check_period_ptr->name, (unsigned long)temp_service->next_check, ctime(&temp_service->next_check));
++				if(log_level(DEBUGL_EVENTS, 2)) { log_debug_info(DEBUGL_EVENTS, 2, "Preferred Time is Invalid In Timeperiod '%s': %lu --> %s", temp_service->check_period_ptr->name, (unsigned long)temp_service->next_check, ctime(&temp_service->next_check)); }
+ 				get_next_valid_time(temp_service->next_check, &next_valid_time, temp_service->check_period_ptr);
+ 				temp_service->next_check = next_valid_time;
+ 				}
+ 
+-			log_debug_info(DEBUGL_EVENTS, 2, "Actual Check Time: %lu --> %s", (unsigned long)temp_service->next_check, ctime(&temp_service->next_check));
++			if(log_level(DEBUGL_EVENTS, 2)) { log_debug_info(DEBUGL_EVENTS, 2, "Actual Check Time: %lu --> %s", (unsigned long)temp_service->next_check, ctime(&temp_service->next_check)); }
+ 
+ 			if(scheduling_info.first_service_check == (time_t)0 || (temp_service->next_check < scheduling_info.first_service_check))
+ 				scheduling_info.first_service_check = temp_service->next_check;
+@@ -461,7 +461,7 @@
+ 
+ 		/* skip hosts that are already scheduled for the future (from retention data), but reschedule ones that were supposed to be checked before we started */
+ 		if(temp_host->next_check > current_time) {
+-			log_debug_info(DEBUGL_EVENTS, 2, "Host is already scheduled to be checked in the future: %s\n", ctime(&temp_host->next_check));
++			if(log_level(DEBUGL_EVENTS, 2)) { log_debug_info(DEBUGL_EVENTS, 2, "Host is already scheduled to be checked in the future: %s\n", ctime(&temp_host->next_check)); }
+ 			continue;
+ 			}
+ 
+@@ -477,7 +477,7 @@
+ 			temp_host->next_check = current_time + ranged_urand(0, check_window(temp_host));
+ 			}
+ 
+-		log_debug_info(DEBUGL_EVENTS, 2, "Preferred Check Time: %lu --> %s", (unsigned long)temp_host->next_check, ctime(&temp_host->next_check));
++		if(log_level(DEBUGL_EVENTS, 2)) { log_debug_info(DEBUGL_EVENTS, 2, "Preferred Check Time: %lu --> %s", (unsigned long)temp_host->next_check, ctime(&temp_host->next_check)); }
+ 
+ 		/* make sure the host can actually be scheduled at this time */
+ 		is_valid_time = check_time_against_period(temp_host->next_check, temp_host->check_period_ptr);
+@@ -486,7 +486,7 @@
+ 			temp_host->next_check = next_valid_time;
+ 			}
+ 
+-		log_debug_info(DEBUGL_EVENTS, 2, "Actual Check Time: %lu --> %s", (unsigned long)temp_host->next_check, ctime(&temp_host->next_check));
++		if(log_level(DEBUGL_EVENTS, 2)) { log_debug_info(DEBUGL_EVENTS, 2, "Actual Check Time: %lu --> %s", (unsigned long)temp_host->next_check, ctime(&temp_host->next_check)); }
+ 
+ 		if(scheduling_info.first_host_check == (time_t)0 || (temp_host->next_check < scheduling_info.first_host_check))
+ 			scheduling_info.first_host_check = temp_host->next_check;
+@@ -1008,7 +1008,7 @@
+ 		event_runtime = squeue_event_runtime(temp_event->sq_event);
+ 		if (temp_event != last_event) {
+ 			log_debug_info(DEBUGL_EVENTS, 1, "** Event Check Loop\n");
+-			log_debug_info(DEBUGL_EVENTS, 1, "Next Event Time: %s", ctime(&temp_event->run_time));
++			if(log_level(DEBUGL_EVENTS, 1)) { log_debug_info(DEBUGL_EVENTS, 1, "Next Event Time: %s", ctime(&temp_event->run_time)); }
+ 			log_debug_info(DEBUGL_EVENTS, 1, "Current/Max Service Checks: %d/%d (%.3lf%% saturation)\n",
+ 						   currently_running_service_checks, max_parallel_service_checks,
+ 						   ((float)currently_running_service_checks / (float)max_parallel_service_checks) * 100);
+@@ -1146,7 +1146,7 @@
+ 	broker_timed_event(NEBTYPE_TIMEDEVENT_EXECUTE, NEBFLAG_NONE, NEBATTR_NONE, event, NULL);
+ #endif
+ 
+-	log_debug_info(DEBUGL_EVENTS, 0, "** Timed Event ** Type: EVENT_%s, Run Time: %s", EVENT_TYPE_STR(event->event_type), ctime(&event->run_time));
++	if(log_level(DEBUGL_EVENTS, 0)) { log_debug_info(DEBUGL_EVENTS, 0, "** Timed Event ** Type: EVENT_%s, Run Time: %s", EVENT_TYPE_STR(event->event_type), ctime(&event->run_time)); }
+ 
+ 	/* get event latency */
+ 	gettimeofday(&tv, NULL);
+diff -Bbur nagios-4.0.20121116.orig/base/logging.c nagios-4.0.20121116/base/logging.c
+--- nagios-4.0.20121116.orig/base/logging.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/base/logging.c	2012-11-28 16:07:29.000000000 +0000
+@@ -466,16 +466,26 @@
+ 	}
+ 
+ 
++/* Returns TRUE if logging applies - TRUE=1 so can do 'if(log_level(...)) {' for conditional debugging */
++int log_level(int level, int verbosity) {
++	if(!(debug_level == DEBUGL_ALL || (level & debug_level)))
++		return FALSE;
++
++	if(verbosity > debug_verbosity)
++		return FALSE;
++
++    return TRUE;
++	}
++
++
+ /* write to the debug log */
+ int log_debug_info(int level, int verbosity, const char *fmt, ...) {
+ 	va_list ap;
+ 	char *tmppath = NULL;
+ 	struct timeval current_time;
+ 
+-	if(!(debug_level == DEBUGL_ALL || (level & debug_level)))
+-		return OK;
+-
+-	if(verbosity > debug_verbosity)
++	/* Ignore if logging not appropriate */
++	if(log_level(level, verbosity) != TRUE)
+ 		return OK;
+ 
+ 	if(debug_file_fp == NULL)
+diff -Bbur nagios-4.0.20121116.orig/base/notifications.c nagios-4.0.20121116/base/notifications.c
+--- nagios-4.0.20121116.orig/base/notifications.c	2012-11-26 17:57:07.000000000 +0000
++++ nagios-4.0.20121116/base/notifications.c	2012-11-28 16:07:29.000000000 +0000
+@@ -86,7 +86,7 @@
+ 	time(&current_time);
+ 	gettimeofday(&start_time, NULL);
+ 
+-	log_debug_info(DEBUGL_NOTIFICATIONS, 0, "** Service Notification Attempt ** Host: '%s', Service: '%s', Type: %s, Options: %d, Current State: %d, Last Notification: %s", svc->host_name, svc->description, notification_reason_name(type), options, svc->current_state, ctime(&svc->last_notification));
++	if(log_level(DEBUGL_NOTIFICATIONS, 0)) { log_debug_info(DEBUGL_NOTIFICATIONS, 0, "** Service Notification Attempt ** Host: '%s', Service: '%s', Type: %s, Options: %d, Current State: %d, Last Notification: %s", svc->host_name, svc->description, notification_reason_name(type), options, svc->current_state, ctime(&svc->last_notification)); }
+ 
+ 	/* if we couldn't find the host, return an error */
+ 	if((temp_host = svc->host_ptr) == NULL) {
+@@ -271,7 +271,7 @@
+ 				/* calculate the next acceptable re-notification time */
+ 				svc->next_notification = get_next_service_notification_time(svc, current_time);
+ 
+-				log_debug_info(DEBUGL_NOTIFICATIONS, 0, "%d contacts were notified.  Next possible notification time: %s", contacts_notified, ctime(&svc->next_notification));
++				if(log_level(DEBUGL_NOTIFICATIONS, 0)) { log_debug_info(DEBUGL_NOTIFICATIONS, 0, "%d contacts were notified.  Next possible notification time: %s", contacts_notified, ctime(&svc->next_notification)); }
+ 
+ 				/* update the last notification time for this service (this is needed for rescheduling later notifications) */
+ 				svc->last_notification = current_time;
+@@ -275,7 +275,7 @@
+ 				/* adjust current notification number */
+ 				svc->current_notification_number--;
+ 
+-				log_debug_info(DEBUGL_NOTIFICATIONS, 0, "No contacts were notified.  Next possible notification time: %s", ctime(&svc->next_notification));
++				if(log_level(DEBUGL_NOTIFICATIONS, 0)) { log_debug_info(DEBUGL_NOTIFICATIONS, 0, "No contacts were notified.  Next possible notification time: %s", ctime(&svc->next_notification)); }
+ 				}
+ 
+ 			}
+@@ -387,7 +387,7 @@
+ 			else
+ 				svc->next_notification = timeperiod_start;
+ 
+-			log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next possible notification time: %s\n", ctime(&svc->next_notification));
++			if(log_level(DEBUGL_NOTIFICATIONS, 1)) { log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next possible notification time: %s\n", ctime(&svc->next_notification)); }
+ 			}
+ 
+ 		return ERROR;
+@@ -566,7 +566,7 @@
+ 	if(current_time < svc->next_notification) {
+ 		if (svc->is_volatile == FALSE || svc->is_volatile == VOLATILE_WITH_RENOTIFICATION_INTERVAL) {
+ 		log_debug_info(DEBUGL_NOTIFICATIONS, 1, "We haven't waited long enough to re-notify contacts about this service.\n");
+-		log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next valid notification time: %s", ctime(&svc->next_notification));
++		if(log_level(DEBUGL_NOTIFICATIONS, 1)) { log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next valid notification time: %s", ctime(&svc->next_notification)); }
+ 		return ERROR;
+ 		}
+ 		}
+@@ -1059,7 +1059,7 @@
+ 	time(&current_time);
+ 	gettimeofday(&start_time, NULL);
+ 
+-	log_debug_info(DEBUGL_NOTIFICATIONS, 0, "** Host Notification Attempt ** Host: '%s', Type: %s, Options: %d, Current State: %d, Last Notification: %s", hst->name, notification_reason_name(type), options, hst->current_state, ctime(&hst->last_notification));
++	if(log_level(DEBUGL_NOTIFICATIONS, 0)) { log_debug_info(DEBUGL_NOTIFICATIONS, 0, "** Host Notification Attempt ** Host: '%s', Type: %s, Options: %d, Current State: %d, Last Notification: %s", hst->name, notification_reason_name(type), options, hst->current_state, ctime(&hst->last_notification)); }
+ 
+ 
+ 	/* check viability of sending out a host notification */
+@@ -1234,7 +1234,7 @@
+ 				/* update notifications flags */
+ 				hst->notified_on = (1 << hst->current_state);
+ 
+-				log_debug_info(DEBUGL_NOTIFICATIONS, 0, "%d contacts were notified.  Next possible notification time: %s", contacts_notified, ctime(&hst->next_notification));
++				if(log_level(DEBUGL_NOTIFICATIONS, 0)) { log_debug_info(DEBUGL_NOTIFICATIONS, 0, "%d contacts were notified.  Next possible notification time: %s", contacts_notified, ctime(&hst->next_notification)); }
+ 				}
+ 
+ 			/* we didn't end up notifying anyone */
+@@ -1243,7 +1243,7 @@
+ 				/* adjust current notification number */
+ 				hst->current_notification_number--;
+ 
+-				log_debug_info(DEBUGL_NOTIFICATIONS, 0, "No contacts were notified.  Next possible notification time: %s", ctime(&hst->next_notification));
++				if(log_level(DEBUGL_NOTIFICATIONS, 0)) { log_debug_info(DEBUGL_NOTIFICATIONS, 0, "No contacts were notified.  Next possible notification time: %s", ctime(&hst->next_notification)); }
+ 				}
+ 			}
+ 
+@@ -1320,7 +1320,7 @@
+ 			else
+ 				hst->next_notification = timeperiod_start;
+ 
+-			log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next possible notification time: %s\n", ctime(&hst->next_notification));
++			if(log_level(DEBUGL_NOTIFICATIONS, 1)) { log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next possible notification time: %s\n", ctime(&hst->next_notification)); }
+ 			}
+ 
+ 		return ERROR;
+@@ -1497,7 +1497,7 @@
+ 	/* check if its time to re-notify the contacts about the host... */
+ 	if(current_time < hst->next_notification) {
+ 		log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Its not yet time to re-notify the contacts about this host problem...\n");
+-		log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next acceptable notification time: %s", ctime(&hst->next_notification));
++		if(log_level(DEBUGL_NOTIFICATIONS, 1)) { log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next acceptable notification time: %s", ctime(&hst->next_notification)); }
+ 		return ERROR;
+ 		}
+ 
+diff -Bbur nagios-4.0.20121116.orig/base/utils.c nagios-4.0.20121116/base/utils.c
+--- nagios-4.0.20121116.orig/base/utils.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/base/utils.c	2012-11-28 16:07:29.000000000 +0000
+@@ -564,7 +564,7 @@
+ 
+ 			}
+ 
+-		log_debug_info(DEBUGL_COMMANDS, 1, "Execution time=%.3f sec, early timeout=%d, result=%d, output=%s\n", *exectime, *early_timeout, result, (output_dbuf.buf == NULL) ? "(null)" : output_dbuf.buf);
++		if(log_level(DEBUGL_COMMANDS, 1)) { log_debug_info(DEBUGL_COMMANDS, 1, "Execution time=%.3f sec, early timeout=%d, result=%d, output=%s\n", *exectime, *early_timeout, result, (output_dbuf.buf == NULL) ? "(null)" : output_dbuf.buf); }
+ 
+ #ifdef USE_EVENT_BROKER
+ 		/* send data to event broker */
+diff -Bbur nagios-4.0.20121116.orig/include/logging.h nagios-4.0.20121116/include/logging.h
+--- nagios-4.0.20121116.orig/include/logging.h	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/include/logging.h	2012-11-28 16:07:29.000000000 +0000
+@@ -83,6 +83,7 @@
+ int open_debug_log(void);
+ int close_debug_log(void);
+ int close_log_file(void);
++int log_level(int, int);
+ int fix_log_file_owner(uid_t uid, gid_t gid);
+ #endif /* !NSCGI */
+ 
+diff -Bbur nagios-4.0.20121116.orig/t-tap/test_events.c nagios-4.0.20121116/t-tap/test_events.c
+--- nagios-4.0.20121116.orig/t-tap/test_events.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/t-tap/test_events.c	2012-11-28 16:07:29.000000000 +0000
+@@ -140,6 +140,7 @@
+ 	va_end(ap);
+ 	}
+ int update_host_status(host *hst, int aggregated_dump) {}
++int log_level(int level, int verbosity) {}
+ 
+ /* Test variables */
+ service *svc1 = NULL, *svc2 = NULL, *svc3 = NULL;
+diff -Bbur nagios-4.0.20121116.orig/t-tap/test_nagios_config.c nagios-4.0.20121116/t-tap/test_nagios_config.c
+--- nagios-4.0.20121116.orig/t-tap/test_nagios_config.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/t-tap/test_nagios_config.c	2012-11-28 16:07:29.000000000 +0000
+@@ -247,6 +247,7 @@
+ 	/* vprintf( fmt, ap ); */
+ 	va_end(ap);
+ 	}
++int log_level(int level, int verbosity) {}
+ 
+ int neb_free_callback_list(void) {}
+ void broker_program_status(int type, int flags, int attr, struct timeval *timestamp) {}
+diff -Bbur nagios-4.0.20121116.orig/t-tap/test_timeperiods.c nagios-4.0.20121116/t-tap/test_timeperiods.c
+--- nagios-4.0.20121116.orig/t-tap/test_timeperiods.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/t-tap/test_timeperiods.c	2012-11-28 16:07:29.000000000 +0000
+@@ -49,6 +49,7 @@
+ void free_comment_data(void) {}
+ int write_to_log(char *buffer, unsigned long data_type, time_t *timestamp) { return 0; }
+ int log_debug_info(int level, int verbosity, const char *fmt, ...) { return 0; }
++int log_level(int level, int verbosity) {}
+ 
+ int neb_free_callback_list(void) { return 0; }
+ void broker_program_status(int type, int flags, int attr, struct timeval *timestamp) {}

@@ -1,0 +1,161 @@
+diff -ur nmis-4.2.13.original/cgi-bin/reports.pl nmis-4.2.13/cgi-bin/reports.pl
+--- nmis-4.2.13.original/cgi-bin/reports.pl	2006-10-08 19:48:06.000000000 +0100
++++ nmis-4.2.13/cgi-bin/reports.pl	2008-01-22 21:52:37.030106824 +0000
+@@ -131,6 +131,8 @@
+ my $my_data;
+ my %FORM;
+ 
++my $this_script = $q->url( -relative => 1 );
++
+ if($ENV{'REQUEST_METHOD'} eq "GET"){
+    $my_data = $ENV{'QUERY_STRING'};
+ }
+@@ -572,14 +574,14 @@
+ 		 	cssTableStart("white");
+ 			 	cssPrintCell('grey', "<A name=$group><a href=#TOP>$group</a>", 10);
+ 			 	rowStart;
+-				printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=node\">Node</a>","#FFFFFF");
++				printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=node\">Node</a>","#FFFFFF");
+ 			 	printHeadCell("Device Type","#FFFFFF");
+ 			 	printHeadCell("Role","#FFFFFF");
+ 			 	printHeadCell("Net","#FFFFFF");
+-			 	printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=reachability\">Reachability</a>","#FFFFFF");
+-			 	printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=availability\">Interface Avail.</a>","#FFFFFF");
+-			 	printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=health\">Health</a>","#FFFFFF");
+-			 	printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=response\">Response Time</a>","#FFFFFF");
++			 	printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=reachability\">Reachability</a>","#FFFFFF");
++			 	printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=availability\">Interface Avail.</a>","#FFFFFF");
++			 	printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=health\">Health</a>","#FFFFFF");
++			 	printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;length=$length&amp;sort=response\">Response Time</a>","#FFFFFF");
+ 			 	rowEnd;
+ 				&reportNodeType($group);
+ 		 	tableEnd;
+@@ -1267,10 +1269,10 @@
+ 		 	cssTableStart("white");
+ 
+ 			rowStart;
+-			printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;level=$level&amp;length=$length&amp;sort=time\">Time</a>","#FFFFFF");
+-			printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;level=$level&amp;length=$length&amp;sort=node\">Node</a>","#FFFFFF");
+-			printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;level=$level&amp;length=$length&amp;sort=type\">Outage Type</a>","#FFFFFF");
+-			printHeadCell("<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=$type&amp;report=$report&amp;level=$level&amp;length=$length&amp;sort=length\">Outage Time</a>","#FFFFFF");
++			printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;level=$level&amp;length=$length&amp;sort=time\">Time</a>","#FFFFFF");
++			printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;level=$level&amp;length=$length&amp;sort=node\">Node</a>","#FFFFFF");
++			printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;level=$level&amp;length=$length&amp;sort=type\">Outage Type</a>","#FFFFFF");
++			printHeadCell("<a href=\"$this_script?file=$conf&amp;type=$type&amp;report=$report&amp;level=$level&amp;length=$length&amp;sort=length\">Outage Time</a>","#FFFFFF");
+ 			printHeadCell("Interface","#FFFFFF");
+ 			printHeadCell("Planned Outage","#FFFFFF");
+ 			rowEnd;
+@@ -2120,41 +2122,41 @@
+ 			cssPrintCell('grey', 'Current Status Reports', 1);
+ 			rowEnd;
+ 			cssPrintRow('Node Details Report', 'menubar', 1 );
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;report=nodedetails\">Node Details Report (HTML)</a> <a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;report=nodedetails&amp;csvfile=asset\">(CSV)</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;report=nodedetails\">Node Details Report (HTML)</a> <a href=\"$this_script?file=$conf&amp;report=nodedetails&amp;csvfile=asset\">(CSV)</a>");
+ 
+ 			cssPrintRow('Network Availability Reports', 'menubar', 1 );
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=avail&amp;length=day\">Daily Availability Report</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=avail&amp;length=week\">Weekly Availability Report</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=avail&amp;length=month\">Monthly Availability Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=avail&amp;length=day\">Daily Availability Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=avail&amp;length=week\">Weekly Availability Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=avail&amp;length=month\">Monthly Availability Report</a>");
+ 
+ 			cssPrintRow( 'Network Top10 Reports', 'menubar', 1 );
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=top10&amp;length=15min\">Current Top10 Report (Last 15 min)</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=top10&amp;length=day\">Daily Top10 Report</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=top10&amp;length=week\">Weekly Top10 Report</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=top10&amp;length=month\">Monthly Top10 Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=top10&amp;length=15min\">Current Top10 Report (Last 15 min)</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=top10&amp;length=day\">Daily Top10 Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=top10&amp;length=week\">Weekly Top10 Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=top10&amp;length=month\">Monthly Top10 Report</a>");
+ 
+ 			cssPrintRow( 'Network Health Reports', 'menubar', 1 );
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=health&amp;length=day\">Daily Health Reports</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=health&amp;length=week\">Weekly Health Reports</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=health&amp;length=month\">Monthly Health Reports</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=health&amp;length=day\">Daily Health Reports</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=health&amp;length=week\">Weekly Health Reports</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=health&amp;length=month\">Monthly Health Reports</a>");
+ 
+ 			cssPrintRow( 'Outage Reports', 'menubar', 1 );
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage&amp;length=day&amp;level=node\">Daily Outage Reports by Node</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage&amp;length=week&amp;level=node\">Weekly Outage Reports by Node</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage&amp;length=month&amp;level=node\">Monthly Outage Reports by Node</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage&amp;length=day&amp;level=interface\">Daily Outage Reports by Interface</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage&amp;length=week&amp;level=interface\">Weekly Outage Reports by Interface</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage&amp;length=month&amp;level=interface\">Monthly Outage Reports by Interface</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage&amp;length=day&amp;level=node\">Daily Outage Reports by Node</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage&amp;length=week&amp;level=node\">Weekly Outage Reports by Node</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage&amp;length=month&amp;level=node\">Monthly Outage Reports by Node</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage&amp;length=day&amp;level=interface\">Daily Outage Reports by Interface</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage&amp;length=week&amp;level=interface\">Weekly Outage Reports by Interface</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage&amp;length=month&amp;level=interface\">Monthly Outage Reports by Interface</a>");
+ 
+ 			cssPrintRow( 'Response Time Reports', 'menubar', 1 );
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=response\">Current Response Time Report (Last 6 Hours)</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=response&amp;length=day\">Daily Response Time Report</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=response&amp;length=week\">Weekly Response Time Report</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=response&amp;length=month\">Monthly Response Time Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=response\">Current Response Time Report (Last 6 Hours)</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=response&amp;length=day\">Daily Response Time Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=response&amp;length=week\">Weekly Response Time Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=response&amp;length=month\">Monthly Response Time Report</a>");
+ 
+ 			cssPrintRow( 'Port Report', 'menubar', 1 );
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=port\">Current Port Count Summary Report</a>");
+-				cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=counts\">Current Port Count per Device Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=port\">Current Port Count Summary Report</a>");
++				cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=counts\">Current Port Count per Device Report</a>");
+ 			tableEnd;
+ 			cellEnd;
+ 
+@@ -2166,32 +2168,32 @@
+ 				rowEnd;
+ 
+ 				cssPrintRow( 'Network Availability Reports', 'menubar', 1 );
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=avail-day\">Daily Availability Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=avail-week\">Weekly Availability Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=avail-month\">Monthly Availability Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=avail-day\">Daily Availability Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=avail-week\">Weekly Availability Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=avail-month\">Monthly Availability Stored Reports</a>");
+ 
+ 				cssPrintRow( 'Network Top10 Reports', 'menubar', 1 );
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=top10-day\">Daily Top10 Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=top10-week\">Weekly Top10 Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=top10-month\">Monthly Top10 Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=top10-day\">Daily Top10 Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=top10-week\">Weekly Top10 Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=top10-month\">Monthly Top10 Stored Reports</a>");
+ 
+ 				cssPrintRow( 'Network Health Reports', 'menubar', 1 );
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=day\">Daily Health Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=week\">Weekly Health Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=month\">Monthly Health Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=day\">Daily Health Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=week\">Weekly Health Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=month\">Monthly Health Stored Reports</a>");
+ 
+ 				cssPrintRow( 'Outage Reports by Node', 'menubar', 1 );
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage-day\">Daily Outage Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage-week\">Weekly Outage Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=outage-month\">Monthly Outage Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage-day\">Daily Outage Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage-week\">Weekly Outage Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=outage-month\">Monthly Outage Stored Reports</a>");
+ 
+ 				cssPrintRow( 'Response Time Reports', 'menubar', 1 );
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=response-day\">Daily Response Time Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=response-week\">Weekly Response Time Stored Reports</a>");
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=response-month\">Monthly Response Time Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=response-day\">Daily Response Time Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=response-week\">Weekly Response Time Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=response-month\">Monthly Response Time Stored Reports</a>");
+ 
+ 				cssPrintRow( 'Port Reports', 'menubar', 1 );
+-					cssPrintRow( "<a href=\"$ENV{SCRIPT_NAME}?file=$conf&amp;type=reports&amp;report=port-day\">Daily Port Count Summary Stored Reports</a>");
++					cssPrintRow( "<a href=\"$this_script?file=$conf&amp;type=reports&amp;report=port-day\">Daily Port Count Summary Stored Reports</a>");
+ 				tableEnd;
+ 				cellEnd;
+ 				rowEnd;

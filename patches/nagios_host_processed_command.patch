@@ -1,0 +1,60 @@
+diff -Bbur nagios-4.0.20121116.orig/base/checks.c nagios-4.0.20121116/base/checks.c
+--- nagios-4.0.20121116.orig/base/checks.c	2012-11-26 17:57:07.000000000 +0000
++++ nagios-4.0.20121116/base/checks.c	2012-11-28 14:40:17.000000000 +0000
+@@ -2076,6 +2079,9 @@
+ 		return ERROR;
+ 		}
+ 
++	my_free(hst->processed_command);
++	hst->processed_command = strdup(processed_command);
++
+ 	/* get the command start time */
+ 	gettimeofday(&start_time, NULL);
+ 
+@@ -2344,7 +2350,7 @@
+ 
+ #ifdef USE_EVENT_BROKER
+ 	/* send data to event broker */
+-	broker_host_check(NEBTYPE_HOSTCHECK_PROCESSED, NEBFLAG_NONE, NEBATTR_NONE, temp_host, temp_host->check_type, temp_host->current_state, temp_host->state_type, start_time_hires, end_time_hires, temp_host->check_command, temp_host->latency, temp_host->execution_time, host_check_timeout, queued_check_result->early_timeout, queued_check_result->return_code, NULL, temp_host->plugin_output, temp_host->long_plugin_output, temp_host->perf_data, NULL, queued_check_result);
++	broker_host_check(NEBTYPE_HOSTCHECK_PROCESSED, NEBFLAG_NONE, NEBATTR_NONE, temp_host, temp_host->check_type, temp_host->current_state, temp_host->state_type, start_time_hires, end_time_hires, temp_host->check_command, temp_host->latency, temp_host->execution_time, host_check_timeout, queued_check_result->early_timeout, queued_check_result->return_code, temp_host->processed_command, temp_host->plugin_output, temp_host->long_plugin_output, temp_host->perf_data, NULL, queued_check_result);
+ #endif
+ 
+ 	return OK;
+diff -Bbur nagios-4.0.20121116.orig/common/objects.c nagios-4.0.20121116/common/objects.c
+--- nagios-4.0.20121116.orig/common/objects.c	2012-11-26 17:57:07.000000000 +0000
++++ nagios-4.0.20121116/common/objects.c	2012-11-28 14:40:17.000000000 +0000
+@@ -739,6 +739,7 @@
+ 	new_host->acknowledgement_type = ACKNOWLEDGEMENT_NONE;
+ 	new_host->notifications_enabled = (notifications_enabled > 0) ? TRUE : FALSE;
+ 	new_host->check_options = CHECK_OPTION_NONE;
++	new_host->processed_command = NULL;
+ #endif
+ 
+ 	/* add new host to hash table */
+@@ -2509,6 +2510,7 @@
+ 		my_free(this_host->plugin_output);
+ 		my_free(this_host->long_plugin_output);
+ 		my_free(this_host->perf_data);
++		my_free(this_host->processed_command);
+ #endif
+ 		free_objectlist(&this_host->hostgroups_ptr);
+ 		free_objectlist(&this_host->notify_deps);
+@@ -2881,6 +2883,7 @@
+ 		my_free(this_service->plugin_output);
+ 		my_free(this_service->long_plugin_output);
+ 		my_free(this_service->perf_data);
++		my_free(this_service->processed_command);
+ 
+ 		my_free(this_service->event_handler_args);
+ 		my_free(this_service->check_command_args);
+diff -Bbur nagios-4.0.20121116.orig/include/objects.h nagios-4.0.20121116/include/objects.h
+--- nagios-4.0.20121116.orig/include/objects.h	2012-11-26 17:57:07.000000000 +0000
++++ nagios-4.0.20121116/include/objects.h	2012-11-28 14:40:14.000000000 +0000
+@@ -493,6 +493,7 @@
+ 	char	*plugin_output;
+ 	char    *long_plugin_output;
+ 	char    *perf_data;
++	char    *processed_command;
+ 	int     state_type;
+ 	int     current_attempt;
+ 	unsigned long current_event_id;

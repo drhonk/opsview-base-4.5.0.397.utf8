@@ -1,0 +1,76 @@
+diff -Bbur nagvis-1.4.4.orig/nagvis/templates/hover/tmpl.default.css nagvis-1.4.4/nagvis/templates/hover/tmpl.default.css
+--- nagvis-1.4.4.orig/nagvis/templates/hover/tmpl.default.css	2013-01-14 18:06:53.000000000 +0000
++++ nagvis-1.4.4/nagvis/templates/hover/tmpl.default.css	2013-01-14 18:15:51.000000000 +0000
+@@ -30,31 +30,31 @@
+ }
+ 
+ table.hover_table td, table.hover_table th {
+-	border: 1px #a4a4a4 solid;
++	border: 1px #ADACAC solid;
+ 	padding: 2px;
+ 	
+ 	font-size: 9px;
+-	color: #314455;
++	color: #313030;
+ }
+ 
+ table.hover_table th {
+ 	text-align: center;
+-	background-color: #eee;
++	background-color: #EAEAEA;
+ }
+ 
+ table.hover_table spacer {
+ 	height: 3px;
+-	background-color: #eee;
++	background-color: #EAEAEA;
+ }
+ 
+-table.hover_table td.label { text-align: center; background-color: #eee; }
+-table.hover_table td.labelACK { text-align: center; background-color: #eee; }
+-table.hover_table td.labelPENDING { text-align: center; background-color: #eee; }
+-table.hover_table td.labelOK, table.hover_table td.labelUP { text-align: center; background-color: #66FF66; }
+-table.hover_table td.labelWARNING { text-align: center; background-color: #FFFF7E; }
+-table.hover_table td.labelCRITICAL, table.hover_table td.labelDOWN, table.hover_table td.labelUNREACHABLE { text-align: center; background-color: #FFBBBB; }
+-table.hover_table td.labelERROR { text-align: center; background-color: #eee; }
+-table.hover_table td.labelUNKNOWN { text-align: center; background-color: #eee; }
++table.hover_table td.label { text-align: center; background-color: #EAEAEA; }
++table.hover_table td.labelACK { text-align: center; background-color: #EAEAEA; }
++table.hover_table td.labelPENDING { text-align: center; background-color: #EAEAEA; }
++table.hover_table td.labelOK, table.hover_table td.labelUP { text-align: center; background-color: #9ED515; }
++table.hover_table td.labelWARNING { text-align: center; background-color: #FFDB58; }
++table.hover_table td.labelCRITICAL, table.hover_table td.labelDOWN { text-align: center; background-color: #FF5555; }
++table.hover_table td.labelERROR { text-align: center; background-color: #FF5555; }
++table.hover_table td.labelUNKNOWN, table.hover_table td.labelUNREACHABLE { text-align: center; background-color: #FFF8DC; }
+ 
+ table.hover_table label {
+ 	font-weight: bold;
+@@ -65,21 +65,21 @@
+ }
+ 
+ table.hover_table td.stateOK, table.hover_table td.stateUP {
+-	background-color: #00CC00;
++	background-color: #9ED515;
+ }
+ 
+ table.hover_table td.stateWARNING {
+-	background-color: #FFFF00;
++	background-color: #FFDB58;
+ }
+ 
+-table.hover_table td.stateCRITICAL, table.hover_table td.stateDOWN, table.hover_table td.stateUNREACHABLE {
+-	background-color: #F83838;
++table.hover_table td.stateCRITICAL, table.hover_table td.stateDOWN {
++	background-color: #FF5555;
+ }
+ 
+ table.hover_table td.stateERROR {
+-	background-color: #66CCFF;
++	background-color: #FF5555;
+ }
+ 
+-table.hover_table td.stateUNKNOWN {
+-	background-color: #FFFF99;
++table.hover_table td.stateUNKNOWN, table.hover_table td.stateUNREACHABLE {
++	background-color: #FFF8DC;
+ }

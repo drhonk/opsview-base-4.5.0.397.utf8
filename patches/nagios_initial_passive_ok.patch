@@ -1,0 +1,13 @@
+--- nagios-2.0.original/common/statusdata.c	2005-11-16 08:49:35.000000000 +0000
++++ nagios-2.0/common/statusdata.c	2006-03-10 16:49:48.663060014 +0000
+@@ -391,9 +391,9 @@
+ 			break;
+ 		        }
+ 		if(new_svcstatus->has_been_checked==FALSE){
+-			new_svcstatus->status=SERVICE_PENDING;
+ 			free(new_svcstatus->plugin_output);
+ 			if(new_svcstatus->should_be_scheduled==TRUE){
++				new_svcstatus->status=SERVICE_PENDING;
+ 				get_time_string(&new_svcstatus->next_check,date_string,sizeof(date_string),LONG_DATE_TIME);
+ 				snprintf(temp_buffer,sizeof(temp_buffer)-1,"Service check scheduled for %s",date_string);
+ 				temp_buffer[sizeof(temp_buffer)-1]='\x0';

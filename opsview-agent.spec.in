@@ -1,0 +1,93 @@
+%define name opsview-base
+%define version %VERSION%
+%define release 1
+%define nsusr nagios
+%define nsgrp nagios
+%define nsport 5666
+
+License: See associated files for each software
+Name: opsview-agent
+Prefix: /usr/local/nagios
+Release: %RELEASE%%{?distribution:.%{distribution}}
+Version: %VERSION%
+Source: opsview-agent-%VERSION%.tar.gz
+URL: http://www.opsview.org
+Buildroot: /tmp/opsview-base
+Group: System Environment/Daemons
+Summary: Opsview Agent
+Provides: opsview-agent
+Conflicts: nagios, nagios-nrpe, opsview-base, opsview-core, opsview-perl, opsview-web
+Requires: perl, openssl, /bin/ksh, bash, libmcrypt, libtool, lsb, bind-utils
+BuildRequires: zlib-devel, libmcrypt-devel, openssl-devel, gcc, automake, make, unzip, libtool, bind-utils
+Autoreqprov: 0
+
+%define debug_package %{nil}
+
+%description
+This is the agent for Opsview, to be installed on systems to be monitored
+by the check_nrpe command.
+
+%prep
+%setup -q
+
+%build
+make agent
+
+%install
+make install-agent DESTDIR=$RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/etc/init.d/
+cp support_files/opsview-agent $RPM_BUILD_ROOT/etc/init.d/opsview-agent
+
+%clean
+rm -fr $RPM_BUILD_ROOT
+
+%pre
+if [ "`/bin/uname -i`" != "%{_arch}" ]; then
+	echo "%{name}.%{version}.%{release} was designed for %{_arch} servers"
+	exit 1
+fi
+# Create `nagios' group on the system if necessary
+if grep ^nagios: /etc/group > /dev/null; then
+        : # group already exists
+else
+        /usr/sbin/groupadd -r nagios || %nnmmsg Unexpected error adding group "nagios". Aborting install process.
+fi
+# Create `nagios' user on the system if necessary
+if id nagios > /dev/null 2>/dev/null ; then
+        : # user already exists
+else
+        /usr/sbin/useradd -r -m -d /var/log/nagios -s /bin/bash -c "nagios" -g nagios nagios || \
+                %nnmmsg Unexpected error adding user "nagios". Aborting install process.
+fi
+
+%post
+/sbin/chkconfig --add opsview-agent
+if [ "$1" -ge 1 ]; then
+	/etc/init.d/opsview-agent restart
+else
+	/etc/init.d/opsview-agent start
+fi
+
+%preun
+/etc/init.d/opsview-agent stop
+/sbin/chkconfig --del opsview-agent
+
+%postun
+if [ "$1" -ge 1 ]; then
+	/sbin/service opsview-agent restart >/dev/null 2>&1
+fi
+
+%files
+%defattr(0555,nagios,nagios)
+%attr(0550,root,nagios) /etc/init.d/opsview-agent
+%dir %attr(0555,nagios,nagios) /usr/local/nagios
+%dir %attr(0555,nagios,nagios) /usr/local/nagios/bin
+%attr(0550,nagios,nagios) /usr/local/nagios/bin/nrpe
+%dir %attr(0555,nagios,nagios) /usr/local/nagios/etc
+%attr(0550,nagios,nagios) /usr/local/nagios/etc/nrpe.cfg
+%dir %attr(0770,nagios,nagios) /usr/local/nagios/etc/nrpe_local
+%dir %attr(0755,nagios,nagios) /usr/local/nagios/var
+/usr/local/nagios/libexec
+%attr(4550,root,nagios) /usr/local/nagios/libexec/check_icmp
+%attr(4550,root,nagios) /usr/local/nagios/libexec/check_dhcp
+%dir %attr(0770,nagios,nagios) /usr/local/nagios/libexec/nrpe_local

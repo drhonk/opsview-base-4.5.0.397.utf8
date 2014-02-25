@@ -1,0 +1,24 @@
+diff -ur nagvis-1.4.4.orig//etc/nagvis.ini.php-sample nagvis-1.4.4//etc/nagvis.ini.php-sample
+--- nagvis-1.4.4.orig//etc/nagvis.ini.php-sample	2012-10-11 10:58:12.000000000 +0100
++++ nagvis-1.4.4//etc/nagvis.ini.php-sample	2012-10-11 11:57:41.000000000 +0100
+@@ -103,7 +103,7 @@
+ ; show map in lists (dropdowns, index page, ...)
+ ;showinlists=1
+ ; target for the icon links
+-;urltarget="_self"
++urltarget="_parent"
+ ; URL template for host object links
+ ;hosturl="[htmlcgi]/status.cgi?host=[host_name]"
+ ; URL template for hostgroup object links
+diff -ur nagvis-1.4.4.orig//nagvis/includes/classes/GlobalMainCfg.php nagvis-1.4.4//nagvis/includes/classes/GlobalMainCfg.php
+--- nagvis-1.4.4.orig//nagvis/includes/classes/GlobalMainCfg.php	2012-10-11 11:41:27.000000000 +0100
++++ nagvis-1.4.4//nagvis/includes/classes/GlobalMainCfg.php	2012-10-11 11:55:36.000000000 +0100
+@@ -180,7 +180,7 @@
+ 					'match' => MATCH_BOOLEAN),
+ 				'urltarget' => Array('must' => 0,
+ 					'editable' => 1,
+-					'default' => '_self',
++					'default' => '_parent',
+ 					'match' => MATCH_STRING_NO_SPACE),
+ 				'hosturl' => Array('must' => 0,
+ 					'default' => '[htmlcgi]/status.cgi?host=[host_name]',

@@ -1,0 +1,16 @@
+diff -ur nagiosgraph-0.8.2.orig/map nagiosgraph-0.8.2/map
+--- nagiosgraph-0.8.2.orig/map	2008-04-11 11:53:27.000000000 -0400
++++ nagiosgraph-0.8.2/map	2008-04-11 11:55:22.000000000 -0400
+@@ -136,7 +136,11 @@
+ 
+ # Service type: unix-procs
+ #   output:PROCS OK: 43 processes
+-/output:PROCS.*?(\d+) processes\n/
++# 
++# NOTE: if perfdata is supplied then match fails and output gets 
++# passed on to next processing method
++# 
++/output:PROCS.*?(\d+) process.*perfdata:$/s
+ and push @s, [ procs,
+                [ procs, GAUGE, $1 ] ];
+ 

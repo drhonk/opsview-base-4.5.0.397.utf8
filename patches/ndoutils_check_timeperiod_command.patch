@@ -1,0 +1,34 @@
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/objects.h ndoutils-2-0/include/nagios-4x/objects.h
+--- ndoutils-2-0.orig/include/nagios-4x/objects.h	2012-11-27 15:48:00.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/objects.h	2012-11-27 15:56:54.000000000 +0000
+@@ -544,6 +544,14 @@
+ 	} servicegroup;
+ 
+ 
++/* COMMANDTIMEPERIOD structure */
++typedef struct commandtimeperiod_struct {
++	timeperiod 	*check_period_ptr;
++	command 	*check_command_ptr;
++	char		*service_check_command;
++	} commandtimeperiod;
++
++
+ /* SERVICE structure */
+ struct service {
+ 	unsigned int id;
+@@ -553,6 +561,7 @@
+ 	struct servicesmember *parents;
+ 	struct servicesmember *children;
+ 	char    *check_command;
++	char	*service_check_timeperiod_command;
+ 	char    *event_handler;
+ 	int     initial_state;
+ 	double	check_interval;
+@@ -642,6 +651,7 @@
+ 	struct command *event_handler_ptr;
+ 	char *event_handler_args;
+ 	struct command *check_command_ptr;
++	commandtimeperiod *check_timeperiod_command_ptr;
+ 	char *check_command_args;
+ 	struct timeperiod *check_period_ptr;
+ 	struct timeperiod *notification_period_ptr;

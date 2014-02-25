@@ -1,0 +1,17 @@
+diff -ur nagios-4.0.20130107.original//lib/iobroker.c nagios-4.0.20130107/lib/iobroker.c
+--- nagios-4.0.20130107.original//lib/iobroker.c	2012-12-24 15:29:25.000000000 +0000
++++ nagios-4.0.20130107/lib/iobroker.c	2013-02-08 13:15:18.000000000 +0000
+@@ -43,6 +43,13 @@
+ # error "iobroker can't use both poll() and select()"
+ #endif
+ 
++#if defined(IOBROKER_USES_EPOLL)
++#error SHOULD NOT GET CALLED HERE! OPSVIEW USES SELECT
++#endif
++#if defined(IOBROKER_USES_POLL)
++#error SHOULD NOT GET CALLED HERE! OPSVIEW USES SELECT
++#endif
++
+ typedef struct {
+ 	int fd; /* the file descriptor */
+ 	int events; /* events the caller is interested in */

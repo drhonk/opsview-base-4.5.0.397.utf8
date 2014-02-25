@@ -1,0 +1,21 @@
+--- validation-1.5.4.1.original/validation.js	2007-07-17 13:57:58.000000000 +0100
++++ validation-1.5.4.1/validation.js	2007-07-17 13:57:35.000000000 +0100
+@@ -77,7 +77,7 @@
+ 			immediate : false,
+ 			focusOnError : true,
+ 			useTitles : false,
+-			onFormValidate : function(result, form) {},
++			onFormValidate : function(result, form) {return result},
+ 			onElementValidate : function(result, elm) {}
+ 		}, options || {});
+ 		this.form = $(form);
+@@ -105,8 +105,7 @@
+ 		if(!result && this.options.focusOnError) {
+ 			Form.getElements(this.form).findAll(function(elm){return $(elm).hasClassName('validation-failed')}).first().focus()
+ 		}
+-		this.options.onFormValidate(result, this.form);
+-		return result;
++		return this.options.onFormValidate(result, this.form);
+ 	},
+ 	reset : function() {
+ 		Form.getElements(this.form).each(Validation.reset);

@@ -1,0 +1,11 @@
+????? ????
+    NOTICES:
+    FEATURES:
+        Added WMI client
+    ENHANCEMENTS:
+        NRPE now returns some system version information
+    FIXES:
+        Fix to nagvis for later versions of firefox and chrome where use of vairables was a bit lax in code
+        Fix to Solaris agent packaging when etc/nrpe_local didn't exisst
+        Fixed package conflicts with nagios-nrpe-server got ospview-agent and opsview-base
+    TECHNICAL:

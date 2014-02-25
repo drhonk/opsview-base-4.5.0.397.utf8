@@ -1,0 +1,11 @@
+diff -ur ndoutils-2-0.orig/include/nagios-2x/objects.h ndoutils-2-0/include/nagios-2x/objects.h
+--- ndoutils-2-0.orig/include/nagios-2x/objects.h	2012-09-24 22:29:40.000000000 +0000
++++ ndoutils-2-0/include/nagios-2x/objects.h	2012-11-21 16:38:19.000000000 +0000
+@@ -272,6 +273,7 @@
+ 	int     notify_on_host_flapping;
+ 	char	*host_notification_period;
+ 	char	*service_notification_period;
++	int	can_submit_commands;
+ 	struct	contact_struct *next;
+ 	struct	contact_struct *nexthash;
+ 	}contact;

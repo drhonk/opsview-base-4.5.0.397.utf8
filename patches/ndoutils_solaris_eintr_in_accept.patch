@@ -1,0 +1,34 @@
+diff -ur ndoutils-1.4b3.original/src/ndo2db.c ndoutils-1.4b3/src/ndo2db.c
+--- ndoutils-1.4b3.original/src/ndo2db.c	2008-02-26 16:47:56.039942000 +0000
++++ ndoutils-1.4b3/src/ndo2db.c	2008-02-26 16:54:47.137446552 +0000
+@@ -709,11 +709,25 @@
+ 	/* accept connections... */
+ 	while(1){
+ 
+-		if((new_sd=accept(ndo2db_sd,(ndo2db_socket_type==NDO_SINK_TCPSOCKET)?(struct sockaddr *)&client_address_i:(struct sockaddr *)&client_address_u,(socklen_t *)&client_address_length))<0){
+-			perror("Accept error");
+-			ndo2db_cleanup_socket();
+-			return NDO_ERROR;
+-		        }
++		/* 
++		Altinity patch: Solaris 10 gets an EINTR error when file2sock invoked on the 2nd call
++		An alternative fix is not to fork below, but this has wider implications
++		*/
++		while(1) {
++			new_sd=accept(ndo2db_sd,(ndo2db_socket_type==NDO_SINK_TCPSOCKET)?(struct sockaddr *)&client_address_i:(struct sockaddr *)&client_address_u,(socklen_t *)&client_address_length);
++			if(new_sd>=0)
++				/* data available */
++				break;
++			if(errno == EINTR) {
++				/* continue */
++				} 
++			else {
++				perror("Accept error");
++				ndo2db_cleanup_socket();
++				return NDO_ERROR;
++				}
++			}
++
+ 
+ #ifndef DEBUG_NDO2DB
+ 		/* fork... */

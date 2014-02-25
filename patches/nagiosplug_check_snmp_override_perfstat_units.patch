@@ -1,0 +1,114 @@
+diff --git a/plugins/check_snmp.c b/plugins/check_snmp.c
+index 2d9861b..d03f8cf 100644
+--- a/plugins/check_snmp.c
++++ b/plugins/check_snmp.c
+@@ -113,16 +113,20 @@ char *privpasswd = NULL;
+ char **oids = NULL;
+ char *label;
+ char *units;
++char *unittypes;
+ char *port;
+ char *snmpcmd;
+ char string_value[MAX_INPUT_BUFFER] = "";
+ int  invert_search=0;
+ char **labels = NULL;
+ char **unitv = NULL;
++char **unittypesv = NULL;
+ size_t nlabels = 0;
+ size_t labels_size = 8;
+ size_t nunits = 0;
+ size_t unitv_size = 8;
++size_t nunittypes = 0;
++size_t unittypesv_size = 8;
+ int numoids = 0;
+ int numauthpriv = 0;
+ int verbose = 0;
+@@ -183,11 +187,13 @@ main (int argc, char **argv)
+ 
+ 	labels = malloc (labels_size);
+ 	unitv = malloc (unitv_size);
++	unittypesv = malloc (unittypesv_size);
+ 	for (i = 0; i < MAX_OIDS; i++)
+ 		eval_method[i] = CHECK_UNDEF;
+ 
+ 	label = strdup ("SNMP");
+ 	units = strdup ("");
++	unittypes = strdup ("");
+ 	port = strdup (DEFAULT_PORT);
+ 	outbuff = strdup ("");
+ 	delimiter = strdup (" = ");
+@@ -398,6 +404,12 @@ main (int argc, char **argv)
+ 		else
+ 			show = response;
+ 
++        if(!calculate_rate) {
++            if (nunittypes > (size_t)0 && (size_t)i < nunittypes && unittypesv[i] != NULL)
++                //asprintf (&outbuff, "%s %s", outbuff, unitsv[i]);
++                strcpy(type, unittypesv[i]);
++        }
++
+ 		iresult = STATE_DEPENDENT;
+ 
+ 		/* Process this block for numeric comparisons */
+@@ -582,6 +594,7 @@ process_arguments (int argc, char **argv)
+ 		{"eregi", required_argument, 0, 'R'},
+ 		{"label", required_argument, 0, 'l'},
+ 		{"units", required_argument, 0, 'u'},
++		{"unit_type", required_argument, 0, 'T'},
+ 		{"port", required_argument, 0, 'p'},
+ 		{"retries", required_argument, 0, 'e'},
+ 		{"miblist", required_argument, 0, 'm'},
+@@ -614,7 +627,7 @@ process_arguments (int argc, char **argv)
+ 	}
+ 
+ 	while (1) {
+-		c = getopt_long (argc, argv, "nhvVOt:c:w:H:C:o:e:E:d:D:s:t:R:r:l:u:p:m:P:L:U:a:x:A:X:",
++		c = getopt_long (argc, argv, "nhvVOt:c:w:H:C:o:e:E:d:D:s:t:R:r:l:u:p:m:P:L:U:a:x:A:X:T:",
+ 									 longopts, &option);
+ 
+ 		if (c == -1 || c == EOF)
+@@ -800,6 +813,35 @@ process_arguments (int argc, char **argv)
+ 					unitv[nunits - 1] = ptr;
+ 			}
+ 			break;
++		case 'T':									/* units */
++			unittypes = optarg;
++			nunittypes++;
++			if (nunittypes >= unittypesv_size) {
++				unittypesv_size += 8;
++				unittypesv = realloc (unittypesv, unittypesv_size);
++				if (unittypesv == NULL)
++					die (STATE_UNKNOWN, _("Could not reallocate unit types [%d]\n"), (int)nunittypes);
++			}
++			unittypesv[nunittypes - 1] = optarg;
++			ptr = thisarg (optarg);
++			unittypesv[nunittypes - 1] = ptr;
++			if (strstr (ptr, "'") == ptr)
++				unittypesv[nunittypes - 1] = ptr + 1;
++			while (ptr && (ptr = nextarg (ptr))) {
++				if (nunittypes >= unittypesv_size) {
++					unittypesv_size += 8;
++					unittypesv = realloc (unittypesv, unittypesv_size);
++					if (unittypes == NULL)
++						die (STATE_UNKNOWN, _("Could not realloc() unit types\n"));
++				}
++				nunittypes++;
++				ptr = thisarg (ptr);
++				if (strstr (ptr, "'") == ptr)
++					unittypesv[nunittypes - 1] = ptr + 1;
++				else
++					unittypesv[nunittypes - 1] = ptr;
++			}
++			break;
+ 		case L_CALCULATE_RATE:
+ 			if(calculate_rate==0)
+ 				np_enable_state(NULL, 1);
+@@ -1073,6 +1115,8 @@ print_help (void)
+ 	printf ("    %s\n", _("Prefix label for output from plugin"));
+ 	printf (" %s\n", "-u, --units=STRING");
+ 	printf ("    %s\n", _("Units label(s) for output data (e.g., 'sec.')."));
++	printf (" %s\n", "-T, --unit_type=STRING");
++	printf ("    %s\n", _("Override calculated performance data unit type(s) for output data"));
+ 	printf (" %s\n", "-D, --output-delimiter=STRING");
+ 	printf ("    %s\n", _("Separates output on multiple OID requests"));
+ 

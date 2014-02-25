@@ -1,0 +1,13 @@
+diff -Bbur nagios-4.0.20121116.orig/base/events.c nagios-4.0.20121116/base/events.c
+--- nagios-4.0.20121116.orig/base/events.c	2012-11-30 18:19:14.000000000 +0000
++++ nagios-4.0.20121116/base/events.c	2012-11-30 18:20:28.000000000 +0000
+@@ -980,7 +980,8 @@
+ 		time(&current_time);
+ 
+ 		/* hey, wait a second...  we traveled back in time! */
+-		if(current_time < last_time)
++		// take time change threshold into account
++		if(current_time < (last_time - time_change_threshold))
+ 			compensate_for_system_time_change((unsigned long)last_time, (unsigned long)current_time);
+ 
+ 		/* else if the time advanced over the specified threshold, try and compensate... */

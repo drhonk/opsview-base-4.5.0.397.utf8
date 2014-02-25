@@ -1,0 +1,25 @@
+diff -ur nagvis-1.4.4.orig/nagvis/includes/functions/ajaxErrorHandler.php nagvis-1.4.4/nagvis/includes/functions/ajaxErrorHandler.php
+--- nagvis-1.4.4.orig/nagvis/includes/functions/ajaxErrorHandler.php	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4/nagvis/includes/functions/ajaxErrorHandler.php	2012-09-19 10:49:01.000000000 +0100
+@@ -31,7 +31,8 @@
+  */
+ function ajaxError($errno, $errstr, $file, $line) {
+ 	// Don't handle E_STRICT errors
+-	if($errno != 2048) {
++	// 8192 - E_DEPRECATED is in PHP > 5.3.0 
++	if($errno != 2048 && $errno != 8192) {
+ 		echo "Error: (".$errno.") ".$errstr. " (".$file.":".$line.")";
+ 		die();
+ 	}
+diff -ur nagvis-1.4.4.orig/nagvis/includes/defines/global.php nagvis-1.4.4/nagvis/includes/defines/global.php
+--- nagvis-1.4.4.orig/nagvis/includes/defines/global.php	2012-09-19 11:08:15.000000000 +0100
++++ nagvis-1.4.4/nagvis/includes/defines/global.php	2012-09-19 11:09:52.000000000 +0100
+@@ -30,7 +30,7 @@
+ @session_start();
+ 
+ // Opsview patch: Remove unnecessary error messages
+-error_reporting(E_ALL ^ E_STRICT ^ ( defined("E_DEPRECATED") ? E_DEPRECATED : 0 ));
++error_reporting(E_ALL ^ E_STRICT & ~( defined("E_DEPRECATED") ? E_DEPRECATED : 0 ));
+ ini_set('display_errors', 0);
+ 
+ // Opsview patch: set default timezone

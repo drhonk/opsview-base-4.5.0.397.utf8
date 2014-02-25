@@ -1,0 +1,16 @@
+diff -Bbur nagios-4.0.20121116.orig/xdata/xpddefault.c nagios-4.0.20121116/xdata/xpddefault.c
+--- nagios-4.0.20121116.orig/xdata/xpddefault.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/xdata/xpddefault.c	2012-11-27 11:46:54.000000000 +0000
+@@ -664,7 +664,11 @@
+ 
+ 	for(x = 0, y = 0; x < strlen(template); x++, y++) {
+ 		if(template[x] == '\\') {
+-			if(template[x + 1] == 't') {
++			if (template[x + 1] == '\\') {
++				tempbuf[y] = '\\';
++				x++;
++				}
++			else if(template[x + 1] == 't') {
+ 				tempbuf[y] = '\t';
+ 				x++;
+ 				}

@@ -1,0 +1,23 @@
+diff -ur scriptaculous-js-1.8.2/src/effects.js scriptaculous-js-1.8.2.without_flicker/src/effects.js
+--- scriptaculous-js-1.8.2/src/effects.js	2008-11-19 01:30:59.000000000 +0800
++++ scriptaculous-js-1.8.2.without_flicker/src/effects.js	2008-11-29 00:25:37.000000000 +0800
+@@ -462,6 +462,10 @@
+   },
+   setDimensions: function(height, width) {
+     var d = { };
++    // Altinity patch: Stops flickering of menus in sidenav
++    // See http://scriptaculous.stikipad.com/scriptaculous/discuss/Effect.BlindDown, comment posted by Jen Stander
++    width = width.round() || 1;
++    height = height.round() || 1;
+     if (this.options.scaleX) d.width = width.round() + 'px';
+     if (this.options.scaleY) d.height = height.round() + 'px';
+     if (this.options.scaleFromCenter) {
+@@ -608,7 +612,7 @@
+     scaleMode: {originalHeight: elementDimensions.height, originalWidth: elementDimensions.width},
+     restoreAfterFinish: true,
+     afterSetup: function(effect) {
+-      effect.element.makeClipping().setStyle({height: '0px'}).show();
++      effect.element.makeClipping().setStyle({height: '1px'}).show();
+     },
+     afterFinishInternal: function(effect) {
+       effect.element.undoClipping();

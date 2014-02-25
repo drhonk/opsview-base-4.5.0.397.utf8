@@ -1,0 +1,12 @@
+diff -ur nagios-4.0.20130107.original//cgi/extinfo.c nagios-4.0.20130107/cgi/extinfo.c
+--- nagios-4.0.20130107.original//cgi/extinfo.c	2013-01-08 16:36:27.000000000 +0000
++++ nagios-4.0.20130107/cgi/extinfo.c	2013-01-08 16:38:41.000000000 +0000
+@@ -2870,7 +2870,7 @@
+ 				printf("&service=%s'><img src='%s%s' border=0 ALT='Enable Active Checks Of This Service' TITLE='Enable Active Checks Of This Service'></a>\n", url_encode(temp_svcstatus->description), url_images_path, ENABLED_ICON);
+ 				}
+ 			printf("<a href='%s?cmd_typ=%d&host=%s", COMMAND_CGI, CMD_SCHEDULE_SVC_CHECK, url_encode(temp_svcstatus->host_name));
+-			printf("&service=%s%s'><img src='%s' border=0 ALT='Re-schedule This Service Check' TITLE='Re-schedule This Service Check'></a>\n", url_encode(temp_svcstatus->description), url_images_path, DELAY_ICON);
++			printf("&service=%s'><img src='%s%s' border=0 ALT='Re-schedule This Service Check' TITLE='Re-schedule This Service Check'></a>\n", url_encode(temp_svcstatus->description), url_images_path, DELAY_ICON);
+ 			printf("</TD>\n");
+ 			}
+ 

@@ -1,0 +1,11 @@
+--- validation.js	2010-06-16 08:50:46.000000000 +0000
++++ ../../opsview-core/share/javascript/validation.js	2010-06-30 14:19:55.000000000 +0000
+@@ -197,7 +197,7 @@
+ 		return true;
+ 	},
+ 	getAdvice : function(name, elm) {
+-		return $('advice-' + name + '-' + Validation.getElmID(elm)) || $('advice-' + Validation.getElmID(elm));
++		return $('advice-' + name + '-' + Validation.getElmID(elm)) || $('advice-' + Validation.getElmID(elm)) || $('advice-' + name);
+ 	},
+ 	getElmID : function(elm) {
+ 		return elm.id ? elm.id : elm.name;

@@ -1,0 +1,79 @@
+diff -ur nagios-2.7.original/base/nagios.c nagios-2.7/base/nagios.c
+--- nagios-2.7.original/base/nagios.c	2007-02-14 19:44:11.985753148 +0000
++++ nagios-2.7/base/nagios.c	2007-02-14 19:09:49.000000000 +0000
+@@ -148,6 +148,7 @@
+ int             verify_config=FALSE;
+ int             test_scheduling=FALSE;
+ int             dump_object_data=FALSE;
++int             fast_reload=FALSE;
+ 
+ int             daemon_mode=FALSE;
+ int             daemon_dumps_core=TRUE;
+@@ -236,6 +237,7 @@
+ 		{"verify",no_argument,0,'v'},
+ 		{"daemon",no_argument,0,'d'},
+ 		{"object-dump",no_argument,0,'o'},
++		{"fast-reload",no_argument,0,'F'},
+ 		{0,0,0,0}
+ 	};
+ #endif
+@@ -249,9 +251,9 @@
+ 	while(1){
+ 
+ #ifdef HAVE_GETOPT_H
+-		c=getopt_long(argc,argv,"+hVvdso",long_options,&option_index);
++		c=getopt_long(argc,argv,"+hVvdsoF",long_options,&option_index);
+ #else
+-		c=getopt(argc,argv,"+hVvdso");
++		c=getopt(argc,argv,"+hVvdsoF");
+ #endif
+ 
+ 		if(c==-1 || c==EOF)
+@@ -284,6 +286,10 @@
+ 			dump_object_data=TRUE;
+ 			break;
+ 
++		case 'F': /* fast-reload mode */
++			fast_reload=TRUE;
++			break;
++
+ 		default:
+ 			break;
+ 		        }
+@@ -603,7 +609,11 @@
+ 		                }
+ 
+ 			/* run the pre-flight check to make sure everything looks okay*/
+-			result=pre_flight_check();
++			/* If fast reload set, don't bother */
++			if (fast_reload==TRUE && sigrestart==TRUE)
++				result=OK;
++			else
++				result=pre_flight_check();
+ 
+ 			/* there was a problem running the pre-flight check */
+ 			if(result!=OK){
+@@ -675,8 +685,9 @@
+ 				exit(ERROR);
+ 		                }
+ 
+-		        /* initialize status data */
+-			initialize_status_data(config_file);
++		        /* initialize status data unless we're restarting */
++			if(sigrestart==FALSE) 
++				initialize_status_data(config_file);
+ 
+ 			/* initialize comment data */
+ 			initialize_comment_data(config_file);
+@@ -758,8 +769,9 @@
+ 			/* save service and host state information */
+ 			save_state_information(config_file,FALSE);
+ 
+-			/* clean up the status data */
+-			cleanup_status_data(config_file,TRUE);
++			/* clean up the status data unless we're restarting */
++			if(sigrestart==FALSE) 
++				cleanup_status_data(config_file,TRUE);
+ 
+ 			/* clean up the comment data */
+ 			cleanup_comment_data(config_file);

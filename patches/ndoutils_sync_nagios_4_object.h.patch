@@ -1,0 +1,54 @@
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/objects.h ndoutils-2-0/include/nagios-4x/objects.h
+--- ndoutils-2-0.orig/include/nagios-4x/objects.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/objects.h	2012-11-29 13:26:01.000000000 +0000
+@@ -404,6 +404,13 @@
+ 	} hostgroup;
+ 
+ 
++/* COMMAND_TIMEPERIOD structure */
++typedef struct commandtimeperiod_struct {
++	timeperiod 	*check_period_ptr;
++	command 	*check_command_ptr;
++	char		*service_check_command;
++	} commandtimeperiod;
++
+ /* HOST structure */
+ struct host {
+ 	unsigned int id;
+@@ -544,24 +551,17 @@
+ 	} servicegroup;
+ 
+ 
+-/* COMMANDTIMEPERIOD structure */
+-typedef struct commandtimeperiod_struct {
+-	timeperiod 	*check_period_ptr;
+-	command 	*check_command_ptr;
+-	char		*service_check_command;
+-	} commandtimeperiod;
+-
+-
+ /* SERVICE structure */
+ struct service {
+ 	unsigned int id;
+ 	char	*host_name;
+ 	char	*description;
+ 	char    *display_name;
++	//char    *service_check_command; // This is renamed to check_command in Nagios 4
++	char	*service_check_timeperiod_command;
+ 	struct servicesmember *parents;
+ 	struct servicesmember *children;
+ 	char    *check_command;
+-	char	*service_check_timeperiod_command;
+ 	char    *event_handler;
+ 	int     initial_state;
+ 	double	check_interval;
+@@ -651,8 +651,8 @@
+ 	struct host *host_ptr;
+ 	struct command *event_handler_ptr;
+ 	char *event_handler_args;
+-	struct command *check_command_ptr;
+ 	commandtimeperiod *check_timeperiod_command_ptr;
++	struct command *check_command_ptr;
+ 	char *check_command_args;
+ 	struct timeperiod *check_period_ptr;
+ 	struct timeperiod *notification_period_ptr;

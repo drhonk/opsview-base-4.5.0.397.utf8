@@ -1,0 +1,8 @@
+#!/bin/sh
+# NRPE postinstall
+
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+if [ -x /etc/init.d/nrpe ]; then
+	/etc/init.d/nrpe start
+fi

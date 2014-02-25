@@ -1,0 +1,56 @@
+diff -ur nagios-4.0.20121205.original/include//comments.h nagios-4.0.20121205/include/comments.h
+--- nagios-4.0.20121205.original/include//comments.h	Sun Jan  6 20:11:00 2013
++++ nagios-4.0.20121205/include/comments.h	Mon Jan  7 16:44:32 2013
+@@ -59,7 +59,7 @@
+ NAGIOS_BEGIN_DECL
+ 
+ /* COMMENT structure */
+-typedef struct comment {
++typedef struct comment_struct {
+ 	int 	comment_type;
+ 	int     entry_type;
+ 	unsigned long comment_id;
+@@ -72,11 +72,11 @@
+ 	char 	*service_description;
+ 	char 	*author;
+ 	char 	*comment_data;
+-	struct 	comment *next;
+-	struct 	comment *nexthash;
++	struct 	comment_struct *next;
++	struct 	comment_struct *nexthash;
+ 	} comment;
+ 
+-extern struct comment *comment_list;
++extern struct comment_struct *comment_list;
+ 
+ #ifdef NSCORE
+ int initialize_comment_data(char *);                                /* initializes comment data */
+@@ -95,13 +95,13 @@
+ int check_for_expired_comment(unsigned long);                       /* expires a comment */
+ #endif
+ 
+-struct comment *find_comment(unsigned long, int);                            /* finds a specific comment */
+-struct comment *find_service_comment(unsigned long);                         /* finds a specific service comment */
+-struct comment *find_host_comment(unsigned long);                            /* finds a specific host comment */
+-struct comment *find_comment_by_similar_content(int, char *, char *, char *, char *); /* finds a comment based on content - used for distributed nagios instances */
++struct comment_struct *find_comment(unsigned long, int);                            /* finds a specific comment */
++struct comment_struct *find_service_comment(unsigned long);                         /* finds a specific service comment */
++struct comment_struct *find_host_comment(unsigned long);                            /* finds a specific host comment */
++struct comment_struct *find_comment_by_similar_content(int, char *, char *, char *, char *); /* finds a comment based on content - used for distributed nagios instances */
+ 
+-struct comment *get_first_comment_by_host(char *);
+-struct comment *get_next_comment_by_host(char *, struct comment *);
++struct comment_struct *get_first_comment_by_host(char *);
++struct comment_struct *get_next_comment_by_host(char *, struct comment_struct *);
+ 
+ int number_of_host_comments(char *);			              /* returns the number of comments associated with a particular host */
+ int number_of_service_comments(char *, char *);		              /* returns the number of comments associated with a particular service */
+@@ -111,7 +111,7 @@
+ int add_host_comment(int, char *, time_t, char *, char *, unsigned long, int, int, time_t, int);   /* adds a host comment */
+ int add_service_comment(int, char *, char *, time_t, char *, char *, unsigned long, int, int, time_t, int); /* adds a service comment */
+ 
+-int add_comment_to_hashlist(struct comment *);
++int add_comment_to_hashlist(struct comment_struct *);
+ 
+ void free_comment_data(void);                                             /* frees memory allocated to the comment list */
+ 

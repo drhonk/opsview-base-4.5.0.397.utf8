@@ -1,0 +1,16 @@
+--- nagiosgraph-0.8.2.original/map	2008-08-07 10:50:11.243216320 +0200
++++ nagiosgraph-0.8.2/map	2008-08-07 10:53:13.488510824 +0200
+@@ -28,10 +28,10 @@
+ 
+ # Service type: ping
+ #   output:PING OK - Packet loss = 0%, RTA = 0.00 ms
+-/output:PING.*?(\d+)%.+?([.\d]+)\sms/
++/output:(?:CRITICAL - Host Unreachable|CRITICAL - Time to live exceeded|PING.*?(\d+)%(?:.+?([.\d]+)\sms)?)/
+ and push @s, [ ping,
+-               [ losspct, GAUGE, $1      ],
+-               [ rta,     GAUGE, $2/1000 ] ];
++               [ losspct, GAUGE, defined $1 ? $1 : "100" ],
++               [ rta,     GAUGE, defined $2 ? $2/1000 : "U" ] ];
+ 
+ # Service type: single disk
+ #  output:DISK OK - free space: /tmp 663 MB (90%):

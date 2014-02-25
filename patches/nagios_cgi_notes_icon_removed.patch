@@ -1,0 +1,39 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/extinfo.c nagios-4.0.20121116/cgi/extinfo.c
+--- nagios-4.0.20121116.orig/cgi/extinfo.c	2012-11-26 15:00:29.000000000 +0000
++++ nagios-4.0.20121116/cgi/extinfo.c	2012-11-26 16:12:04.000000000 +0000
+@@ -453,6 +453,8 @@
+ 				printf("' TARGET='%s'><img src='%s%s' border=0 alt='Perform Additional Actions On This Service' title='Perform Additional Actions On This Service'></A>\n", (action_url_target == NULL) ? "_blank" : action_url_target, url_images_path, ACTION_ICON);
+ 				printf("<BR CLEAR=ALL><FONT SIZE=-1><I>Extra Actions</I></FONT><BR CLEAR=ALL><BR CLEAR=ALL>\n");
+ 				}
++/* Opsview patch to remove the notes on the side of extinfo page as this
++ * duplicates the graph image in the middle
+ 			if(temp_service->notes_url != NULL && strcmp(temp_service->notes_url, "")) {
+ 				printf("<A HREF='");
+ 				process_macros_r(mac, temp_service->notes_url, &processed_string, 0);
+@@ -461,6 +463,7 @@
+ 				printf("' TARGET='%s'><img src='%s%s' border=0 alt='View Additional Notes For This Service' title='View Additional Notes For This Service'></A>\n", (notes_url_target == NULL) ? "_blank" : notes_url_target, url_images_path, NOTES_ICON);
+ 				printf("<BR CLEAR=ALL><FONT SIZE=-1><I>Extra Notes</I></FONT><BR CLEAR=ALL><BR CLEAR=ALL>\n");
+ 				}
++*/
+ 			printf("</TD></TR></TABLE>\n");
+ 			}
+ 
+diff -Bbur nagios-4.0.20121116.orig/cgi/status.c nagios-4.0.20121116/cgi/status.c
+--- nagios-4.0.20121116.orig/cgi/status.c	2012-11-26 14:55:46.000000000 +0000
++++ nagios-4.0.20121116/cgi/status.c	2012-11-26 16:09:40.000000000 +0000
+@@ -1808,6 +1808,7 @@
+ 				printf("<td ALIGN=center valign=center><a href='%s?type=%d&host=%s", EXTINFO_CGI, DISPLAY_SERVICE_INFO, url_encode(temp_status->host_name));
+ 				printf("&service=%s'><IMG SRC='%s%s' border=0 WIDTH=%d HEIGHT=%d ALT='This service is currently in a period of scheduled downtime' TITLE='This service is currently in a period of scheduled downtime'></a></td>", url_encode(temp_status->description), url_images_path, SCHEDULED_DOWNTIME_ICON, STATUS_ICON_WIDTH, STATUS_ICON_HEIGHT);
+ 				}
++/* Opsview patch to remove this notes icon as we use the view graph one instead
+ 			if(temp_service->notes_url != NULL) {
+ 				printf("<td align=center valign=center>");
+ 				printf("<a href='");
+@@ -1819,6 +1820,7 @@
+ 				printf("</a>");
+ 				printf("</td>\n");
+ 				}
++*/
+ 			if(temp_service->action_url != NULL) {
+ 				printf("<td align=center valign=center>");
+ 				printf("<a href='");

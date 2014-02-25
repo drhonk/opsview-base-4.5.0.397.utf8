@@ -1,0 +1,48 @@
+diff -ur validation-1.5.4.1.original/validation.js validation-1.5.4.1/validation.js
+--- validation-1.5.4.1.original/validation.js	2009-07-09 15:59:05.000000000 +0100
++++ validation-1.5.4.1/validation.js	2009-07-09 16:51:38.000000000 +0100
+@@ -85,26 +85,37 @@
+ 		if(this.options.immediate) {
+ 			var useTitles = this.options.useTitles;
+ 			var callback = this.options.onElementValidate;
+-			Form.getElements(this.form).each(function(input) { // Thanks Mike!
+-				Event.observe(input, 'blur', function(ev) { Validation.validate(Event.element(ev),{useTitle : useTitles, onElementValidate : callback}); });
+-			});
++			// Changed so when a part of the form's DOM changes blur subscriptions are updated
++			Form.getElements(this.form).each(function(input) { // Thanks Mike!
++				Event.observe(input, 'blur', function(ev) { Validation.validate(Event.element(ev),{useTitle : useTitles, onElementValidate : callback}); });
++			    input.addClassName('validation-blur-observing');
++			});
++			Event.observe(this.form, 'dom:changed', function(ev) {
++			    Form.getElements(ev.target).each(function(input) {
++				    if (!input.hasClassName('validation-blur-observing')) {
++				        Event.observe(input, 'blur', function(ev) { Validation.validate(Event.element(ev),{useTitle : useTitles, onElementValidate : callback}); });
++			            input.addClassName('validation-blur-observing');
++					}
++				});
++			});
+ 		}
+ 	},
+ 	onSubmit :  function(ev){
+ 		if(!this.validate()) Event.stop(ev);
+ 	},
+-	validate : function() {
++	validate : function(parentElement) {
++                if (!parentElement) var parentElement = this.form;
+ 		var result = false;
+ 		var useTitles = this.options.useTitles;
+ 		var callback = this.options.onElementValidate;
+ 		if(this.options.stopOnFirst) {
+-			result = Form.getElements(this.form).all(function(elm) { return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback}); });
++			result = Form.getElements(parentElement).all(function(elm) { return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback}); });
+ 		} else {
+-			result = Form.getElements(this.form).collect(function(elm) { return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback}); }).all();
++			result = Form.getElements(parentElement).collect(function(elm) { return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback}); }).all();
+ 		}
+ 		if(!result && this.options.focusOnError) {
+ 			try {
+-				Form.getElements(this.form).findAll(function(elm){return $(elm).hasClassName('validation-failed')}).first().focus()
++				Form.getElements(parentElement).findAll(function(elm){return $(elm).hasClassName('validation-failed')}).first().focus()
+ 			} catch(e) {
+ 				/* This is required to catch an IE6 exception when a field has not passed validation, but is in a different tab to the current one */
+ 				alert("There is a validation error in one of the other tabs");

@@ -1,0 +1,12 @@
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/objects.h ndoutils-2-0/include/nagios-4x/objects.h
+--- ndoutils-2-0.orig/include/nagios-4x/objects.h	2013-04-25 09:55:23.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/objects.h	2013-04-25 09:56:13.000000000 +0000
+@@ -351,6 +351,8 @@
+ 	int     host_notifications_enabled;
+ 	int     service_notifications_enabled;
+ 	int     can_submit_commands;
++	int	    notification_level_start;
++	int	    notification_level_stop;
+ 	int     retain_status_information;
+ 	int     retain_nonstatus_information;
+ 	struct customvariablesmember *custom_variables;

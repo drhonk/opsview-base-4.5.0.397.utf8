@@ -1,0 +1,36 @@
+diff -ur nagios-plugins-1.4.14/configure nagios-plugins-1.4.14.new/configure
+--- nagios-plugins-1.4.14/configure	Wed Mar  3 16:31:12 2010
++++ nagios-plugins-1.4.14.new/configure	Wed Mar  3 16:18:49 2010
+@@ -13548,7 +13548,7 @@
+   $as_echo_n "(cached) " >&6
+ else
+   ac_check_lib_save_LIBS=$LIBS
+-LIBS="-lldap -llber $LIBS"
++LIBS="-lldap $LIBS"
+ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ 
+@@ -13582,7 +13582,7 @@
+ fi
+ 
+ if test "$ac_cv_lib_ldap_main" = "yes"; then
+-  LDAPLIBS="-lldap -llber"\
++  LDAPLIBS="-lldap "\
+   LDAPINCLUDE="-I/usr/include/ldap"
+ 
+ 
+diff -ur nagios-plugins-1.4.14/configure.in nagios-plugins-1.4.14.new/configure.in
+--- nagios-plugins-1.4.14/configure.in	Wed Sep 16 09:20:34 2009
++++ nagios-plugins-1.4.14.new/configure.in	Wed Mar  3 16:09:57 2010
+@@ -290,9 +290,9 @@
+ 
+ dnl Check for LDAP libraries
+ _SAVEDLIBS="$LIBS"
+-AC_CHECK_LIB(ldap,main,,,-llber)
++AC_CHECK_LIB(ldap,main,,,)
+ if test "$ac_cv_lib_ldap_main" = "yes"; then
+-  LDAPLIBS="-lldap -llber"\
++  LDAPLIBS="-lldap "\
+   LDAPINCLUDE="-I/usr/include/ldap"
+   AC_SUBST(LDAPLIBS)
+   AC_SUBST(LDAPINCLUDE)

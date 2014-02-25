@@ -1,0 +1,21 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/statusmap.c nagios-4.0.20121116/cgi/statusmap.c
+--- nagios-4.0.20121116.orig/cgi/statusmap.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/cgi/statusmap.c	2012-11-26 14:20:42.000000000 +0000
+@@ -176,7 +176,7 @@
+ 
+ int embedded = FALSE;
+ int display_header = TRUE;
+-int display_popups = TRUE;
++int display_popups = FALSE;
+ int use_links = TRUE;
+ int use_text = TRUE;
+ int use_highlights = TRUE;
+@@ -773,8 +773,6 @@
+ 		printf("</td></tr>\n");
+ 
+ 		printf("<tr><td CLASS='optBoxItem'>\n");
+-		printf("Suppress popups:<br>\n");
+-		printf("<input type='checkbox' name='nopopups' %s>\n", (display_popups == FALSE) ? "CHECKED" : "");
+ 		printf("</td><td CLASS='optBoxItem'>\n");
+ 		printf("<input type='submit' value='Update'>\n");
+ 		printf("</td></tr>\n");

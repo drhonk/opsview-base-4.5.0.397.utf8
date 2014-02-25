@@ -1,0 +1,39 @@
+diff -ur nagvis-1.4rc3.orig/wui/ajax_handler.php nagvis-1.4rc3/wui/ajax_handler.php
+--- nagvis-1.4rc3.orig/wui/ajax_handler.php	2009-03-10 19:44:29.000000000 +0000
++++ nagvis-1.4rc3/wui/ajax_handler.php	2009-04-23 11:24:57.000000000 +0000
+@@ -411,8 +411,11 @@
+ 				$FRONTEND->getForm();
+ 			break;
+ 			case 'manageShapes':
+-				$FRONTEND = new WuiShapeManagement($CORE);
+-				$FRONTEND->getForm();
++				// Opsview patch: remove this functionality for the moment. This is 
++				// because the shapes (or icons) are shared with Opsview and we don't 
++				// want uploading or removal of these yet
++				//$FRONTEND = new WuiShapeManagement($CORE);
++				//$FRONTEND->getForm();
+ 			break;
+ 			case 'manageMaps':
+ 				$FRONTEND = new WuiMapManagement($CORE);
+diff -ur nagvis-1.4rc3.orig/wui/includes/js/jsdomenu.inc.js nagvis-1.4rc3/wui/includes/js/jsdomenu.inc.js
+--- nagvis-1.4rc3.orig/wui/includes/js/jsdomenu.inc.js	2009-02-16 22:33:39.000000000 +0000
++++ nagvis-1.4rc3/wui/includes/js/jsdomenu.inc.js	2009-04-23 11:21:33.000000000 +0000
+@@ -89,7 +89,10 @@
+ 	with (submenu_management) {
+ 		addMenuItem(new menuItem(get_label('manageMaps'), "menu_map_mgmt", "code:popupWindow('"+get_label('manageMaps')+"', getSyncRequest('./ajax_handler.php?action=getFormContents&form=manageMaps', true, false));"));
+ 		addMenuItem(new menuItem(get_label('manageBackgrounds'), "menu_background_mgmt", "code:popupWindow('"+get_label('manageBackgrounds')+"', getSyncRequest('./ajax_handler.php?action=getFormContents&form=manageBackgrounds', true, false));"));
+-		addMenuItem(new menuItem(get_label('manageShapes'), "menu_shape_mgmt", "code:popupWindow('"+get_label('manageShapes')+"', getSyncRequest('./ajax_handler.php?action=getFormContents&form=manageShapes', true, false));"));
++		// Opsview patch: remove this functionality for the moment. This is 
++		// because the shapes (or icons) are shared with Opsview and we don't 
++		// want uploading or removal of these yet
++		//addMenuItem(new menuItem(get_label('manageShapes'), "menu_shape_mgmt", "code:popupWindow('"+get_label('manageShapes')+"', getSyncRequest('./ajax_handler.php?action=getFormContents&form=manageShapes', true, false));"));
+ 		addMenuItem(new menuItem(get_label('manageBackends'), "menu_backend_mgmt", "code:popupWindow('"+get_label('manageBackends')+"', getSyncRequest('./ajax_handler.php?action=getFormContents&form=manageBackends', true, false));"));
+ 	}
+ 	
+@@ -185,4 +188,4 @@
+ 		mainMenu.items.menu_restore.enabled=false;
+ 		mainMenu.items.menu_restore.className='jsdomenuitem_disabled';
+ 	}
+-}
+\ No newline at end of file
++}

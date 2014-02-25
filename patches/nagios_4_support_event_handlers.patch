@@ -1,0 +1,92 @@
+diff -ur nagios-4.0.20130107.original/base/sehandlers.c nagios-4.0.20130107/base/sehandlers.c
+--- nagios-4.0.20130107.original/base/sehandlers.c	2013-02-20 08:43:04.000000000 +0000
++++ nagios-4.0.20130107/base/sehandlers.c	2013-02-20 09:01:44.000000000 +0000
+@@ -301,8 +301,7 @@
+ 	add_command_environment_to_kvv(&kvv, global_service_event_handler_ptr, mac);
+ 
+ 	/* run the command through a worker */
+-	/* XXX FIXME make base/workers.c handle the eventbroker stuff below */
+-	result = wproc_run(WPJOB_GLOBAL_SVC_EVTHANDLER, processed_command, event_handler_timeout, &kvv);
++	result = wproc_run_event_handler(WPJOB_GLOBAL_SVC_EVTHANDLER, event_handler_timeout, svc->host_name, svc->description, processed_command, &kvv);
+ 
+ 	/* check to see if the event handler timed out */
+ 	if(early_timeout == TRUE)
+@@ -408,8 +407,7 @@
+ 	add_command_environment_to_kvv(&kvv, svc->event_handler_ptr, mac);
+ 
+ 	/* run the command through a worker */
+-	/* XXX FIXME make base/workers.c handle the eventbroker stuff below */
+-	result = wproc_run(WPJOB_SVC_EVTHANDLER, processed_command, event_handler_timeout, &kvv);
++	result = wproc_run_event_handler(WPJOB_SVC_EVTHANDLER, event_handler_timeout, svc->host_name, svc->description, processed_command, &kvv);
+ 
+ 	/* check to see if the event handler timed out */
+ 	if(early_timeout == TRUE)
+@@ -559,8 +557,7 @@
+ 	add_command_environment_to_kvv(&kvv, global_host_event_handler_ptr, mac);
+ 
+ 	/* run the command through a worker */
+-	/* XXX FIXME make base/workers.c handle the eventbroker stuff below */
+-	wproc_run(WPJOB_GLOBAL_HOST_EVTHANDLER, processed_command, event_handler_timeout, &kvv);
++	wproc_run_event_handler(WPJOB_GLOBAL_HOST_EVTHANDLER, event_handler_timeout, hst->name, NULL, processed_command, &kvv);
+ 
+ 	/* check for a timeout in the execution of the event handler command */
+ 	if(early_timeout == TRUE)
+@@ -664,7 +661,7 @@
+ 	add_command_environment_to_kvv(&kvv, hst->event_handler_ptr, mac);
+ 
+ 	/* run the command through a worker */
+-	result = wproc_run(WPJOB_HOST_EVTHANDLER, processed_command, event_handler_timeout, &kvv);
++	result = wproc_run_event_handler(WPJOB_HOST_EVTHANDLER, event_handler_timeout, hst->name, NULL, processed_command, &kvv);
+ 
+ 	/* check to see if the event handler timed out */
+ 	if(early_timeout == TRUE)
+diff -ur nagios-4.0.20130107.original/base/workers.c nagios-4.0.20130107/base/workers.c
+--- nagios-4.0.20130107.original/base/workers.c	2013-02-20 08:43:04.000000000 +0000
++++ nagios-4.0.20130107/base/workers.c	2013-02-20 08:51:06.000000000 +0000
+@@ -1045,6 +1045,19 @@
+ 	return wproc_run_job(job, kvv);
+ }
+ 
++int wproc_run_event_handler(int jtype, int timeout, char *hname, char *sdesc, char *cmd, struct kvvec *kvv)
++{
++	struct wproc_job *job;
++	wproc_object_job *oj;
++
++	if (!(oj = create_object_job(NULL, hname, sdesc)))
++		return ERROR;
++
++	job = create_job(jtype, oj, timeout, cmd);
++
++	return wproc_run_job(job, kvv);
++}
++
+ int wproc_run_service_job(int jtype, int timeout, service *svc, char *cmd, struct kvvec *kvv)
+ {
+ 	struct wproc_job *job;
+@@ -1095,7 +1108,7 @@
+ 
+ int wproc_run_callback(char *cmd, int timeout,
+ 		void (*cb)(struct wproc_result *, void *, int), void *data,
+-		nagios_macros *mac)
++		struct kvvec *kvv)
+ {
+ 	struct wproc_job *job;
+ 	struct wproc_callback_job *cj;
+@@ -1105,5 +1118,5 @@
+ 	cj->data = data;
+ 
+ 	job = create_job(WPJOB_CALLBACK, cj, timeout, cmd);
+-	return wproc_run_job(job, mac);
++	return wproc_run_job(job, kvv);
+ }
+diff -ur nagios-4.0.20130107.original/include/workers.h nagios-4.0.20130107/include/workers.h
+--- nagios-4.0.20130107.original/include/workers.h	2013-02-20 08:43:04.000000000 +0000
++++ nagios-4.0.20130107/include/workers.h	2013-02-20 08:50:41.000000000 +0000
+@@ -27,6 +27,7 @@
+ extern int init_workers(int desired_workers);
+ extern int wproc_run_check(check_result *cr, char *cmd, struct kvvec *kvv);
+ extern int wproc_notify(char *cname, char *hname, char *sdesc, char *cmd, struct kvvec *kvv);
++extern int wproc_run_event_handler(int jtype, int timeout, char *hname, char *sdesc, char *cmd, struct kvvec *kvv);
+ extern int wproc_run(int job_type, char *cmd, int timeout, struct kvvec *kvv);
+ extern int wproc_run_service_job(int jtype, int timeout, service *svc, char *cmd, struct kvvec *kvv);
+ extern int wproc_run_host_job(int jtype, int timeout, host *hst, char *cmd, struct kvvec *kvv);

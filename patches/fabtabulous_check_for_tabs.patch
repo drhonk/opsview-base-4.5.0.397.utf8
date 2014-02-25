@@ -1,0 +1,50 @@
+--- fabtabulous.original/fabtabulous.js	2006-05-06 17:59:10.000000000 +0200
++++ fabtabulous/fabtabulous.js	2008-03-27 18:17:39.776211848 +0100
+@@ -8,12 +8,14 @@
+ var Fabtabs = Class.create();
+ 
+ Fabtabs.prototype = {
+-	initialize : function(element) {
++	initialize : function(element, initialTab) {
+ 		this.element = $(element);
+-		var options = Object.extend({}, arguments[1] || {});
+-		this.menu = $A(this.element.getElementsByTagName('a'));
+-		this.show(this.getInitialTab());
+-		this.menu.each(this.setupTab.bind(this));
++		if (this.element) {
++			var options = Object.extend({}, arguments[1] || {});
++			this.menu = $A(this.element.getElementsByTagName('a'));
++			this.show(this.getInitialTab(initialTab));
++			this.menu.each(this.setupTab.bind(this));
++		}
+ 	},
+ 	setupTab : function(elm) {
+ 		Event.observe(elm,'click',this.activate.bindAsEventListener(this),false)
+@@ -34,17 +36,20 @@
+ 
+ 	},
+ 	tabID : function(elm) {
+-		return elm.href.match(/#(\w.+)/)[1];
++		return elm.href.match(/#([\w-]+)/)[1];
+ 	},
+-	getInitialTab : function() {
+-		if(document.location.href.match(/#(\w.+)/)) {
+-			var loc = RegExp.$1;
+-			var elm = this.menu.find(function(value) { return value.href.match(/#(\w.+)/)[1] == loc; });
++	getInitialTab : function(tabname) {
++		if (! tabname) {
++			document.location.href.match(/#([\w-]+)/);
++			tabname = RegExp.$1;
++		}
++		if(tabname) {
++			var elm = this.menu.find(function(value) { return value.href.match(/#([\w-]+)/)[1] == tabname; });
+ 			return elm || this.menu.first();
+ 		} else {
+ 			return this.menu.first();
+ 		}
+ 	}
+ }
+-
+-Event.observe(window,'load',function(){ new Fabtabs('tabs'); },false);
++//Initialise with:
++//Event.observe(window,'load',function(){ new Fabtabs('tabs'); },false);

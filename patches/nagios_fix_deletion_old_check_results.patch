@@ -1,0 +1,26 @@
+--- nagios-4.0.20130107.original/base/utils.c	2013-01-08 14:41:47.000000000 +0000
++++ nagios-4.0.20130107/base/utils.c	2013-01-08 14:51:12.000000000 +0000
+@@ -2233,15 +2266,16 @@
+ 
+ /* deletes as check result file, as well as its ok-to-go file */
+ int delete_check_result_file(char *fname) {
+-	char *temp_buffer = NULL;
+-
+-	/* delete the result file */
+-	unlink(fname);
++	char fileok[MAX_FILENAME_LENGTH + 3];
+ 
+ 	/* delete the ok-to-go file */
+-	asprintf(&temp_buffer, "%s.ok", fname);
+-	unlink(temp_buffer);
+-	my_free(temp_buffer);
++	snprintf(fileok, sizeof(fileok), "%s.ok", fname);
++	fileok[sizeof(fileok) - 1] = '\x0';
++	unlink(fileok);
++
++	/* Delete the result file */
++	/* Should be deleted last, as possible race condition with something else writing new result */
++	unlink(fname);
+ 
+ 	return OK;
+ 	}

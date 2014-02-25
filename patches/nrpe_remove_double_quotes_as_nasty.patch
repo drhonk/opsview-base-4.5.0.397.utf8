@@ -1,0 +1,13 @@
+diff -ur nrpe-2.11.original/src/nrpe.c nrpe-2.11/src/nrpe.c
+--- nrpe-2.11.original/src/nrpe.c	2007-12-26 20:25:05.000000000 +0100
++++ nrpe-2.11/src/nrpe.c	2008-03-07 17:05:22.127482992 +0100
+@@ -42,7 +42,8 @@
+ 
+ #define DEFAULT_COMMAND_TIMEOUT	60			/* default timeout for execution of plugins */
+ #define MAXFD                   64
+-#define NASTY_METACHARS         "|`&><'\"\\[]{};"
++/* Altinity patch: Removed " from nasty characters */
++#define NASTY_METACHARS         "|`&><'\\[]{};"
+ 
+ char    *command_name=NULL;
+ char    *macro_argv[MAX_COMMAND_ARGUMENTS];

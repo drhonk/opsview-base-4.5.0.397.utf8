@@ -1,0 +1,17 @@
+diff -ur nmis-4.2.13.original/bin/nmis.pl nmis-4.2.13/bin/nmis.pl
+--- nmis-4.2.13.original/bin/nmis.pl	2008-04-25 20:53:13.054314000 +0200
++++ nmis-4.2.13/bin/nmis.pl	2008-04-25 20:56:31.517143112 +0200
+@@ -2882,9 +2882,11 @@
+ 		
+ 		# Get all the Cisco PIX Stuff unless not doing collection
+ 		# only collect cpu for software 6.2 and above
+-
++		# Altinity patch: allow PIX v7 to be graphed too
++		# Only tested on PIX v6 and v7
+ 		if ($collect eq "true") {
+-			if ( $NMIS::systemTable{sysDescr} =~ /6\.(\d+)/ && $1 > 1  ) {
++			if (( $NMIS::systemTable{sysDescr} =~ /6\.(\d+)/ && $1 > 1 )
++				or ($NMIS::systemTable{sysDescr} =~ /[7-9]\.(\d+)/)) {
+ 				(  	$snmpTable{avgBusy1},
+ 					$snmpTable{avgBusy5}
+ 				) = $session->snmpget(

@@ -1,0 +1,28 @@
+diff -ur nagvis-1.4.4/nagvis/ajax_handler.php nagvis-1.4.4.htmlentities//nagvis/ajax_handler.php
+--- nagvis-1.4.4/nagvis/ajax_handler.php	2009-10-15 16:41:24.000000000 +0000
++++ nagvis-1.4.4.htmlentities//nagvis/ajax_handler.php	2013-09-04 14:12:17.000000000 +0000
+@@ -52,6 +52,12 @@
+ 	$_GET['action'] = '';
+ }
+ 
++function opsview_encode_html_response( &$val, $key ) {
++    if( is_string($val) ) {
++        $val = htmlentities($val);
++    }
++};
++
+ switch($_GET['action']) {
+ 	case 'getMapState':
+ 		if(!isset($_GET['objName1']) || $_GET['objName1'] == '') {
+@@ -156,7 +162,9 @@
+ 				
+ 				$arrReturn[] = $arr;
+ 			}
+-			
++
++            array_walk_recursive( $arrReturn, 'opsview_encode_html_response' );
++
+ 			echo json_encode($arrReturn);
+ 		}
+ 	break;
+Only in nagvis-1.4.4.htmlentities//nagvis: .ajax_handler.php.swp

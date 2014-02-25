@@ -1,0 +1,32 @@
+diff -ur nagios-2.8.orig/base/utils.c nagios-2.8/base/utils.c
+--- nagios-2.8.orig/base/utils.c	2007-07-09 11:09:34.000000000 +0100
++++ nagios-2.8/base/utils.c	2007-07-09 11:26:08.000000000 +0100
+@@ -3344,6 +3344,16 @@
+ 	signal(SIGQUIT,sighandler);
+ 	signal(SIGTERM,sighandler);
+ 	signal(SIGHUP,sighandler);
++
++	/* added by DJF so can log on these */
++	signal(SIGINT,sighandler);
++	signal(SIGILL,sighandler);
++	signal(SIGABRT,sighandler);
++	signal(SIGFPE,sighandler);
++	signal(SIGKILL,sighandler);
++	signal(SIGBUS,sighandler);
++	/* added of added by DJF */
++
+ #if !defined(DEBUG0) && !defined(DEBUG1) && !defined(DEBUG2) && !defined(DEBUG3) && !defined(DEBUG4) && !defined(DEBUG5)
+ 	if(daemon_dumps_core==FALSE || daemon_mode==FALSE)
+ 		signal(SIGSEGV,sighandler);
+@@ -3399,6 +3409,11 @@
+ 
+ 	sig_id=sig;
+ 
++	/* log the signal we received */
++	snprintf(buffer,sizeof(buffer),"Received signal SIG%s (%d)\n",sigs[sig], sig);
++	buffer[sizeof(buffer)-1]='\x0';
++	write_to_all_logs(buffer,NSLOG_PROCESS_INFO);
++
+ 	/* log errors about segfaults now, as we might not get a chance to later */
+ 	/* all other signals are logged at a later point in main() to prevent problems with NPTL */
+ 	if(sig==SIGSEGV){

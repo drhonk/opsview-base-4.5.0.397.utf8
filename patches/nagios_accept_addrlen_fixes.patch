@@ -1,0 +1,24 @@
+diff -ur nagios-4.0.20130107.original/base/query-handler.c nagios-4.0.20130107/base/query-handler.c
+--- nagios-4.0.20130107.original/base/query-handler.c	2012-12-24 15:29:58.000000000 +0000
++++ nagios-4.0.20130107/base/query-handler.c	2013-03-25 20:39:05.000000000 +0000
+@@ -87,7 +87,7 @@
+ 	/* input on main socket, so accept one */
+ 	if(sd == qh_listen_sock) {
+ 		struct sockaddr sa;
+-		socklen_t slen = 0;
++		socklen_t slen = sizeof(sa);
+ 		int nsd;
+ 
+ 		memset(&sa, 0, sizeof(sa)); /* shut valgrind up */
+diff -ur nagios-4.0.20130107.original/lib/test-iobroker.c nagios-4.0.20130107/lib/test-iobroker.c
+--- nagios-4.0.20130107.original/lib/test-iobroker.c	2012-12-24 15:29:25.000000000 +0000
++++ nagios-4.0.20130107/lib/test-iobroker.c	2013-03-25 20:34:25.000000000 +0000
+@@ -84,7 +85,7 @@
+ {
+ 	int sock;
+ 	struct sockaddr_in sain;
+-	socklen_t addrlen;
++	socklen_t addrlen=sizeof(sain);
+ 
+ 	if (!arg || arg != iobs) {
+ 		printf("Argument passing seems to fail spectacularly\n");

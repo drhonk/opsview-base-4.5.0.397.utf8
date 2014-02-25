@@ -1,0 +1,146 @@
+diff -Bbur nagios-4.0.20121116.orig/base/broker.c nagios-4.0.20121116/base/broker.c
+--- nagios-4.0.20121116.orig/base/broker.c	2012-12-03 11:40:31.000000000 +0000
++++ nagios-4.0.20121116/base/broker.c	2012-12-03 12:02:56.000000000 +0000
+@@ -929,7 +929,7 @@
+ 
+ 
+ /* send state change data to broker */
+-void broker_statechange_data(int type, int flags, int attr, int statechange_type, void *data, int state, int state_type, int current_attempt, int max_attempts, struct timeval *timestamp, int scheduled_downtime_depth, int downtime_id, int problem_has_been_acknowledged, int eventtype) {
++void broker_statechange_data(int type, int flags, int attr, int statechange_type, void *data, int state, int state_type, int current_attempt, int max_attempts, struct timeval *timestamp, int scheduled_downtime_depth, int downtime_id, int problem_has_been_acknowledged, int eventtype, char *output) {
+ 	nebstruct_statechange_data ds;
+ 	host *temp_host = NULL;
+ 	service *temp_service = NULL;
+@@ -960,6 +960,8 @@
+ 		ds.service_description = NULL;
+ 		ds.output = temp_host->plugin_output;
+ 		}
++	if(output != NULL)
++		ds.output = output;
+ 	ds.object_ptr = data;
+ 	ds.state = state;
+ 	ds.state_type = state_type;
+diff -Bbur nagios-4.0.20121116.orig/base/commands.c nagios-4.0.20121116/base/commands.c
+--- nagios-4.0.20121116.orig/base/commands.c	2012-12-03 11:40:31.000000000 +0000
++++ nagios-4.0.20121116/base/commands.c	2012-12-03 12:02:56.000000000 +0000
+@@ -4072,6 +4072,7 @@
+ 
+ /* acknowledges a host problem */
+ void acknowledge_host_problem(host *hst, char *ack_author, char *ack_data, int type, int notify, int persistent) {
++    char *temp_buffer = NULL;
+ 	time_t current_time = 0L;
+ 
+ 	/* cannot acknowledge a non-existent problem */
+@@ -4098,7 +4099,9 @@
+ 
+ #ifdef USE_EVENT_BROKER
+     /* Mark the host acknowledgement event as a state change type */
+-    broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, 0, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_ACKNOWLEDGEMENT);
++	asprintf(&temp_buffer, "%s:%s", ack_author, ack_data);
++	broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, 0, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_ACKNOWLEDGEMENT, temp_buffer);
++	my_free(temp_buffer);
+ #endif
+ 
+ 	/* add a comment for the acknowledgement */
+@@ -4111,6 +4114,7 @@
+ 
+ /* acknowledges a service problem */
+ void acknowledge_service_problem(service *svc, char *ack_author, char *ack_data, int type, int notify, int persistent) {
++	char *temp_buffer = NULL;
+ 	time_t current_time = 0L;
+ 
+ 	/* cannot acknowledge a non-existent problem */
+@@ -4137,7 +4141,9 @@
+ 
+ #ifdef USE_EVENT_BROKER
+     /* Mark the service acknowledgement event as a state change type */
+-    broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, 0, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_ACKNOWLEDGEMENT);
++	asprintf(&temp_buffer, "%s:%s", ack_author, ack_data);
++	broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, 0, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_ACKNOWLEDGEMENT, temp_buffer);
++	my_free(temp_buffer);
+ #endif
+ 
+ 	/* add a comment for the acknowledgement */
+diff -Bbur nagios-4.0.20121116.orig/base/sehandlers.c nagios-4.0.20121116/base/sehandlers.c
+--- nagios-4.0.20121116.orig/base/sehandlers.c	2012-12-03 11:40:31.000000000 +0000
++++ nagios-4.0.20121116/base/sehandlers.c	2012-12-03 12:02:56.000000000 +0000
+@@ -174,7 +174,7 @@
+ 
+ #ifdef USE_EVENT_BROKER
+ 	/* send event data to broker */
+-	broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, 0, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_STATECHANGE);
++	broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, 0, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_STATECHANGE, NULL);
+ #endif
+ 
+ 	/* bail out if we shouldn't be running event handlers */
+@@ -426,7 +426,7 @@
+ 
+ #ifdef USE_EVENT_BROKER
+ 	/* send event data to broker */
+-	broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, 0, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_STATECHANGE);
++	broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, 0, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_STATECHANGE, NULL);
+ #endif
+ 
+ 	/* bail out if we shouldn't be running event handlers */
+diff -Bbur nagios-4.0.20121116.orig/common/downtime.c nagios-4.0.20121116/common/downtime.c
+--- nagios-4.0.20121116.orig/common/downtime.c	2012-12-03 11:40:31.000000000 +0000
++++ nagios-4.0.20121116/common/downtime.c	2012-12-03 12:02:56.000000000 +0000
+@@ -190,9 +190,9 @@
+ #ifdef USE_EVENT_BROKER
+ 		/* Mark the downtime cancelled event as a state change type */
+ 		if(temp_downtime->type == HOST_DOWNTIME)
+-			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, temp_downtime->downtime_id, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_STOP);
++			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, temp_downtime->downtime_id, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_STOP, NULL);
+ 		else
+-			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, temp_downtime->downtime_id, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_STOP);
++			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, temp_downtime->downtime_id, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_STOP, NULL);
+ #endif
+ 
+ 		}
+@@ -489,9 +489,9 @@
+ #ifdef USE_EVENT_BROKER
+ 		/* Mark the downtime stop event as a state change type */
+ 		if(temp_downtime->type == HOST_DOWNTIME)
+-			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, temp_downtime->downtime_id, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_STOP);
++			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, temp_downtime->downtime_id, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_STOP, NULL);
+ 		else
+-			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, temp_downtime->downtime_id, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_STOP);
++			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, temp_downtime->downtime_id, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_STOP, NULL);
+ #endif
+ 
+ 		/* decrement pending flex downtime if necessary */
+@@ -576,9 +576,9 @@
+ #ifdef USE_EVENT_BROKER
+ 		/* Mark the downtime start event as a state change type */
+ 		if(temp_downtime->type == HOST_DOWNTIME)
+-			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, temp_downtime->downtime_id, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_START);
++			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, HOST_STATECHANGE, (void *)hst, hst->current_state, hst->state_type, hst->current_attempt, hst->max_attempts, NULL, hst->scheduled_downtime_depth, temp_downtime->downtime_id, hst->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_START, NULL);
+ 		else
+-			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, temp_downtime->downtime_id, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_START);
++			broker_statechange_data(NEBTYPE_STATECHANGE_END, NEBFLAG_NONE, NEBATTR_NONE, SERVICE_STATECHANGE, (void *)svc, svc->current_state, svc->state_type, svc->current_attempt, svc->max_attempts, NULL, svc->scheduled_downtime_depth, temp_downtime->downtime_id, svc->problem_has_been_acknowledged, NEBATTR_EVENTTYPE_DOWNTIME_START, NULL);
+ #endif
+ 
+ 		/* schedule an event to end the downtime */
+diff -Bbur nagios-4.0.20121116.orig/include/broker.h nagios-4.0.20121116/include/broker.h
+--- nagios-4.0.20121116.orig/include/broker.h	2012-12-03 11:40:31.000000000 +0000
++++ nagios-4.0.20121116/include/broker.h	2012-12-03 12:02:56.000000000 +0000
+@@ -209,7 +209,7 @@
+ void broker_aggregated_status_data(int, int, int, struct timeval *);
+ void broker_retention_data(int, int, int, struct timeval *);
+ void broker_acknowledgement_data(int, int, int, int, void *, char *, char *, int, int, int, struct timeval *);
+-void broker_statechange_data(int, int, int, int, void *, int, int, int, int, struct timeval *, int, int, int, int);
++void broker_statechange_data(int, int, int, int, void *, int, int, int, int, struct timeval *, int, int, int, int, char *);
+ 
+ NAGIOS_END_DECL
+ #endif
+diff -Bbur nagios-4.0.20121116.orig/t-tap/test_nagios_config.c nagios-4.0.20121116/t-tap/test_nagios_config.c
+--- nagios-4.0.20121116.orig/t-tap/test_nagios_config.c	2012-12-03 11:40:31.000000000 +0000
++++ nagios-4.0.20121116/t-tap/test_nagios_config.c	2012-12-03 12:02:56.000000000 +0000
+@@ -270,7 +270,7 @@
+ void broker_retention_data(int type, int flags, int attr, struct timeval *timestamp) {}
+ int host_notification(host *hst, int type, char *not_author, char *not_data, int options) {}
+ void broker_downtime_data(int type, int flags, int attr, int downtime_type, char *host_name, char *svc_description, time_t entry_time, char *author_name, char *comment_data, time_t start_time, time_t end_time, int fixed, unsigned long triggered_by, unsigned long duration, unsigned long downtime_id, struct timeval *timestamp) {}
+-void broker_statechange_data(int type, int flags, int attr, int statechange_type, void *data, int state, int state_type, int current_attempt, int max_attempts, struct timeval *timestamp, int scheduled_downtime_depth, int downtime_id, int problem_has_been_acknowledged, int eventtype){}
++void broker_statechange_data(int type, int flags, int attr, int statechange_type, void *data, int state, int state_type, int current_attempt, int max_attempts, struct timeval *timestamp, int scheduled_downtime_depth, int downtime_id, int problem_has_been_acknowledged, int eventtype, char *output) {}
+ int update_service_status(service *svc, int aggregated_dump) {}
+ time_t get_next_host_notification_time(host *temp_host, time_t time_t1) {}
+ void check_for_host_flapping(host *hst, int update, int actual_check, int allow_flapstart_notification) {}

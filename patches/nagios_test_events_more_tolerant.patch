@@ -1,0 +1,12 @@
+diff -ur nagios-3.2.3.original/t-tap/test_events.c nagios-3.2.3/t-tap/test_events.c
+--- nagios-3.2.3.original/t-tap/test_events.c	2010-09-21 16:43:14.000000000 +0000
++++ nagios-3.2.3/t-tap/test_events.c	2010-11-10 08:36:08.000000000 +0000
+@@ -310,7 +310,7 @@
+ 	setup_events_with_host(now);
+ 	event_execution_loop();
+ 
+-	ok(host1->last_check == now,  "host1 was checked" );
++	ok(host1->last_check-now <= 2,  "host1 was checked (within 2 seconds tolerance)" ) || diag("last_check:%lu now:%lu", host1->last_check, now);
+ 	ok(svc3->last_check == 0, "svc3 was skipped" );
+ 	ok(host1->next_check == now,  "host1 rescheduled ahead - normal interval" );
+ 	ok(svc3->next_check == now+300, "svc3 rescheduled ahead - normal interval" );

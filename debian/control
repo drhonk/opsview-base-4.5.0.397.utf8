@@ -1,0 +1,35 @@
+Source: opsview-base
+Section: misc
+Priority: optional
+Maintainer: Opsview Support <support@opsview.com>
+# NOTE: changes to Build-Depends should be replicated to Depends on opsview-dev
+Build-Depends: debhelper (>= 4), libgd2-noxpm-dev | libgd2-xpm-dev, libssl-dev, libexpat1-dev, make, gcc, libmcrypt-dev, openssl, libmysqlclient-dev | libmysqlclient14-dev, automake1.9, dnsutils, snmp, unzip, gzip, netpbm, libgd-tools, imagemagick, libpq-dev | postgresql-dev, libldap2-dev, flex, bison, python-dev
+Standards-Version: 3.7.4
+
+# NOTE: this packages should be all build-depends and depends from all
+# opsview packages
+Package: opsview-dev
+Architecture: any
+Depends: apache2, automake1.9, build-essential, debhelper (>= 4), dnsutils, gcc, git-svn, graphviz, gzip, imagemagick, ksh, less, libcairo2-dev | libcairo-dev, libexpat1, libexpat1-dev, libgd2-noxpm-dev | libgd2-xpm-dev, libgd2-noxpm | libgd2-xpm, libgd-tools, libio-socket-inet6-perl, libldap2-dev, libltdl7 | libltdl3, libmcrypt4, libmcrypt-dev, libmysqlclient-dev | libmysqlclient14-dev, libpq-dev | postgresql-dev, librrd4 | librrd2 | librrd0 | librrd, librrds-perl, libsnmp-perl, libsocket6-perl, libssl1.0.0 | libssl0.9.8 | libssl0.9.7 | libssl, libssl-dev, libxml2-dev, links, logrotate, mailx, make, mrtg, mysql-client-5.5 | mysql-client-5.0 | mysql-client, mysql-server-5.5 |mysql-server-5.1 | mysql-server-5.0, netpbm, openssl, perltidy, rrdtool (>= 1.2.15), rsync, snmp, snmpd, subversion, sudo | sudo-ldap, tar, unzip, openssh-server, vim, vim-perl, perl-doc, manpages-dev, devscripts, apache2-prefork-dev, libperl-dev, libdb-dev, python-dev
+Build-Depends: nfdump
+Description: Opsview development prerequisite package
+ Install this to have all Opsview build dependencies installed on a development
+ server.
+
+Package: opsview-base
+Architecture: any
+Pre-Depends: mysql-server
+# NOTE: changes to Depends should be replicated to Depends on opsview-dev
+Depends: opsview-perl, mysql-server-5.5 | mysql-server-5.1 | mysql-server-5.0, apache2, ksh, mrtg, libgd2-noxpm | libgd2-xpm, libmcrypt4, rrdtool (>= 1.2.15), sudo | sudo-ldap, libltdl7 | libltdl3, snmp, snmpd, dnsutils, libgd-tools, netpbm, less, links, libexpat1, openssl, mailx, libpq5 | libpq4
+# Need this conflicts section because nagiosgraph has moved to opsview-core
+Conflicts: opsview-core (<< 3.2), nagios-nrpe-server
+Description: Main component for Opsview
+ Provides the bulk of the components for Opsview, a
+ network monitoring system based on Debian.
+
+Package: opsview-agent
+Architecture: any
+Depends: libc6, perl, openssl, libssl0.9.8 | libssl1.0.0, libgetopt-mixed-perl, libmcrypt4
+Pre-Depends: adduser
+Conflicts: opsview, nagios-nrpe-server, opsview-base, opsview-slave
+Description: Opsview-specific nagios NRPE agent package.

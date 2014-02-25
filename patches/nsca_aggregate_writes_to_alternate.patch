@@ -1,0 +1,140 @@
+diff -ur nsca-2.7.2.original/nsca_tests/NSCATest.pm nsca-2.7.2/nsca_tests/NSCATest.pm
+--- nsca-2.7.2.original/nsca_tests/NSCATest.pm	2007-01-30 05:53:05.000000000 +0000
++++ nsca-2.7.2/nsca_tests/NSCATest.pm	2008-01-08 13:23:17.000000000 +0000
+@@ -19,6 +19,7 @@
+ 	config => '$',
+ 	pid => '$',
+ 	timeout => '$',
++	suppress_cmd_file => '$',
+ 	};
+ 
+ $| = 1;	# Autoflush on
+@@ -27,6 +28,8 @@
+ 	my ($self, $mode) = @_;
+ 	$mode ||= "--single";
+ 
++	unlink "var/nagios.cmd", "var/nsca.dump";
++
+ 	printf "Starting nsca with $mode\n";
+ 	system("../src/nsca -c nsca_".$self->config.".cfg $mode");
+ 
+@@ -36,9 +39,16 @@
+ 	close F;
+ 	$self->pid($pid);
+ 
++	unless ($self->suppress_cmd_file) {
++		$self->create_cmd;
++	}
++	return $pid;
++}
++
++sub create_cmd {
++	my $self = shift;
+ 	open(F, "> var/nagios.cmd") or die "Cannot create var/nagios.cmd";
+ 	close F;
+-	return $pid;
+ }
+ 
+ sub stop {
+@@ -61,14 +71,32 @@
+ sub send_cmd {
+ 	my ($self) = @_;
+ 	my $timeout = $self->timeout || 2;
+-	return "../src/send_nsca -to $timeout -p 56677 -H localhost -c send_".$self->config.".cfg";
++	my $config = "send_".$self->config.".cfg";
++	if (! -e $config) {
++		$config = "send_basic.cfg";
++	}
++	return "../src/send_nsca -to $timeout -p 56677 -H localhost -c $config";
+ }
+ 
+ sub read_cmd {
+ 	my ($self, $file) = @_;
+-	$file ||= "var/nagios.cmd";
+-	my $fh = IO::File->new($file) or die "Can't open $file";
+-	$self->process_data($fh);
++	$self->_read_and_process_file( $file || "var/nagios.cmd" );
++}
++
++sub read_alternate {
++	my ($self, $file) = @_;
++	$self->_read_and_process_file( $file || "var/nsca.dump" );
++}
++
++sub _read_and_process_file {
++	my ($self, $file) = @_;
++	my $fh = IO::File->new($file);
++	if ($fh) {
++		return $self->process_data($fh);
++	} else {
++		warn "Can't open $file";
++		return [];
++	}
+ }
+ 
+ sub process_data {
+diff -ur nsca-2.7.2.original/nsca_tests/README nsca-2.7.2/nsca_tests/README
+--- nsca-2.7.2.original/nsca_tests/README	2007-01-30 05:53:05.000000000 +0000
++++ nsca-2.7.2/nsca_tests/README	2008-01-08 13:45:04.000000000 +0000
+@@ -6,7 +6,7 @@
+ and accept messages by comparing the output in the dummy nagios.cmd file with
+ the sent data.
+ 
+-There are 3 tests at the moment:
++There are 4 tests at the moment:
+ 
+     * basic - just sends a few passive checks and makes sure that the nagios.cmd file receives them
+ 
+@@ -14,6 +14,7 @@
+ 
+     * simultaneous - runs lots of send_nscas at the same time (well, nearly). Uses Parallel::Forker to setup all the sends then executes them all at once. Expect about 200 extra processes to hit your server!
+ 
++    * alternate - does not create the nagios.cmd file, so alternate file is used. Then nagios.cmd appears and starts to use that
+ 
+ Requirements
+ ------------
+diff -ur nsca-2.7.2.original/src/nsca.c nsca-2.7.2/src/nsca.c
+--- nsca-2.7.2.original/src/nsca.c	2007-07-03 20:57:28.000000000 +0100
++++ nsca-2.7.2/src/nsca.c	2008-01-08 13:40:26.000000000 +0000
+@@ -53,6 +53,7 @@
+ int     sigrestart=FALSE;
+ int     sigshutdown=FALSE;
+ 
++int	using_alternate_dump_file=FALSE;
+ static FILE *command_file_fp=NULL;
+ 
+ struct handler_entry *rhand=NULL;
+@@ -923,7 +924,7 @@
+                 }
+ 
+         /* open the command file if we're aggregating writes */
+-        if(aggregate_writes==TRUE && !command_file_fp){
++        if(aggregate_writes==TRUE){
+                 if(open_command_file()==ERROR){
+                         close(sock);
+ 			if(mode==MULTI_PROCESS_DAEMON)
+@@ -1119,7 +1120,7 @@
+ 	struct stat statbuf;
+ 
+         /* file is already open */
+-        if(command_file_fp!=NULL)
++        if(command_file_fp!=NULL && using_alternate_dump_file==FALSE)
+                 return OK;
+ 
+ 	/* command file doesn't exist - monitoring app probably isn't running... */
+@@ -1135,6 +1136,7 @@
+ 				syslog(LOG_ERR,"Could not open alternate dump file '%s' for appending",alternate_dump_file);
+ 			return ERROR;
+                         }
++		using_alternate_dump_file=TRUE;
+ 
+ 		return OK;
+ 	        }
+@@ -1147,6 +1149,7 @@
+                 return ERROR;
+                 }
+ 
++	using_alternate_dump_file=FALSE;
+         return OK;
+         }
+ 

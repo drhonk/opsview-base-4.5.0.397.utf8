@@ -1,0 +1,13 @@
+Index: lib/runcmd.c
+===================================================================
+--- lib/runcmd.c	(revision 2701)
++++ lib/runcmd.c	(working copy)
+@@ -228,7 +228,7 @@
+ 			}
+ 			break;
+ 
+-		case '*': case '?':
++		case '*': case '?': case '~':
+ 			if (!in_quotes) {
+ 				add_ret(RUNCMD_HAS_WILDCARD);
+ 			}

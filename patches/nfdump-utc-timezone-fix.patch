@@ -1,0 +1,28 @@
+diff -ur nfdump-clean/bin//nfcapd.c nfdump-1.6.9/bin/nfcapd.c
+--- nfdump-clean/bin//nfcapd.c	2013-07-11 16:49:38.000000000 +0100
++++ nfdump-1.6.9/bin/nfcapd.c	2013-07-11 16:22:05.000000000 +0100
+@@ -762,6 +762,10 @@
+ 
+ int main(int argc, char **argv) {
+  
++	//Set timezone to UTC for standardisation
++	setenv("TZ", "UTC", 1);
++	tzset();
++
+ char	*bindhost, *filter, *datadir, pidstr[32], *launch_process;
+ char	*userid, *groupid, *checkptr, *listenport, *mcastgroup, *extension_tags;
+ char	*Ident, *pcap_file, *dynsrcdir, pidfile[MAXPATHLEN];
+diff -ur nfdump-clean/bin//nfdump.c nfdump-1.6.9/bin/nfdump.c
+--- nfdump-clean/bin//nfdump.c	2013-07-11 16:49:38.000000000 +0100
++++ nfdump-1.6.9/bin/nfdump.c	2013-07-11 16:51:36.000000000 +0100
+@@ -729,6 +729,10 @@
+ long		gfile;
+ char 		Ident[IDENTLEN];
+ 
++	//Set timezone to UTC for standardisation
++	setenv("TZ", "UTC", 1);
++	tzset();
++
+ 	rfile = Rfile = Mdirs = wfile = ffile = filter = tstring = stat_type = NULL;
+ 	byte_limit_string = packet_limit_string = NULL;
+ 	fdump = aggregate = 0;

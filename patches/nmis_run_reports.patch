@@ -1,0 +1,70 @@
+diff -ur nmis-4.2.13.original/bin/run-reports.sh nmis-4.2.13/bin/run-reports.sh
+--- nmis-4.2.13.original/bin/run-reports.sh	2003-09-05 04:28:57.000000000 +0100
++++ nmis-4.2.13/bin/run-reports.sh	2008-01-22 22:13:27.435080952 +0000
+@@ -4,11 +4,11 @@
+ #    Copyright (C) 2000 Sinclair InterNetworking Services Pty Ltd
+ #    <nmis@sins.com.au> http://www.sins.com.au/nmis
+ 
+-export PATH=/usr/bin:/usr/sbin:/usr/ucb:/usr/local/bin:/usr/local/nmis/bin:/bin
+-cd /usr/local/nmis/bin
++export PATH=/usr/bin:/usr/sbin:/usr/ucb:/usr/local/bin:/usr/local/nagios/nmis/bin:/bin
++cd /usr/local/nagios/nmis/bin
+ 
+-log=/usr/local/nmis/log/reports.log
+-reportdir=/usr/local/nmis/htdocs/reports
++log=/usr/local/nagios/nmis/log/reports.log
++reportdir=/usr/local/nagios/nmis/htdocs/reports
+ 
+ # set the date parameters
+ year=`date | awk '{print $6}'`
+@@ -78,38 +78,38 @@
+ 	health) 
+ 		../cgi-bin/reports.pl report=$2 length=$length outfile=$reportdir/$outfile
+ 		chmod 664 $reportdir/$outfile
+-		chgrp nmis $reportdir/$outfile
+-		chown nmis $reportdir/$outfile
++		chgrp nagios $reportdir/$outfile
++		chown nagios $reportdir/$outfile
+ 		;;
+ 	outage)
+ 		../cgi-bin/reports.pl report=$2 length=$length outfile=$reportdir/outage-$outfile
+ 		chmod 664 $reportdir/outage-$outfile
+-		chgrp nmis $reportdir/outage-$outfile
+-		chown nmis $reportdir/outage-$outfile
++		chgrp nagios $reportdir/outage-$outfile
++		chown nagios $reportdir/outage-$outfile
+ 		;;
+ 	response)
+ 		../cgi-bin/reports.pl report=$2 length=$length outfile=$reportdir/response-$outfile
+ 		chmod 664 $reportdir/response-$outfile
+-		chgrp nmis $reportdir/response-$outfile
+-		chown nmis $reportdir/response-$outfile
++		chgrp nagios $reportdir/response-$outfile
++		chown nagios $reportdir/response-$outfile
+ 		;;
+ 	top10)
+ 		../cgi-bin/reports.pl report=$2 length=$length outfile=$reportdir/top10-$outfile
+ 		chmod 664 $reportdir/top10-$outfile
+-		chgrp nmis $reportdir/top10-$outfile
+-		chown nmis $reportdir/top10-$outfile
++		chgrp nagios $reportdir/top10-$outfile
++		chown nagios $reportdir/top10-$outfile
+ 		;;
+ 	avail)
+ 		../cgi-bin/reports.pl report=$2 length=$length outfile=$reportdir/avail-$outfile
+ 		chmod 664 $reportdir/avail-$outfile
+-		chgrp nmis $reportdir/avail-$outfile
+-		chown nmis $reportdir/avail-$outfile
++		chgrp nagios $reportdir/avail-$outfile
++		chown nagios $reportdir/avail-$outfile
+ 		;;
+ 	port)
+ 		../cgi-bin/reports.pl report=$2 length=$length outfile=$reportdir/port-$outfile
+ 		chmod 664 $reportdir/port-$outfile
+-		chgrp nmis $reportdir/port-$outfile
+-		chown nmis $reportdir/port-$outfile
++		chgrp nagios $reportdir/port-$outfile
++		chown nagios $reportdir/port-$outfile
+ 		;;
+ 
+ 	*)

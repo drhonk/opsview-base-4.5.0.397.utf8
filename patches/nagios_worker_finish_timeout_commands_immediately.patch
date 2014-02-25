@@ -1,0 +1,17 @@
+diff -ur nagios-4.0.20130107.original//lib/worker.c nagios-4.0.20130107/lib/worker.c
+--- nagios-4.0.20130107.original//lib/worker.c	2013-06-10 10:20:21.000000000 +0000
++++ nagios-4.0.20130107/lib/worker.c	2013-06-11 00:30:01.000000000 +0000
+@@ -220,11 +220,11 @@
+ 
+ 	/* get rid of still open filedescriptors */
+ 	if (cp->outstd.fd != -1) {
+-		gather_output(cp, &cp->outstd, 1);
++		if (!reason) gather_output(cp, &cp->outstd, 1);		// Opsview patch: if we try to gather output, worker will block on read() until process actually stops
+ 		iobroker_close(iobs, cp->outstd.fd);
+ 	}
+ 	if (cp->outerr.fd != -1) {
+-		gather_output(cp, &cp->outerr, 1);
++		if (!reason) gather_output(cp, &cp->outerr, 1);
+ 		iobroker_close(iobs, cp->outerr.fd);
+ 	}
+ 

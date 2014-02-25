@@ -1,0 +1,13 @@
+diff -ur nagios-4.0.20130107.original//cgi/statusmap.c nagios-4.0.20130107/cgi/statusmap.c
+--- nagios-4.0.20130107.original//cgi/statusmap.c	2013-01-21 13:44:50.000000000 +0000
++++ nagios-4.0.20130107/cgi/statusmap.c	2013-01-21 16:00:39.000000000 +0000
+@@ -1638,7 +1639,8 @@
+ 			}
+ 
+ 		if(create_type == CREATE_IMAGE)
+-			draw_text("Nagios Core Process", x1 + (DEFAULT_NODE_WIDTH / 2), y1 + DEFAULT_NODE_HEIGHT, color_black);
++			// Opsview patch: Remove extra text, which gets truncated when only one other host available
++			draw_text("Core Process", x1 + (DEFAULT_NODE_WIDTH / 2), y1 + DEFAULT_NODE_HEIGHT, color_black);
+ 		}
+ 
+ 	/* calculate average services per host */

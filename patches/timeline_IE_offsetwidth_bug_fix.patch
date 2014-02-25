@@ -1,0 +1,19 @@
+diff -ur timeline-libraries-2.3.0.original/timeline_2.3.0/timeline_js/timeline-bundle.js timeline-libraries-2.3.0/timeline_2.3.0/timeline_js/timeline-bundle.js
+--- timeline-libraries-2.3.0.original/timeline_2.3.0/timeline_js/timeline-bundle.js	2009-08-10 12:37:39.000000000 +0100
++++ timeline-libraries-2.3.0/timeline_2.3.0/timeline_js/timeline-bundle.js	2009-08-10 12:39:43.000000000 +0100
+@@ -1578,13 +1578,14 @@
+ var I=Math.round(E.dateToPixelOffset(H));
+ var G=Math.round(E.dateToPixelOffset(J));
+ var F=Math.max(G-I,3);
++if (E.getViewWidth()>0) {
+ if(A){this._highlightDiv.style.left=I+"px";
+ this._highlightDiv.style.width=F+"px";
+ this._highlightDiv.style.height=(E.getViewWidth()-4)+"px";
+ }else{this._highlightDiv.style.top=I+"px";
+ this._highlightDiv.style.height=F+"px";
+ this._highlightDiv.style.width=(E.getViewWidth()-4)+"px";
+-}};
++}}};
+ };
+ 
+ 

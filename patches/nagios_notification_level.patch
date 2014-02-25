@@ -1,0 +1,219 @@
+diff -ur nagios-4.0.20130107.original/base/broker.c nagios-4.0.20130107/base/broker.c
+--- nagios-4.0.20130107.original/base/broker.c	2012-12-24 15:29:58.000000000 +0000
++++ nagios-4.0.20130107/base/broker.c	2013-06-17 13:20:20.000000000 +0000
+@@ -581,6 +581,7 @@
+ 		ds.service_description = temp_service->description;
+ 		ds.state = temp_service->current_state;
+ 		ds.output = temp_service->plugin_output;
++		ds.notification_number=temp_service->current_notification_number;
+ 		}
+ 	else {
+ 		temp_host = (host *)data;
+@@ -588,6 +589,7 @@
+ 		ds.service_description = NULL;
+ 		ds.state = temp_host->current_state;
+ 		ds.output = temp_host->plugin_output;
++		ds.notification_number=temp_host->current_notification_number;
+ 		}
+ 	ds.object_ptr = data;
+ 	ds.ack_author = ack_author;
+diff -ur nagios-4.0.20130107.original/base/notifications.c nagios-4.0.20130107/base/notifications.c
+--- nagios-4.0.20130107.original/base/notifications.c	2012-12-24 15:29:58.000000000 +0000
++++ nagios-4.0.20130107/base/notifications.c	2013-06-17 13:39:28.000000000 +0000
+@@ -581,6 +581,7 @@
+ 
+ /* check viability of sending out a service notification to a specific contact (contact-specific filters) */
+ int check_contact_service_notification_viability(contact *cntct, service *svc, int type, int options) {
++	int notification_number;
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "check_contact_service_notification_viability()\n");
+ 
+@@ -651,6 +652,27 @@
+ 	/*** ACKS AND NORMAL NOTIFICATIONS ***/
+ 	/*************************************/
+ 
++	/* Opsview patch: Check that contact's notification number allows this to go out */
++    /* This needs to be just before normal notifications */
++	if(svc->current_state == STATE_OK)
++		notification_number = svc->current_notification_number - 1;
++	else
++		notification_number=svc->current_notification_number;
++	if(notification_number < cntct->notification_level_start) {
++		log_debug_info(DEBUGL_NOTIFICATIONS,2,"This contact's notification_level_start %d is greater than the current notification number %d\n", cntct->notification_level_start, notification_number);
++		return ERROR;
++		}
++	if((cntct->notification_level_stop > 0) && (notification_number > cntct->notification_level_stop)) {
++
++        // Do not block a state change, so this covers a recovery and a warning -> critical change
++        // This has a possible limitation if more than 1 result comes in for the same second, but this not be possible by
++        // Nagios not making this notification call
++        if (svc->last_hard_state_change != svc->last_check) {
++            log_debug_info(DEBUGL_NOTIFICATIONS,2,"This contact's notification_level_stop %d is less than the current notification number %d\n", cntct->notification_level_stop, notification_number);
++            return ERROR;
++            }
++		}
++
+ 	/* see if we should notify about problems with this service */
+ 	if(!(cntct->service_notification_options & (1 << svc->current_state))) {
+ 		log_debug_info(DEBUGL_NOTIFICATIONS, 2, "We shouldn't notify this contact about %s service states.\n", service_state_name(svc->current_state));
+@@ -1482,6 +1504,7 @@
+ 
+ /* checks the viability of notifying a specific contact about a host */
+ int check_contact_host_notification_viability(contact *cntct, host *hst, int type, int options) {
++	int notification_number;
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "check_contact_host_notification_viability()\n");
+ 
+@@ -1505,6 +1528,22 @@
+ 		return ERROR;
+ 		}
+ 
++	/* Opsview patch: Check that contact's notification number allows this to go out */
++	if(hst->current_state == STATE_UP)
++		notification_number = hst->current_notification_number - 1;
++	else
++		notification_number=hst->current_notification_number;
++	if(notification_number < cntct->notification_level_start) {
++		log_debug_info(DEBUGL_NOTIFICATIONS,2,"This contact's notification_level_start %d is greater than the current notification number %d\n", cntct->notification_level_start, notification_number);
++		return ERROR;
++		}
++	if((cntct->notification_level_stop > 0 ) && ( notification_number > cntct->notification_level_stop ) ) {
++        if (hst->last_hard_state_change != hst->last_check) {
++            log_debug_info(DEBUGL_NOTIFICATIONS,2,"This contact's notification_level_stop %d is less than the current notification number %d\n", cntct->notification_level_stop, notification_number);
++            return ERROR;
++            }
++		}
++
+ 	/* see if the contact can be notified at this time */
+ 	if(check_time_against_period(time(NULL), cntct->host_notification_period_ptr) == ERROR) {
+ 		log_debug_info(DEBUGL_NOTIFICATIONS, 2, "This contact shouldn't be notified at this time.\n");
+diff -ur nagios-4.0.20130107.original/common/objects.c nagios-4.0.20130107/common/objects.c
+--- nagios-4.0.20130107.original/common/objects.c	2013-06-17 13:19:52.000000000 +0000
++++ nagios-4.0.20130107/common/objects.c	2013-06-17 13:20:20.000000000 +0000
+@@ -1215,7 +1215,7 @@
+ 
+ 
+ /* add a new contact to the list in memory */
+-contact *add_contact(char *name, char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period, int service_notification_options, int host_notification_options, int host_notifications_enabled, int service_notifications_enabled, int can_submit_commands, int retain_status_information, int retain_nonstatus_information, unsigned int minimum_value) {
++contact *add_contact(char *name, char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period, int service_notification_options, int host_notification_options, int host_notifications_enabled, int service_notifications_enabled, int can_submit_commands, int retain_status_information, int retain_nonstatus_information, unsigned int minimum_value, int notification_level_start, int notification_level_stop) {
+ 	contact *new_contact = NULL;
+ 	timeperiod *htp = NULL, *stp = NULL;
+ 	int x = 0;
+@@ -1270,6 +1270,8 @@
+ 		}
+ 
+ 	new_contact->minimum_value = minimum_value;
++	new_contact->notification_level_start = notification_level_start;
++	new_contact->notification_level_stop = notification_level_stop;
+ 	new_contact->service_notification_options = service_notification_options;
+ 	new_contact->host_notification_options = host_notification_options;
+ 	new_contact->host_notifications_enabled = (host_notifications_enabled > 0) ? TRUE : FALSE;
+@@ -3234,6 +3236,8 @@
+ 	fprintf(fp, "\thost_notifications_enabled\t%d\n", temp_contact->host_notifications_enabled);
+ 	fprintf(fp, "\tservice_notifications_enabled\t%d\n", temp_contact->service_notifications_enabled);
+ 	fprintf(fp, "\tcan_submit_commands\t%d\n", temp_contact->can_submit_commands);
++	fprintf(fp, "\tnotification_level_start\t%d\n", temp_contact->notification_level_start);
++	fprintf(fp, "\tnotification_level_stop\t%d\n", temp_contact->notification_level_stop);
+ 	fprintf(fp, "\tretain_status_information\t%d\n", temp_contact->retain_status_information);
+ 	fprintf(fp, "\tretain_nonstatus_information\t%d\n", temp_contact->retain_nonstatus_information);
+ 
+diff -ur nagios-4.0.20130107.original/include/nebstructs.h nagios-4.0.20130107/include/nebstructs.h
+--- nagios-4.0.20130107.original/include/nebstructs.h	2012-12-24 15:29:29.000000000 +0000
++++ nagios-4.0.20130107/include/nebstructs.h	2013-06-17 13:20:20.000000000 +0000
+@@ -326,6 +326,7 @@
+ 	char            *ack_data;
+ 	int             escalated;
+ 	int             contacts_notified;
++	int		        notification_number;
+ 
+ 	void            *object_ptr;
+ 	} nebstruct_notification_data;
+diff -ur nagios-4.0.20130107.original/include/objects.h nagios-4.0.20130107/include/objects.h
+--- nagios-4.0.20130107.original/include/objects.h	2013-06-17 13:19:52.000000000 +0000
++++ nagios-4.0.20130107/include/objects.h	2013-06-17 13:20:20.000000000 +0000
+@@ -351,6 +351,8 @@
+ 	int     host_notifications_enabled;
+ 	int     service_notifications_enabled;
+ 	int     can_submit_commands;
++	int	    notification_level_start;
++	int	    notification_level_stop;
+ 	int     retain_status_information;
+ 	int     retain_nonstatus_information;
+ 	struct customvariablesmember *custom_variables;
+@@ -766,7 +768,7 @@
+ 
+ 
+ /**** Object Creation Functions ****/
+-struct contact *add_contact(char *name, char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period, int service_notification_options, int host_notification_options, int service_notifications_enabled, int host_notifications_enabled, int can_submit_commands, int retain_status_information, int retain_nonstatus_information, unsigned int minimum_value);
++struct contact *add_contact(char *name, char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period, int service_notification_options, int host_notification_options, int service_notifications_enabled, int host_notifications_enabled, int can_submit_commands, int retain_status_information, int retain_nonstatus_information, unsigned int minimum_value, int notification_level_start, int notification_level_stop);
+ struct commandsmember *add_service_notification_command_to_contact(contact *, char *);				/* adds a service notification command to a contact definition */
+ struct commandsmember *add_host_notification_command_to_contact(contact *, char *);				/* adds a host notification command to a contact definition */
+ struct customvariablesmember *add_custom_variable_to_contact(contact *, char *, char *);                       /* adds a custom variable to a service definition */
+diff -ur nagios-4.0.20130107.original/xdata/xodtemplate.c nagios-4.0.20130107/xdata/xodtemplate.c
+--- nagios-4.0.20130107.original/xdata/xodtemplate.c	2013-06-17 13:19:52.000000000 +0000
++++ nagios-4.0.20130107/xdata/xodtemplate.c	2013-06-17 13:20:20.000000000 +0000
+@@ -964,6 +964,10 @@
+ 			new_contact->host_notifications_enabled = TRUE;
+ 			new_contact->service_notifications_enabled = TRUE;
+ 			new_contact->can_submit_commands = TRUE;
++			new_contact->notification_level_start = 1;
++			new_contact->have_notification_level_start = FALSE;
++			new_contact->notification_level_stop = 0;
++			new_contact->have_notification_level_stop = FALSE;
+ 			new_contact->retain_status_information = TRUE;
+ 			new_contact->retain_nonstatus_information = TRUE;
+ 			break;
+@@ -2116,6 +2120,14 @@
+ 				temp_contact->can_submit_commands = (atoi(value) > 0) ? TRUE : FALSE;
+ 				temp_contact->have_can_submit_commands = TRUE;
+ 				}
++			else if(!strcmp(variable,"notification_level_start")||!strcmp(variable,"notification_level")) { // Allow older notification_level to exist while transitioning
++				temp_contact->notification_level_start = atoi(value);
++				temp_contact->have_notification_level_start = TRUE;
++		        }
++			else if(!strcmp(variable,"notification_level_stop")) {
++				temp_contact->notification_level_stop = atoi(value);
++				temp_contact->have_notification_level_stop = TRUE;
++		        }
+ 			else if(!strcmp(variable, "retain_status_information")) {
+ 				temp_contact->retain_status_information = (atoi(value) > 0) ? TRUE : FALSE;
+ 				temp_contact->have_retain_status_information = TRUE;
+@@ -5476,6 +5488,8 @@
+ 		xod_inherit(this_contact, template_contact, retain_status_information);
+ 		xod_inherit(this_contact, template_contact, retain_nonstatus_information);
+ 		xod_inherit(this_contact, template_contact, minimum_value);
++		xod_inherit(this_contact, template_contact, notification_level_start);
++		xod_inherit(this_contact, template_contact, notification_level_stop);
+ 
+ 		/* apply missing custom variables from template contact... */
+ 		for(temp_customvariablesmember = template_contact->custom_variables; temp_customvariablesmember != NULL; temp_customvariablesmember = temp_customvariablesmember->next) {
+@@ -7373,7 +7387,7 @@
+ 		return OK;
+ 
+ 	/* add the contact */
+-	new_contact = add_contact(this_contact->contact_name, this_contact->alias, this_contact->email, this_contact->pager, this_contact->address, this_contact->service_notification_period, this_contact->host_notification_period, this_contact->service_notification_options, this_contact->host_notification_options, this_contact->host_notifications_enabled, this_contact->service_notifications_enabled, this_contact->can_submit_commands, this_contact->retain_status_information, this_contact->retain_nonstatus_information, this_contact->minimum_value);
++	new_contact = add_contact(this_contact->contact_name, this_contact->alias, this_contact->email, this_contact->pager, this_contact->address, this_contact->service_notification_period, this_contact->host_notification_period, this_contact->service_notification_options, this_contact->host_notification_options, this_contact->host_notifications_enabled, this_contact->service_notifications_enabled, this_contact->can_submit_commands, this_contact->retain_status_information, this_contact->retain_nonstatus_information, this_contact->minimum_value, this_contact->notification_level_start, this_contact->notification_level_stop);
+ 
+ 	/* return with an error if we couldn't add the contact */
+ 	if(new_contact == NULL) {
+diff -ur nagios-4.0.20130107.original/xdata/xodtemplate.h nagios-4.0.20130107/xdata/xodtemplate.h
+--- nagios-4.0.20130107.original/xdata/xodtemplate.h	2013-06-17 13:19:52.000000000 +0000
++++ nagios-4.0.20130107/xdata/xodtemplate.h	2013-06-17 13:20:20.000000000 +0000
+@@ -146,6 +146,8 @@
+     int       host_notifications_enabled;
+     int       service_notifications_enabled;
+     int       can_submit_commands;
++	int       notification_level_start;
++	int       notification_level_stop;
+     int       retain_status_information;
+     int       retain_nonstatus_information;
+     unsigned int minimum_value;
+@@ -165,6 +167,8 @@
+     char have_host_notifications_enabled;
+     char have_service_notifications_enabled;
+     char have_can_submit_commands;
++	unsigned have_notification_level_start : 1;
++	unsigned have_notification_level_stop : 1;
+     char have_retain_status_information;
+     char have_retain_nonstatus_information;
+     unsigned have_minimum_value : 1;

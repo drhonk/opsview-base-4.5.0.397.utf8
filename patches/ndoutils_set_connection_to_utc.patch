@@ -1,0 +1,22 @@
+diff -ur ndoutils-1.4b7/src/db.c ndoutils-1.4b7.with_utc/src/db.c
+--- ndoutils-1.4b7/src/db.c	2008-11-13 13:41:56.000000000 +0100
++++ ndoutils-1.4b7.with_utc/src/db.c	2008-11-13 13:45:01.000000000 +0100
+@@ -193,6 +193,7 @@
+ 
+ /* connects to the database server */
+ int ndo2db_db_connect(ndo2db_idi *idi){
++	char *buf=NULL;
+ 	char connect_string[NDO2DB_INPUT_BUFFER];
+ 	int result=NDO_OK;
+ 
+@@ -216,6 +217,10 @@
+ 		else{
+ 			idi->dbinfo.connected=NDO_TRUE;
+ 			syslog(LOG_USER|LOG_DEBUG,"Successfully connected to MySQL database");
++			if(asprintf(&buf,"SET time_zone = '+00:00'")==-1)
++				buf=NULL;
++			if((result=ndo2db_db_query(idi,buf))!=NDO_OK)
++				syslog(LOG_USER|LOG_INFO,"Error setting timezone to UTC");
+ 		        }
+ #endif
+ 		break;

@@ -1,0 +1,2 @@
+/etc/init.d/nrpe
+/etc/rc3.d/S99nrpe

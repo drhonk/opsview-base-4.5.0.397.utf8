@@ -1,0 +1,34 @@
+diff -ur nagvis-1.4rc1.original/nagvis/includes/classes/objects/NagVisHostgroup.php nagvis-1.4rc1/nagvis/includes/classes/objects/NagVisHostgroup.php
+--- nagvis-1.4rc1.original/nagvis/includes/classes/objects/NagVisHostgroup.php	2008-11-05 21:09:52.000000000 +0000
++++ nagvis-1.4rc1/nagvis/includes/classes/objects/NagVisHostgroup.php	2008-12-23 19:00:00.245768137 +0000
+@@ -64,7 +64,7 @@
+ 		if(isset($this->url) && $this->url != '') {
+ 			$url = parent::getUrl();
+ 		} else {
+-			$url = $this->CORE->MAINCFG->getValue('backend_'.$this->backend_id, 'htmlcgi').'/status.cgi?hostgroup='.$this->hostgroup_name;
++			$url = $this->CORE->MAINCFG->getValue('paths', 'opsviewbase')."/status/hostgroup/name/".$this->hostgroup_name;
+ 		}
+ 		return $url;
+ 	}
+diff -ur nagvis-1.4rc1.original/nagvis/includes/classes/objects/NagVisHost.php nagvis-1.4rc1/nagvis/includes/classes/objects/NagVisHost.php
+--- nagvis-1.4rc1.original/nagvis/includes/classes/objects/NagVisHost.php	2008-11-09 13:16:36.000000000 +0000
++++ nagvis-1.4rc1/nagvis/includes/classes/objects/NagVisHost.php	2008-12-23 18:55:06.063382887 +0000
+@@ -83,7 +83,7 @@
+ 			$strReturn .= '<tr><td><img src="'.$this->iconPath.$this->icon.'"></img></td></tr>';
+ 			$strReturn .= '<tr><td>'.$this->getName().'</td></tr>';
+ 			$strReturn .= '</table>>, ';
+-			$strReturn .= 'URL="'.$this->CORE->MAINCFG->getValue('backend_'.$this->backend_id, 'htmlcgi').'/status.cgi?host='.$this->getName().'", ';
++			$strReturn .= 'URL="'.$this->CORE->MAINCFG->getValue('paths', 'opsviewbase').'/status/service?host='.$this->getName().'", ';
+ 			$strReturn .= 'target="'.$this->url_target.'", ';
+ 			$strReturn .= 'tooltip="'.$this->getType().'_'.$this->getObjectId().'",';
+ 			// The root host has to be highlighted, these are the options to do this
+@@ -122,7 +122,8 @@
+ 		if(isset($this->url)) {
+ 			$url = parent::getUrl();
+ 		} else {
+-			$url = $this->CORE->MAINCFG->getValue('backend_'.$this->backend_id, 'htmlcgi').'/status.cgi?host='.$this->host_name;
++			#$url = $this->CORE->MAINCFG->getValue('backend_'.$this->backend_id, 'htmlcgi').'/status.cgi?host='.$this->host_name;
++			$url = $this->CORE->MAINCFG->getValue('paths', 'opsviewbase')."/status/service?host=".$this->host_name;
+ 		}
+ 		return $url;
+ 	}

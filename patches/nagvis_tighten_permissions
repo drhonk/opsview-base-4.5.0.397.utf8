@@ -1,0 +1,60 @@
+diff -ur nagvis-1.4rc1.original/nagvis/includes/classes/GlobalMapCfg.php nagvis-1.4rc1/nagvis/includes/classes/GlobalMapCfg.php
+--- nagvis-1.4rc1.original/nagvis/includes/classes/GlobalMapCfg.php	2008-12-11 23:30:30.000000000 +0000
++++ nagvis-1.4rc1/nagvis/includes/classes/GlobalMapCfg.php	2008-12-23 18:21:21.700868137 +0000
+@@ -699,7 +699,7 @@
+ 				$fp = fopen($this->configFile, 'w');
+ 				fclose($fp); 
+ 				// set permissions
+-				chmod($this->configFile,0666);
++				chmod($this->configFile,0664);
+ 				
+ 					return TRUE;
+ 				} else {
+diff -ur nagvis-1.4rc1.original/wui/form_handler.php nagvis-1.4rc1/wui/form_handler.php
+--- nagvis-1.4rc1.original/wui/form_handler.php	2008-10-01 22:06:40.000000000 +0000
++++ nagvis-1.4rc1/wui/form_handler.php	2008-12-23 18:22:56.198773887 +0000
+@@ -341,7 +341,7 @@
+ 				$mapName = $_FILES['map_file']['name'];
+ 				if(preg_match('/\.cfg/i',$fileName)) {
+ 					if(move_uploaded_file($_FILES['map_file']['tmp_name'], $CORE->MAINCFG->getValue('paths', 'mapcfg').$mapName)) {
+-						chmod($CORE->MAINCFG->getValue('paths', 'mapcfg').$mapName,0666);
++						chmod($CORE->MAINCFG->getValue('paths', 'mapcfg').$mapName,0664);
+ 						print("<script>window.history.back();</script>");
+ 					} else {
+ 						print "The file could not be moved to destination (".$CORE->MAINCFG->getValue('paths', 'mapcfg').$mapName.").";
+diff -ur nagvis-1.4rc1.original/wui/includes/classes/WuiBackground.php nagvis-1.4rc1/wui/includes/classes/WuiBackground.php
+--- nagvis-1.4rc1.original/wui/includes/classes/WuiBackground.php	2008-08-15 20:49:25.000000000 +0000
++++ nagvis-1.4rc1/wui/includes/classes/WuiBackground.php	2008-12-23 18:22:18.868440887 +0000
+@@ -63,7 +63,7 @@
+ 				if($this->checkFolderWriteable(1)) {
+ 					if(move_uploaded_file($arr['tmp_name'], $this->CORE->MAINCFG->getValue('paths', 'map').$fileName)) {
+ 						// Change permissions of the map image
+-						chmod($this->CORE->MAINCFG->getValue('paths', 'map').$fileName,0666);
++						chmod($this->CORE->MAINCFG->getValue('paths', 'map').$fileName,0664);
+ 						
+ 						return TRUE;
+ 					} else {
+diff -ur nagvis-1.4rc1.original/wui/includes/classes/WuiShapeManagement.php nagvis-1.4rc1/wui/includes/classes/WuiShapeManagement.php
+--- nagvis-1.4rc1.original/wui/includes/classes/WuiShapeManagement.php	2008-09-05 21:58:50.000000000 +0000
++++ nagvis-1.4rc1/wui/includes/classes/WuiShapeManagement.php	2008-12-23 18:22:27.268965887 +0000
+@@ -180,7 +180,7 @@
+ 			if(preg_match('/\.png/i', $arrFile['name'])) {
+ 				if(@move_uploaded_file($arrFile['tmp_name'], $this->MAINCFG->getValue('paths', 'shape').$arrFile['name'])) {
+ 					// Change permissions of the file after the upload
+-					chmod($this->MAINCFG->getValue('paths', 'shape').$arrFile['name'],0666);
++					chmod($this->MAINCFG->getValue('paths', 'shape').$arrFile['name'],0664);
+ 					
+ 					// Go back to last page
+ 					print("<script>window.history.back();</script>");
+diff -ur nagvis-1.4rc1.original/wui/includes/functions/form_handler.php nagvis-1.4rc1/wui/includes/functions/form_handler.php
+--- nagvis-1.4rc1.original/wui/includes/functions/form_handler.php	2008-03-29 01:01:07.000000000 +0000
++++ nagvis-1.4rc1/wui/includes/functions/form_handler.php	2008-12-23 18:21:49.474603887 +0000
+@@ -80,7 +80,7 @@
+ 			fwrite($fp,$mapname.'='.$MAINCFG->getValue('wui', 'autoupdatefreq')."\n");
+ 			fclose($fp); 
+ 			// set permissions
+-  			chmod($MAINCFG->getValue('paths', 'mapcfg').'autobackup.status',0666);
++  			chmod($MAINCFG->getValue('paths', 'mapcfg').'autobackup.status',0664);
+   			
+   			return TRUE;
+ 		} else {

@@ -1,0 +1,12 @@
+diff -ur validation-1.5.4.1.original/validation.js validation-1.5.4.1/validation.js
+--- validation-1.5.4.1.original/validation.js	2008-08-12 13:14:57.960696000 +0200
++++ validation-1.5.4.1/validation.js	2008-08-12 13:23:52.588901336 +0200
+@@ -119,7 +119,7 @@
+ 			onElementValidate : function(result, elm) {}
+ 		}, options || {});
+ 		elm = $(elm);
+-		var cn = elm.classNames();
++		var cn = elm.classNames().grep(/^(required|validate-)/);
+ 		return result = cn.all(function(value) {
+ 			var test = Validation.test(value,elm,options.useTitle);
+ 			options.onElementValidate(test, elm);

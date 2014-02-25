@@ -1,0 +1,19 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/extinfo.c nagios-4.0.20121116/cgi/extinfo.c
+--- nagios-4.0.20121116.orig/cgi/extinfo.c	2012-11-26 16:14:21.000000000 +0000
++++ nagios-4.0.20121116/cgi/extinfo.c	2012-11-26 16:44:35.000000000 +0000
+@@ -217,6 +217,7 @@
+ 				}
+ 
+ 			/* write some Javascript helper functions */
++            /* Opsview patch. We remove these JS helper functions because an inline refresh on IE7 gives an error
+ 			if(temp_host != NULL) {
+ 				printf("<SCRIPT LANGUAGE=\"JavaScript\">\n<!--\n");
+ 				printf("function nagios_get_host_name()\n{\n");
+@@ -232,6 +233,7 @@
+ 					}
+ 				printf("//-->\n</SCRIPT>\n");
+ 				}
++			*/
+ 			}
+ 
+ 		/* find the hostgroup */

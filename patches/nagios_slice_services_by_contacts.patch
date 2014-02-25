@@ -1,0 +1,39 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/cgiauth.c nagios-4.0.20121116/cgi/cgiauth.c
+--- nagios-4.0.20121116.orig/cgi/cgiauth.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/cgi/cgiauth.c	2012-11-26 14:53:11.000000000 +0000
+@@ -376,8 +376,12 @@
+ 		return FALSE;
+ 
+ 	/* if this user is authorized for this host, they are for all services on it as well... */
++	/* Opsview patch: This is removed because it allows contactgroups to define
++	 * a subset of services on any particular host */
++	/*
+ 	if(is_authorized_for_host(temp_host, authinfo) == TRUE)
+ 		return TRUE;
++	*/
+ 
+ 	/* find the contact */
+ 	temp_contact = find_contact(authinfo->username);
+diff -Bbur nagios-4.0.20121116.orig/cgi/status.c nagios-4.0.20121116/cgi/status.c
+--- nagios-4.0.20121116.orig/cgi/status.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/cgi/status.c	2012-11-26 14:53:57.000000000 +0000
+@@ -4129,6 +4129,7 @@
+ 	servicestatus *temp_servicestatus = NULL;
+ 	hoststatus *temp_hoststatus = NULL;
+ 	host *temp_host = NULL;
++	service *temp_service;
+ 	int problem = FALSE;
+ 
+ 
+@@ -4144,6 +4145,11 @@
+ 		if(is_host_member_of_hostgroup(temp_hostgroup, temp_host) == FALSE)
+ 			continue;
+ 
++		/* Opsview: make sure the user is authorized to see this service... */
++		temp_service = find_service(temp_servicestatus->host_name, temp_servicestatus->description);
++		if(is_authorized_for_service(temp_service,&current_authdata) == FALSE)
++			continue;
++
+ 		/* find the status of the associated host */
+ 		temp_hoststatus = find_hoststatus(temp_servicestatus->host_name);
+ 		if(temp_hoststatus == NULL)

@@ -1,0 +1,101 @@
+diff -Bbur nagios-4.0.20121116.orig/base/checks.c nagios-4.0.20121116/base/checks.c
+--- nagios-4.0.20121116.orig/base/checks.c	2012-11-26 17:31:53.000000000 +0000
++++ nagios-4.0.20121116/base/checks.c	2012-11-26 17:53:06.000000000 +0000
+@@ -955,7 +955,7 @@
+ 				}
+ 
+ 			/* else log the problem (again) if this service is flagged as being volatile */
+-			else if(temp_service->is_volatile == TRUE) {
++			else if(temp_service->is_volatile != FALSE){
+ 				log_service_event(temp_service);
+ 				state_was_logged = TRUE;
+ 				}
+@@ -975,7 +975,7 @@
+ 			service_notification(temp_service, NOTIFICATION_NORMAL, NULL, NULL, NOTIFICATION_OPTION_NONE);
+ 
+ 			/* run the service event handler if we changed state from the last hard state or if this service is flagged as being volatile */
+-			if(hard_state_change == TRUE || temp_service->is_volatile == TRUE)
++			if(hard_state_change == TRUE || temp_service->is_volatile != FALSE)
+ 				handle_service_event(temp_service);
+ 
+ 			/* save the last hard state */
+diff -Bbur nagios-4.0.20121116.orig/base/notifications.c nagios-4.0.20121116/base/notifications.c
+--- nagios-4.0.20121116.orig/base/notifications.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/base/notifications.c	2012-11-26 17:53:06.000000000 +0000
+@@ -563,11 +563,13 @@
+ 		}
+ 
+ 	/* don't notify if we haven't waited long enough since the last time (and the service is not marked as being volatile) */
+-	if((current_time < svc->next_notification) && svc->is_volatile == FALSE) {
++	if(current_time < svc->next_notification) {
++		if (svc->is_volatile == FALSE || svc->is_volatile == VOLATILE_WITH_RENOTIFICATION_INTERVAL) {
+ 		log_debug_info(DEBUGL_NOTIFICATIONS, 1, "We haven't waited long enough to re-notify contacts about this service.\n");
+ 		log_debug_info(DEBUGL_NOTIFICATIONS, 1, "Next valid notification time: %s", ctime(&svc->next_notification));
+ 		return ERROR;
+ 		}
++		}
+ 
+ 	/* if this service is currently in a scheduled downtime period, don't send the notification */
+ 	if(svc->scheduled_downtime_depth > 0) {
+diff -Bbur nagios-4.0.20121116.orig/cgi/config.c nagios-4.0.20121116/cgi/config.c
+--- nagios-4.0.20121116.orig/cgi/config.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/cgi/config.c	2012-11-26 17:53:06.000000000 +0000
+@@ -1290,7 +1290,7 @@
+ 
+ 			printf("<TD CLASS='%s'>%s</TD>\n", bg_class, (temp_service->parallelize == TRUE) ? "Yes" : "No");
+ 
+-			printf("<TD CLASS='%s'>%s</TD>\n", bg_class, (temp_service->is_volatile == TRUE) ? "Yes" : "No");
++			printf("<TD CLASS='%s'>%s</TD>\n", bg_class, (temp_service->is_volatile != FALSE) ? "Yes" : "No");
+ 
+ 			printf("<TD CLASS='%s'>%s</TD>\n", bg_class, (temp_service->obsess == TRUE) ? "Yes" : "No");
+ 
+diff -Bbur nagios-4.0.20121116.orig/common/objects.c nagios-4.0.20121116/common/objects.c
+--- nagios-4.0.20121116.orig/common/objects.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/common/objects.c	2012-11-26 17:53:06.000000000 +0000
+@@ -1577,7 +1577,7 @@
+ 	new_service->notification_interval = notification_interval;
+ 	new_service->first_notification_delay = first_notification_delay;
+ 	new_service->notification_options = notification_options;
+-	new_service->is_volatile = (is_volatile > 0) ? TRUE : FALSE;
++	new_service->is_volatile = (is_volatile > 0) ? ((is_volatile == 2) ? VOLATILE_WITH_RENOTIFICATION_INTERVAL : TRUE) : FALSE;
+ 	new_service->flap_detection_enabled = (flap_detection_enabled > 0) ? TRUE : FALSE;
+ 	new_service->low_flap_threshold = low_flap_threshold;
+ 	new_service->high_flap_threshold = high_flap_threshold;
+diff -Bbur nagios-4.0.20121116.orig/include/objects.h nagios-4.0.20121116/include/objects.h
+--- nagios-4.0.20121116.orig/include/objects.h	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/include/objects.h	2012-11-26 17:53:06.000000000 +0000
+@@ -61,6 +61,10 @@
+ #define HOSTESCALATION_SKIPLIST                10
+ #define SERVICEESCALATION_SKIPLIST             11
+ 
++/****************** DEFINITIONS *******************/
++/*#define VOLATILE_FALSE 0 - uses FALSE*/
++/*#define VOLATILE_TRUE  1 - uses TRUE */
++#define VOLATILE_WITH_RENOTIFICATION_INTERVAL 2
+ 
+ /***************** DATE RANGE TYPES *******************/
+ 
+@@ -103,6 +107,11 @@
+ #define add_notified_on(o, f) (o->notified_on |= (1 << f))
+ 
+ 
++/****************** DEFINITIONS *******************/
++/*#define VOLATILE_FALSE 0 - uses FALSE*/
++/*#define VOLATILE_TRUE  1 - uses TRUE */
++#define VOLATILE_WITH_RENOTIFICATION_INTERVAL 2
++
+ /****************** DATA STRUCTURES *******************/
+ 
+ /* @todo Remove typedef's of non-opaque types in Nagios 5 */
+diff -Bbur nagios-4.0.20121116.orig/xdata/xodtemplate.c nagios-4.0.20121116/xdata/xodtemplate.c
+--- nagios-4.0.20121116.orig/xdata/xodtemplate.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/xdata/xodtemplate.c	2012-11-26 17:53:06.000000000 +0000
+@@ -2820,7 +2820,7 @@
+ 				temp_service->have_parallelize_check = TRUE;
+ 				}
+ 			else if(!strcmp(variable, "is_volatile")) {
+-				temp_service->is_volatile = (atoi(value) > 0) ? TRUE : FALSE;
++				temp_service->is_volatile = (atoi(value) > 0) ? ((atoi(value) == 2) ? VOLATILE_WITH_RENOTIFICATION_INTERVAL : TRUE) : FALSE;
+ 				temp_service->have_is_volatile = TRUE;
+ 				}
+ 			else if(!strcmp(variable, "obsess_over_service") || !strcmp(variable, "obsess")) {

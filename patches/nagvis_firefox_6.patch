@@ -1,0 +1,19 @@
+--- nagvis-1.4.4/wui/includes/js/wui.js	2009-10-15 16:41:24.000000000 +0000
++++ nagvis/wui/includes/js/wui.js	2012-09-13 14:00:01.000000000 +0000
+@@ -397,10 +397,12 @@
+ 		if(aFields[i].name.charAt(0) !== '_') {
+ 			
+ 			// Check if the value of the input helper field should be used
+-			if(aFields[i].options[aFields[i].selectedIndex].value === lang['manualInput']) {
+-				getstr += aFields[i].name + "=" + escapeUrlValues(document.getElementById('_inp_'+aFields[i].name).value) + "&";
+-			} else {
+-				getstr += aFields[i].name + "=" + escapeUrlValues(aFields[i].options[aFields[i].selectedIndex].value) + "&";
++			if(aFields[i].options[aFields[i].selectedIndex]) {
++				if(aFields[i].options[aFields[i].selectedIndex].value === lang['manualInput']) {
++					getstr += aFields[i].name + "=" + escapeUrlValues(document.getElementById('_inp_'+aFields[i].name).value) + "&";
++				} else {
++					getstr += aFields[i].name + "=" + escapeUrlValues(aFields[i].options[aFields[i].selectedIndex].value) + "&";
++				}
+ 			}
+ 		}
+ 	}

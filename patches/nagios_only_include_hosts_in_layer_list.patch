@@ -1,0 +1,88 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/statusmap.c nagios-4.0.20121116/cgi/statusmap.c
+--- nagios-4.0.20121116.orig/cgi/statusmap.c	2012-11-26 14:23:39.000000000 +0000
++++ nagios-4.0.20121116/cgi/statusmap.c	2012-11-26 15:18:54.000000000 +0000
+@@ -222,6 +222,15 @@
+ int all_layers = FALSE;
+ 
+ 
++/*
++Opsview patch: For balance tree and circular maps, this URL parameter will
++redraw with only the items in the specific layers. Topologically should be same, but
++means it will be spaced out better with a smaller number of hosts.
++Warning: This is not particularly efficient
++Warning 2: This only looks good if there is a good parent/child structure of the items
++that are left, otherwise you will get icons on top of each other
++*/
++int only_include_hosts_in_layer_list=FALSE;
+ 
+ 
+ 
+@@ -577,6 +586,8 @@
+ 			strip_html_brackets(variables[x]);
+ 			add_layer(variables[x]);
+ 			}
++		else if(!strcmp(variables[x], "onlyincludehostsinlayerlist"))
++			only_include_hosts_in_layer_list = TRUE;
+ 		}
+ 
+ 	/* free memory allocated to the CGI variables */
+@@ -698,11 +709,13 @@
+ 		/* right hand column of top row */
+ 		printf("<td align=right valign=top>\n");
+ 
+-		printf("<form method=\"POST\" action=\"%s\">\n", STATUSMAP_CGI);
++		/* Opsview patch: Changed to GET for bookmarkability */
++		printf("<form method=\"GET\" action=\"%s\">\n", STATUSMAP_CGI);
+ 		printf("<table border=0 CLASS='optBox'>\n");
+ 		printf("<tr><td valign=top>\n");
+ 		printf("<input type='hidden' name='host' value='%s'>\n", escape_string(host_name));
+-		printf("<input type='hidden' name='layout' value='%d'>\n", layout_method);
++		/* This layout field is redundant as it is in the form */
++		/* printf("<input type='hidden' name='layout' value='%d'>\n", layout_method); */
+ 
+ 		printf("</td><td valign=top>\n");
+ 
+@@ -835,7 +848,7 @@
+ 	if(create_type == CREATE_HTML) {
+ 		printf("<P><DIV ALIGN=center>\n");
+ 		printf("<img src='%s?host=%s&createimage&time=%lu", STATUSMAP_CGI, url_encode(host_name), (unsigned long)time(NULL));
+-		printf("&canvas_x=%d&canvas_y=%d&canvas_width=%d&canvas_height=%d&max_width=%d&max_height=%d&layout=%d%s%s%s", canvas_x, canvas_y, canvas_width, canvas_height, max_image_width, max_image_height, layout_method, (use_links == FALSE) ? "&nolinks" : "", (use_text == FALSE) ? "&notext" : "", (use_highlights == FALSE) ? "&nohighlights" : "");
++		printf("&canvas_x=%d&canvas_y=%d&canvas_width=%d&canvas_height=%d&max_width=%d&max_height=%d&layout=%d%s%s%s%s", canvas_x, canvas_y, canvas_width, canvas_height, max_image_width, max_image_height, layout_method, (use_links == FALSE) ? "&nolinks" : "", (use_text == FALSE) ? "&notext" : "", (use_highlights == FALSE) ? "&nohighlights" : "",(only_include_hosts_in_layer_list==TRUE) ? "&onlyincludehostsinlayerlist" : "");
+ 		print_layer_url(TRUE);
+ 		printf("' width=%d height=%d border=0 name='statusimage' useMap='#statusmap'>\n", (int)(canvas_width * scaling_factor), (int)(canvas_height * scaling_factor));
+ 		printf("</DIV></P>\n");
+@@ -1522,6 +1535,9 @@
+ 			child_in_layer_list = is_host_in_layer_list(this_host);
+ 			parent_in_layer_list = is_host_in_layer_list(parent_host);
+ 
++			if(only_include_hosts_in_layer_list == TRUE && child_in_layer_list == FALSE)
++				continue;
++
+ 			/* use dotted or solid line? */
+ 			/* either the child or parent should not be drawn, so use a dotted line */
+ 			if((child_in_layer_list == TRUE && parent_in_layer_list == FALSE) || (child_in_layer_list == FALSE && parent_in_layer_list == TRUE))
+@@ -2505,7 +2521,7 @@
+ 
+ 	for(temp_host = host_list; temp_host != NULL; temp_host = temp_host->next) {
+ 
+-		if(is_host_immediate_child_of_host(parent, temp_host) == TRUE)
++		if(is_host_immediate_child_of_host(parent, temp_host) == TRUE && (only_include_hosts_in_layer_list == FALSE || is_host_in_layer_list(temp_host)))
+ 			child_width += max_child_host_drawing_width(temp_host);
+ 		}
+ 
+@@ -2571,6 +2587,7 @@
+ 			temp_host->have_2d_coords = TRUE;
+ 			temp_host->should_be_drawn = TRUE;
+ 
++			if (only_include_hosts_in_layer_list == FALSE || is_host_in_layer_list(temp_host))
+ 			current_drawing_x += (this_drawing_width * DEFAULT_NODE_WIDTH) + ((this_drawing_width - 1) * DEFAULT_NODE_HSPACING) + DEFAULT_NODE_HSPACING;
+ 
+ 			/* recurse into child host ... */
+@@ -2703,6 +2720,7 @@
+ 			calculate_circular_layer_coords(temp_host, current_drawing_angle + ((available_angle - clipped_available_angle) / 2), clipped_available_angle, layer + 1, radius + CIRCULAR_DRAWING_RADIUS);
+ 
+ 			/* increment current drawing angle */
++			if (only_include_hosts_in_layer_list == FALSE || is_host_in_layer_list(temp_host))
+ 			current_drawing_angle += available_angle;
+ 			}
+ 		}

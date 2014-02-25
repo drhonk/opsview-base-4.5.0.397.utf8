@@ -1,0 +1,47 @@
+--- nagiosgraph-0.8.2.original/insert.pl	2008-05-14 14:08:38.088844648 +0200
++++ nagiosgraph-0.8.2/insert.pl	2008-05-14 11:51:49.470969856 +0200
+@@ -8,7 +8,9 @@
+ use strict;
+ use lib "/usr/local/nagios/perl/lib";
+ use RRDs;
+-use Nagios::Plugin::Performance;
++use Nagios::Plugin::Performance use_die => 1;
++
++$SIG{__DIE__} = sub { debug(1, "DIED exception: @_") };
+ 
+ # Configuration
+ my $configfile = '/usr/local/nagios/etc/nagiosgraph.conf';
+@@ -144,17 +146,23 @@
+   if (@$s) {
+ 	return $s;
+   } else {
+-	my @a = Nagios::Plugin::Performance->parse_perfstring($P{perfdata});
+-	if (@a) {
+-		my @graphs = ();
+-		foreach my $a (@a) {
+-			my $label = $a->rrdlabel;
+-			push @graphs, [ $label, "GAUGE", $a->value ];
+-			my $shorter_label = substr($label, 0, 14);
+-			push @graphs, [ $shorter_label."_warn", "GAUGE", $a->threshold->warning->end ] if ($a->threshold->warning->is_set);
+-			push @graphs, [ $shorter_label."_crit", "GAUGE", $a->threshold->critical->end ] if ($a->threshold->critical->is_set);
++	local $SIG{__DIE__} = 'DEFAULT';
++	eval {
++		my @a = Nagios::Plugin::Performance->parse_perfstring($P{perfdata});
++		if (@a) {
++			my @graphs = ();
++			foreach my $a (@a) {
++				my $label = $a->rrdlabel;
++				push @graphs, [ $label, "GAUGE", $a->value ];
++				my $shorter_label = substr($label, 0, 14);
++				push @graphs, [ $shorter_label."_warn", "GAUGE", $a->threshold->warning->end ] if ($a->threshold->warning->is_set);
++				push @graphs, [ $shorter_label."_crit", "GAUGE", $a->threshold->critical->end ] if ($a->threshold->critical->is_set);
++			}
++			push @$s, [ "", @graphs ];
+ 		}
+-		push @$s, [ "", @graphs ];
++	};
++	if ($@) {
++		debug(2, "PARSE Cannot parse $_: $@" );
+ 	}
+ 	return $s;
+   }

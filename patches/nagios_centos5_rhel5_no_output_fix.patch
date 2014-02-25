@@ -1,0 +1,34 @@
+--- nagios-4.0.20130912.original/lib/worker.c	2013-10-11 16:38:55.000000000 +0000
++++ nagios-4.0.20130912/lib/worker.c	2013-10-14 21:44:21.000000000 +0000
+@@ -420,6 +420,17 @@
+ 				wlog("job %d (pid=%d): Failed to read(): %s", cp->id, cp->ei->pid, strerror(errno));
+ 		}
+ 
++		/* Opsview patch: We move this higher than the rd<=0 check so that read data is stored */
++		/* Without moving this, centos5/rhel5 will have "No output" messages because in those cases, it
++		   appears that the plugin output is read but not stored */
++		if (rd>0) {
++			/* we read some data */
++			io->buf = realloc(io->buf, rd + io->len + 1);
++			memcpy(&io->buf[io->len], buf, rd);
++			io->len += rd;
++			io->buf[io->len] = '\0';
++		}
++
+ 		/*
+ 		 * Close down on bad, zero and final reads (we don't get
+ 		 * EAGAIN, so all errors are really unfixable)
+@@ -432,13 +443,6 @@
+ 			break;
+ 		}
+ 
+-		if (rd) {
+-			/* we read some data */
+-			io->buf = realloc(io->buf, rd + io->len + 1);
+-			memcpy(&io->buf[io->len], buf, rd);
+-			io->len += rd;
+-			io->buf[io->len] = '\0';
+-		}
+ 		break;
+ 	}
+ }

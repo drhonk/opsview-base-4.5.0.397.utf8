@@ -1,0 +1,248 @@
+%define name opsview-base
+%define version %VERSION%
+%define release 1
+%define nsusr nagios
+%define nsgrp nagios
+%define nsport 5666
+
+Summary: Opsview Base
+License: See associated files for each software
+Group: Administration
+Name: opsview-base
+Prefix: /usr/local/nagios
+Provides: opsview-base
+Release: %RELEASE%%{?distribution:.%{distribution}}
+Version: %VERSION%
+Source: opsview-base-%VERSION%.tar.gz
+URL: http://www.opsview.org
+Buildroot: /tmp/opsview-base
+Requires: opsview-perl, gd > 1.8, zlib, libpng, libjpeg, bash, grep, libmcrypt, rrdtool >= 1.2.15, perl, mysql, openssl, net-snmp, gd, expat, httpd, /bin/ksh, mrtg, sudo, mailx, gzip, tar, bind-utils
+BuildRequires: gd-devel > 1.8, zlib-devel, libpng-devel, libjpeg-devel, libmcrypt-devel, mysql-devel, netpbm, openssl-devel, gcc, automake, ImageMagick, gd-devel, make, gcc, unzip, libtool, bind-utils, flex
+Conflicts: nagios, opsview-agent
+Autoreqprov: 0
+
+%if 0%{?rhel_version} > 0
+Requires: perl-rrdtool, mysql-server, net-snmp-utils
+BuildRequires: byacc
+%endif
+
+%if 0%{?fedora_version} || 0%{?centos_version}
+BuildRequires: gd-progs, netpbm-progs, mysql-devel, openssl-devel, net-snmp-utils, openssh-clients, expat-devel, openldap-devel, net-snmp-perl
+Requires: libtool-libs, mysql-server, perl-rrdtool, which,
+BuildRequires: byacc
+%endif
+
+# net-snmp includes snmpget for SLES, RHEL/Centos require net-snmp-utils
+%if 0%{?sles_version} > 0
+BuildRequires:  libmysqlclient-devel, libopenssl-devel, openssh, libexpat-devel, openldap2-devel, libtool, perl-Net-SNMP, net-snmp
+Requires: libtool, perl-Net-SNMP, mysql, util-linux
+# bison for yacc on SLES
+BuildRequires: bison
+%endif
+
+%package -n opsview-agent
+Group: System Environment/Daemons
+Summary: Opsview Agent
+Provides: opsview-agent
+Conflicts: nagios, nagios-nrpe, opsview-base, opsview-core, opsview-perl, opsview-web
+Requires: perl, openssl, /bin/ksh, bash, libmcrypt, bind-utils
+Autoreqprov: 0
+
+%if 0%{?fedora_version} || 0%{?centos_version}
+Requires: libtool-libs,
+%endif
+
+%if 0%{?sles_version} > 0
+Requires: libtool,
+%endif
+
+%define debug_package %{nil}
+
+%description
+This is the basis of Opsview, consisting of open source components
+
+%description -n opsview-agent
+This is the agent for Opsview, to be installed on systems to be monitored by Opsview
+
+%prep
+%setup -q
+
+# We need to set the DESTDIR at compile time because of
+# nagios-plugins' perl modules which use Module::Build, because
+# they need to know where the target location is beforehand.
+# This is not so risky, because debian/rules sets DESTDIR at build
+# time too, so other software is not likely to be affected
+%build
+make DESTDIR=$RPM_BUILD_ROOT
+
+%install
+make install DESTDIR=$RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/etc/init.d/
+cp support_files/opsview-agent $RPM_BUILD_ROOT/etc/init.d/opsview-agent
+
+%clean
+rm -fr $RPM_BUILD_ROOT
+
+%files
+%defattr(-,nagios,nagios)
+# Must list all directories. Ignore perl because nagiosplugins will install, but opsview-perl duplicates it
+/usr/local/nagios/bin
+/usr/local/nagios/etc
+/usr/local/nagios/installer
+/usr/local/nagios/lib
+/usr/local/nagios/libexec
+/usr/local/nagios/nagvis
+/usr/local/nagios/nmis
+/usr/local/nagios/sbin
+/usr/local/nagios/share
+/usr/local/nagios/snmp
+/usr/local/nagios/var
+%attr(4550,root,nagios) /usr/local/nagios/libexec/check_icmp
+%attr(4550,root,nagios) /usr/local/nagios/libexec/check_dhcp
+%attr(0755,root,root) /etc/init.d/opsview-agent
+%attr(2775,nagios,nagcmd) /usr/local/nagios/nagvis/etc/maps
+%attr(0664,nagios,nagcmd) /usr/local/nagios/nagvis/etc/maps/*
+%attr(2775,nagios,nagcmd) /usr/local/nagios/nagvis/nagvis/images/maps
+%attr(0664,nagios,nagcmd) /usr/local/nagios/nagvis/nagvis/images/maps/*
+%attr(2775,nagios,nagcmd) /usr/local/nagios/nagvis/nagvis/images/shapes
+%attr(0755,nagios,nagios) /usr/local/nagios/nagvis/nagvis/images/shapes/*
+%attr(2775,nagios,nagcmd) /usr/local/nagios/nagvis/var
+
+%pre
+# Create `nagios' group on the system if necessary
+if getent group nagios > /dev/null; then
+        : # group already exists
+else
+        /usr/sbin/groupadd -r nagios 2>/dev/null || echo 'Unexpected error adding group "nagios"'
+fi
+# Create `nagcmd' group on the system if necessary
+if getent group nagcmd > /dev/null; then
+        : # group already exists
+else
+        /usr/sbin/groupadd -r nagcmd 2>/dev/null || echo 'Unexpected error adding group "nagcmd"'
+fi
+# Create `nagios' user on the system if necessary
+if id nagios > /dev/null 2>/dev/null ; then
+        : # user already exists
+else
+        /usr/sbin/useradd -r -m -d /var/log/nagios -s /bin/bash -c "nagios" -g nagios nagios 2>/dev/null || \
+                echo 'Unexpected error adding user "nagios"'
+fi
+if ! groups nagios | grep nagcmd 1>/dev/null; then
+    usermod -G nagcmd nagios || echo 'Unexpected error adding nagcmd group to nagios user'
+fi
+%if 0%{?rhel_version} > 0 || 0%{?centos_version}
+apacheuser=apache
+%endif
+%if 0%{?sles_version} > 0
+apacheuser=wwwrun
+%endif
+if ! groups $apacheuser | grep nagcmd 1>/dev/null; then
+    usermod -G nagcmd $apacheuser || echo 'Unexpected error adding nagcmd group to nagios user'
+fi
+if [ "$1" -ge 1 ]; then
+    # on upgrades
+    if [ -d /usr/local/nagios/snmp/all ] && \
+      [ ! -f /usr/local/nagios/snmp/all/packfile ]; then
+        for mib in /usr/local/nagios/snmp/all/*.[mM]*; do
+            echo $mib | grep copy 1>/dev/null && continue
+            test -f $mib.copy || ln $mib $mib.copy
+        done
+        touch /usr/local/nagios/snmp/all/mid_process
+    fi
+fi
+
+%post
+/sbin/chkconfig --add opsview-agent
+service opsview-agent start 1>/dev/null
+# Run other postinstall tasks
+su - nagios -c "/usr/local/nagios/installer/opsview_base_postinstall" || exit 1
+exit 0
+
+%preun
+service opsview-agent stop 1>/dev/null
+if [ "$1" -eq 0 ]; then
+    /sbin/chkconfig --del opsview-agent
+fi
+exit 0
+
+%postun
+if [ "$1" -ge 1 ]; then
+    service opsview-agent restart 1>/dev/null
+fi
+exit 0
+
+%triggerpostun -- %{name}
+if [ -f /usr/local/nagios/snmp/all/mid_process ]; then
+    for copy in $(/bin/ls /usr/local/nagios/snmp/all/*.copy); do
+        mib=`echo $copy | sed -e 's/\.copy//'`
+        mv $copy $mib || exit 1
+    done
+    touch /usr/local/nagios/snmp/all/packfile || exit 1
+    rm -f /usr/local/nagios/snmp/all/mid_process || exit 1
+fi
+exit 0
+
+%pre -n opsview-agent
+# Create `nagios' group on the system if necessary
+if getent group nagios > /dev/null; then
+        : # group already exists
+else
+        /usr/sbin/groupadd -r nagios || echo 'Unexpected error adding group "nagios"'
+fi
+# Create `nagios' user on the system if necessary
+if id nagios > /dev/null 2>/dev/null ; then
+        : # user already exists
+else
+        /usr/sbin/useradd -r -m -d /var/log/nagios -s /bin/bash -c "nagios" -g nagios nagios || \
+                echo 'Unexpected error adding user "nagios"'
+fi
+
+%post -n opsview-agent
+if [ ! -f /usr/local/nagios/etc/send_nsca.cfg ]; then
+    echo "# See send_nsca.cfg on master server for config options" > /usr/local/nagios/etc/send_nsca.cfg
+    echo "password=changeme" >> /usr/local/nagios/etc/send_nsca.cfg
+    echo "encryption_method=2" >> /usr/local/nagios/etc/send_nsca.cfg
+fi
+# use chkconfig on first install only
+if [ "$1" -eq 1 ]; then
+    /sbin/chkconfig --add opsview-agent
+    service opsview-agent start 1>/dev/null
+    # NOTE: restart is catered for by %postun step
+fi
+exit 0
+
+%postun -n opsview-agent
+if [ "$1" -ge 1 ]; then
+    # only restart service if it is already running
+    service opsview-agent status && service opsview-agent restart
+fi
+exit 0
+
+%preun -n opsview-agent
+if [ "$1" -eq 0 ]; then
+    service opsview-agent stop 1>/dev/null
+    /sbin/chkconfig --del opsview-agent
+fi
+exit 0
+
+%files -n opsview-agent
+%defattr(0555,nagios,nagios)
+%attr(0755,root,root) /etc/init.d/opsview-agent
+%dir %attr(0555,nagios,nagios) /usr/local/nagios
+%dir %attr(0555,nagios,nagios) /usr/local/nagios/bin
+%attr(0550,nagios,nagios) /usr/local/nagios/bin/nrpe
+%attr(0550,nagios,nagios) /usr/local/nagios/bin/send_nsca
+%dir %attr(0550,nagios,nagios) /usr/local/nagios/etc
+%dir %attr(0755,nagios,nagios) /usr/local/nagios/var
+%attr(0550,nagios,nagios) /usr/local/nagios/etc/nrpe.cfg
+%dir %attr(0770,nagios,nagios) /usr/local/nagios/etc/nrpe_local
+/usr/local/nagios/perl
+/usr/local/nagios/libexec
+%attr(4550,root,nagios) /usr/local/nagios/libexec/check_icmp
+%attr(4550,root,nagios) /usr/local/nagios/libexec/check_dhcp
+%dir %attr(0770,nagios,nagios) /usr/local/nagios/libexec/nrpe_local
+
+%config(noreplace)
+/usr/local/nagios/etc/nrpe.cfg
+/usr/local/nagios/nagvis/etc/maps/opsview.cfg

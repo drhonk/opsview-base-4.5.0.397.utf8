@@ -1,0 +1,12 @@
+diff -ur nagios-4.0.20130912.original//xdata/xrddefault.c nagios-4.0.20130912/xdata/xrddefault.c
+--- nagios-4.0.20130912.original//xdata/xrddefault.c	2013-10-11 12:42:22.000000000 +0000
++++ nagios-4.0.20130912/xdata/xrddefault.c	2013-10-14 13:56:54.000000000 +0000
+@@ -1194,7 +1194,7 @@
+ 									temp_host->check_options = atoi(val);
+ 								}
+ 							else if(!strcmp(var, "current_attempt"))
+-								temp_host->current_attempt = (atoi(val) > 0) ? TRUE : FALSE;
++								temp_host->current_attempt = atoi(val);
+ 							else if(!strcmp(var, "current_event_id"))
+ 								temp_host->current_event_id = strtoul(val, NULL, 10);
+ 							else if(!strcmp(var, "last_event_id"))

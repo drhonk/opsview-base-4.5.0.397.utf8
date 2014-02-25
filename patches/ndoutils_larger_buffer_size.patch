@@ -1,0 +1,13 @@
+diff -ur ndoutils-1.4b7/include/ndomod.h ndoutils-1.4b7.with_larger_buffer/include/ndomod.h
+--- ndoutils-1.4b7/include/ndomod.h	2007-01-08 00:35:54.000000000 +0000
++++ ndoutils-1.4b7.with_larger_buffer/include/ndomod.h	2010-12-13 16:47:51.000000000 +0000
+@@ -24,7 +24,8 @@
+         }ndomod_sink_buffer;
+ 
+ 
+-#define NDOMOD_MAX_BUFLEN   4096
++/* Make this larger than the 16K from Nagios because if plugin data contains this amount, need space for rest of db command */
++#define NDOMOD_MAX_BUFLEN   49152
+ 
+ 
+ #define NDOMOD_PROCESS_PROCESS_DATA                   1

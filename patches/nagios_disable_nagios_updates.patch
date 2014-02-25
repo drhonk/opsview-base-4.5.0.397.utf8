@@ -1,0 +1,14 @@
+diff -ur nagios-4.0.20130107.original//base/utils.c nagios-4.0.20130107/base/utils.c
+--- nagios-4.0.20130107.original//base/utils.c	2013-06-10 10:20:21.000000000 +0000
++++ nagios-4.0.20130107/base/utils.c	2013-06-10 22:05:35.000000000 +0000
+@@ -2964,6 +2964,10 @@
+ 
+ /* check for new releases of Nagios */
+ int check_for_nagios_updates(int force, int reschedule) {
++
++	// Opsview patch
++	return OK;
++
+ 	time_t current_time;
+ 	int result = OK;
+ 	int api_result = OK;

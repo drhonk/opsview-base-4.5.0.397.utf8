@@ -1,0 +1,204 @@
+--- nagios-4.0.20130912/cgi/avail.c.orig2	2014-02-25 22:28:47.574430847 +0900
++++ nagios-4.0.20130912/cgi/avail.c	2014-02-25 22:28:24.000000000 +0900
+@@ -1033,7 +1033,7 @@
+ 	printf("Expires: %s\r\n", date_time);
+ 
+ 	if(output_format == HTML_OUTPUT)
+-		printf("Content-type: text/html\r\n\r\n");
++		printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 	else {
+ 		printf("Content-type: text/csv\r\n\r\n");
+ 		return;
+@@ -1044,6 +1044,7 @@
+ 
+ 	printf("<html>\n");
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+ 	printf("Nagios Core Availability\n");
+--- nagios-4.0.20130912/cgi/cmd.c.orig2	2014-02-25 22:29:26.210622443 +0900
++++ nagios-4.0.20130912/cgi/cmd.c	2014-02-25 22:29:25.000000000 +0900
+@@ -254,10 +254,11 @@
+ 
+ 	else {
+ 
+-		printf("Content-type: text/html\r\n\r\n");
++		printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 		printf("<html>\n");
+ 		printf("<head>\n");
++		printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 		printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 		printf("<title>\n");
+ 		printf("External Command Interface\n");
+--- nagios-4.0.20130912/cgi/config.c.orig2	2014-02-25 22:30:11.202845541 +0900
++++ nagios-4.0.20130912/cgi/config.c	2014-02-25 22:29:54.000000000 +0900
+@@ -290,10 +290,11 @@
+ 	printf("Pragma: no-cache\r\n");
+ 	printf("Last-Modified: %s\r\n", date_time);
+ 	printf("Expires: %s\r\n", date_time);
+-	printf("Content-type: text/html\r\n\r\n");
++	printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 	printf("<html>\n");
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<META HTTP-EQUIV='Pragma' CONTENT='no-cache'>\n");
+ 	printf("<title>\n");
+--- nagios-4.0.20130912/cgi/extinfo.c.orig2	2014-02-25 22:30:41.642996485 +0900
++++ nagios-4.0.20130912/cgi/extinfo.c	2014-02-25 22:30:25.000000000 +0900
+@@ -561,13 +561,14 @@
+ 	get_time_string(&expire_time, date_time, (int)sizeof(date_time), HTTP_DATE_TIME);
+ 	printf("Expires: %s\r\n", date_time);
+ 
+-	printf("Content-type: text/html\r\n\r\n");
++	printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 	if(embedded == TRUE)
+ 		return;
+ 
+ 	printf("<html>\n");
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+ 	printf("Extended Information\n");
+--- nagios-4.0.20130912/cgi/histogram.c.orig2	2014-02-25 22:31:23.619204634 +0900
++++ nagios-4.0.20130912/cgi/histogram.c	2014-02-25 22:31:02.000000000 +0900
+@@ -987,13 +987,14 @@
+ 		get_time_string(&expire_time, date_time, sizeof(date_time), HTTP_DATE_TIME);
+ 		printf("Expires: %s\r\n", date_time);
+ 
+-		printf("Content-type: text/html\r\n\r\n");
++		printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 		if(embedded == TRUE)
+ 			return;
+ 
+ 		printf("<html>\n");
+ 		printf("<head>\n");
++		printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 		printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 		printf("<title>\n");
+ 		printf("Nagios Core Histogram\n");
+--- nagios-4.0.20130912/cgi/history.c.orig2	2014-02-25 22:31:48.103325198 +0900
++++ nagios-4.0.20130912/cgi/history.c	2014-02-25 22:31:29.000000000 +0900
+@@ -284,13 +284,14 @@
+ 	get_time_string(&expire_time, date_time, sizeof(date_time), HTTP_DATE_TIME);
+ 	printf("Expires: %s\r\n", date_time);
+ 
+-	printf("Content-type: text/html\r\n\r\n");
++	printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 	if(embedded == TRUE)
+ 		return;
+ 
+ 	printf("<html>\n");
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+ 	printf("Nagios Core History\n");
+--- nagios-4.0.20130912/cgi/notifications.c.orig2	2014-02-25 22:32:23.283500500 +0900
++++ nagios-4.0.20130912/cgi/notifications.c	2014-02-25 22:32:02.000000000 +0900
+@@ -272,13 +272,14 @@
+ 	get_time_string(&expire_time, date_time, (int)sizeof(date_time), HTTP_DATE_TIME);
+ 	printf("Expires: %s\r\n", date_time);
+ 
+-	printf("Content-type: text/html\r\n\r\n");
++	printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 	if(embedded == TRUE)
+ 		return;
+ 
+ 	printf("<html>\n");
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+ 	printf("Alert Notifications\n");
+--- nagios-4.0.20130912/cgi/outages.c.orig2	2014-02-25 22:32:53.431649825 +0900
++++ nagios-4.0.20130912/cgi/outages.c	2014-02-25 22:32:28.000000000 +0900
+@@ -194,13 +194,14 @@
+ 	get_time_string(&expire_time, date_time, (int)sizeof(date_time), HTTP_DATE_TIME);
+ 	printf("Expires: %s\r\n", date_time);
+ 
+-	printf("Content-type: text/html\r\n\r\n");
++	printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 	if(embedded == TRUE)
+ 		return;
+ 
+ 	printf("<html>\n");
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+ 	printf("Network Outages\n");
+--- nagios-4.0.20130912/cgi/showlog.c.orig2	2014-02-25 22:33:25.047806956 +0900
++++ nagios-4.0.20130912/cgi/showlog.c	2014-02-25 22:32:51.000000000 +0900
+@@ -157,13 +157,14 @@
+ 	get_time_string(&expire_time, date_time, (int)sizeof(date_time), HTTP_DATE_TIME);
+ 	printf("Expires: %s\r\n", date_time);
+ 
+-	printf("Content-type: text/html\r\n\r\n");
++	printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 	if(embedded == TRUE)
+ 		return;
+ 
+ 	printf("<HTML>\n");
+ 	printf("<HEAD>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<TITLE>\n");
+ 	printf("Nagios Core Log File\n");
+--- nagios-4.0.20130912/cgi/status.c.orig2	2014-02-25 22:33:38.219872084 +0900
++++ nagios-4.0.20130912/cgi/status.c	2014-02-25 22:33:15.000000000 +0900
+@@ -502,13 +502,14 @@
+ 	get_time_string(&expire_time, date_time, (int)sizeof(date_time), HTTP_DATE_TIME);
+ 	printf("Expires: %s\r\n", date_time);
+ 
+-	printf("Content-type: text/html\r\n\r\n");
++	printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 
+ 	if(embedded == TRUE)
+ 		return;
+ 
+ 	printf("<html>\n");
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+ 	printf("Current Network Status\n");
+--- nagios-4.0.20130912/cgi/statuswml.c.orig2	2014-02-25 22:34:08.600022733 +0900
++++ nagios-4.0.20130912/cgi/statuswml.c	2014-02-25 22:33:53.000000000 +0900
+@@ -202,6 +202,7 @@
+ 	printf("<wml>\n");
+ 
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<meta forua=\"true\" http-equiv=\"Cache-Control\" content=\"max-age=0\"/>\n");
+ 	printf("</head>\n");
+ 
+--- nagios-4.0.20130912/cgi/summary.c.orig2	2014-02-25 22:35:12.756340860 +0900
++++ nagios-4.0.20130912/cgi/summary.c	2014-02-25 22:34:48.000000000 +0900
+@@ -663,7 +663,7 @@
+ 	printf("Expires: %s\r\n", date_time);
+ 
+ 	if(output_format == HTML_OUTPUT)
+-		printf("Content-type: text/html\r\n\r\n");
++		printf("Content-type: text/html;charset=UTF-8\r\n\r\n");
+ 	else {
+ 		printf("Content-type: text/plain\r\n\r\n");
+ 		return;
+@@ -674,6 +674,7 @@
+ 
+ 	printf("<html>\n");
+ 	printf("<head>\n");
++	printf("<meta http-equiv='content-type' content='text/html;charset=UTF-8'>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+ 	printf("Nagios Core Event Summary\n");

@@ -1,0 +1,32 @@
+diff -ur dataTables-1.4.3.original/dataTables-1.4/media/js/jquery.dataTables.min.js dataTables-1.4.3/dataTables-1.4/media/js/jquery.dataTables.min.js
+--- dataTables-1.4.3.original/dataTables-1.4/media/js/jquery.dataTables.min.js	2009-03-18 19:47:50.000000000 +0000
++++ dataTables-1.4.3/dataTables-1.4/media/js/jquery.dataTables.min.js	2009-07-29 13:36:15.000000000 +0100
+@@ -193,7 +193,9 @@
+ }else{oSettings.aaSorting.splice(i,1)}bFound=true;break}}if(bFound===false){oSettings.aaSorting.push([iDataIndex,"asc"])
+ }}else{if(oSettings.aaSorting.length==1&&oSettings.aaSorting[0][0]==iDataIndex){oSettings.aaSorting[0][1]=oSettings.aaSorting[0][1]=="asc"?"desc":"asc"
+ }else{oSettings.aaSorting.splice(0,oSettings.aaSorting.length);oSettings.aaSorting.push([iDataIndex,"asc"])
+-}}_fnSortingClasses(oSettings);_fnSort(oSettings);_fnProcessingDisplay(oSettings,false)
++}}_fnSortingClasses(oSettings);
++if(typeof oSettings.fnCustomSort!='undefined'){oSettings.fnCustomSort(oSettings);}else{_fnSort(oSettings);}
++_fnProcessingDisplay(oSettings,false)
+ },0)});$("thead th",oSettings.nTable).mousedown(function(){this.onselectstart=function(){return false
+ };return false})}if(oSettings.oFeatures.bAutoWidth){oSettings.nTable.style.width=oSettings.nTable.offsetWidth+"px"
+ }}function _fnDraw(oSettings){var i;var anRows=[];var iRowCount=0;var iStrips=oSettings.asStripClasses.length;
+@@ -371,7 +373,9 @@
+ }if(typeof oInit.fnFooterCallback!="undefined"){oSettings.fnFooterCallback=oInit.fnFooterCallback
+ }if(typeof oInit.fnDrawCallback!="undefined"){oSettings.fnDrawCallback=oInit.fnDrawCallback
+ }if(typeof oInit.fnInitComplete!="undefined"){oSettings.fnInitComplete=oInit.fnInitComplete
+-}if(typeof oInit.aaSorting!="undefined"){oSettings.aaSorting=oInit.aaSorting}if(typeof oInit.sPaginationType!="undefined"){oSettings.sPaginationType=oInit.sPaginationType
++}
++if(typeof oInit.fnCustomSort!="undefined"){oSettings.fnCustomSort=oInit.fnCustomSort;}
++if(typeof oInit.aaSorting!="undefined"){oSettings.aaSorting=oInit.aaSorting}if(typeof oInit.sPaginationType!="undefined"){oSettings.sPaginationType=oInit.sPaginationType
+ }if(typeof oInit.sDom!="undefined"){oSettings.sDomPositioning=oInit.sDom}if(typeof oInit.sAjaxSource!="undefined"){oSettings.sAjaxSource=oInit.sAjaxSource
+ }if(typeof oInit.iCookieDuration!="undefined"){oSettings.iCookieDuration=oInit.iCookieDuration
+ }if(typeof oInit.bStateSave!="undefined"){oSettings.oFeatures.bStateSave=oInit.bStateSave;
+@@ -385,4 +389,4 @@
+ }if($("tbody",this).length===0){this.appendChild(document.createElement("tbody"))
+ }}else{_fnGatherData(oSettings)}oSettings.aiDisplay=oSettings.aiDisplayMaster.slice();
+ if(oSettings.oFeatures.bAutoWidth){_fnCalculateColumnWidths(oSettings)}oSettings.bInitialised=true;
+-if(bInitHandedOff===false){_fnInitalise(oSettings)}})}})(jQuery);
+\ No newline at end of file
++if(bInitHandedOff===false){_fnInitalise(oSettings)}})}})(jQuery);

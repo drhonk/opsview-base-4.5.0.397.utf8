@@ -1,0 +1,38 @@
+diff -ur fabtabulous.original/fabtabulous.js fabtabulous/fabtabulous.js
+--- fabtabulous.original/fabtabulous.js	2009-07-09 16:00:07.000000000 +0100
++++ fabtabulous/fabtabulous.js	2009-07-09 16:52:20.000000000 +0100
+@@ -1,4 +1,4 @@
+-/*
++/*i
+  * Fabtabulous! Simple tabs using Prototype
+  * http://tetlaw.id.au/view/blog/fabtabulous-simple-tabs-using-prototype/
+  * Andrew Tetlaw
+@@ -21,10 +21,13 @@
+ 		Event.observe(elm,'click',this.activate.bindAsEventListener(this),false)
+ 	},
+ 	activate :  function(ev) {
+-		var elm = Event.findElement(ev, "a");
++                // only switch if tab is valid 
++                if (typeof globalValidator == "undefined" || globalValidator.validate($(this.tabID(this.getActiveTab())))) {
++		    var elm = Event.findElement(ev, "a");
++		    this.show(elm);
++		    this.menu.without(elm).each(this.hide.bind(this));
++                }
+ 		Event.stop(ev);
+-		this.show(elm);
+-		this.menu.without(elm).each(this.hide.bind(this));
+ 	},
+ 	hide : function(elm) {
+ 		$(elm).removeClassName('active-tab');
+@@ -49,7 +52,10 @@
+ 		} else {
+ 			return this.menu.first();
+ 		}
+-	}
++	},
++        getActiveTab : function() {
++            return this.menu.find(function(value) { return value.hasClassName('active-tab'); }); 
++        }
+ }
+ //Initialise with:
+ //Event.observe(window,'load',function(){ new Fabtabs('tabs'); },false);

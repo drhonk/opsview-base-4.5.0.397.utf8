@@ -1,0 +1,151 @@
+diff -ur nfdump-1.6.9/bin/flist.c nfdump-1.6.9.time_window/bin/flist.c
+--- nfdump-1.6.9/bin/flist.c	2013-09-11 13:50:57.000000000 +0000
++++ nfdump-1.6.9.time_window/bin/flist.c	2013-09-11 13:47:24.000000000 +0000
+@@ -1230,7 +1230,7 @@
+ 
+ } // End of mkpath
+ 
+-void setupStartEndTime(time_t *time_start, time_t *time_end)
++void setupDirTimeFrame(time_t *time_start, time_t *time_end)
+ {
+         struct tm *start, *end;
+ 
+@@ -1248,5 +1248,5 @@
+ 
+         end = localtime(time_end);
+         strftime(t_end, 11, "%Y/%m/%d", end);
+-} // End of setupStartEndTime
++} // End of setupDirTimeFrame
+ 
+diff -ur nfdump-1.6.9/bin/nfdump.c nfdump-1.6.9.time_window/bin/nfdump.c
+--- nfdump-1.6.9/bin/nfdump.c	2013-09-11 13:50:57.000000000 +0000
++++ nfdump-1.6.9.time_window/bin/nfdump.c	2013-09-11 13:48:44.000000000 +0000
+@@ -723,6 +723,7 @@
+ int 		print_stat, syntax_only, date_sorted, do_tag, compress, do_xstat;
+ int			plain_numbers, GuessDir, pipe_output, csv_output;
+ time_t 		t_start, t_end;
++time_t 		tw_start, tw_end;
+ uint16_t	Aggregate_Bits;
+ uint32_t	limitflows;
+ uint64_t	AggregateMasks[AGGR_SIZE];
+@@ -771,6 +772,7 @@
+ 	aggr_fmt		= NULL;
+ 	record_header 	= NULL;
+ 	Aggregate_Bits	= 0xFFFF;	// set all bits
++	tw_start = tw_end = 0;
+ 
+ 	Ident[0] = '\0';
+ 
+@@ -878,13 +880,9 @@
+ 				break;
+ 			case 'g':
+ 				{
+-					time_t rawtime;
+-					struct tm *start_time, *end_time;
+ 					char colonPos = 0;
+ 					char *right_side = NULL;
+ 					char *colon = NULL;
+-				
+-					tstring = (char *)malloc(sizeof(char) * 40);
+ 
+ 					colonPos = strchr(optarg, ':') - optarg;
+ 					colon = strchr(optarg, ':');
+@@ -895,22 +893,19 @@
+ 					}
+ 
+ 					if ( right_side ) {
+-						rawtime = (time_t)atoi(right_side);
++						tw_end = (time_t)atoi(right_side);
+ 					} else {
+-						rawtime = time(NULL);
++						tw_end = time(NULL);
+ 					}
+-					end_time = localtime(&rawtime);
+-					strftime(tstring+20, 20, "%Y/%m/%d.%H:%M:%S", end_time);
+ 
+ 					if ( *optarg == '-' ) {
+-						rawtime -= atoi(optarg+1); /* rawtime is the previously calculated end_time */
++						tw_start = tw_end - atoi(optarg+1);
+ 					} else {
+-						rawtime = (time_t)atoi(optarg);
++						tw_start = (time_t)atoi(optarg);
+ 					}
+-					start_time = localtime( &rawtime );
+ 
+-					strftime(tstring, 20, "%Y/%m/%d.%H:%M:%S", start_time);
+-					tstring[19] = '-'; /* start/end time delimiter */
++                    setupDirTimeFrame(&tw_start, &tw_end);
++                    setupFileTimeFrame(&tw_start, &tw_end);
+ 				}
+ 				break;
+ 			case 'r':
+@@ -1034,8 +1029,6 @@
+ 			exit(255);
+ 	}
+ 
+-	setupStartEndTime(&t_start, &t_end);
+-
+ 	SetupInputFileSequence(Mdirs, rfile, Rfile);
+ 
+ 	if ( print_stat ) {
+diff -ur nfdump-1.6.9/bin/util.c nfdump-1.6.9.time_window/bin/util.c
+--- nfdump-1.6.9/bin/util.c	2013-09-11 13:50:57.000000000 +0000
++++ nfdump-1.6.9.time_window/bin/util.c	2013-09-11 13:47:41.000000000 +0000
+@@ -345,10 +345,21 @@
+ } // End of ParseTime
+ 
+ 
++void setupFileTimeFrame(time_t *t_start, time_t *t_end) {
++	struct tm *start_time, *end_time;
++
++	//Store twindow start and end time for InsertString checking
++	start_time = localtime(t_start);
++	strftime(time_start, 13, "%Y%m%d%H%M", start_time);
++
++	end_time = localtime(t_end);
++	strftime(time_end, 13, "%Y%m%d%H%M", end_time);
++} // End of setupFileTimeFrame
++
++
++
+ int ScanTimeFrame(char *tstring, time_t *t_start, time_t *t_end) {
+ char *p;
+-	struct tm *start_time, *end_time;
+-	int windowExpandSize = 600;
+ 
+ 	if ( !tstring ) {
+ 		fprintf(stderr,"Time Window format error '%s'\n", tstring);
+@@ -388,19 +399,6 @@
+ 		ParseTime(p, t_end);
+ 	}
+ 
+-	//Store twindow start and end time for InsertString checking
+-	*t_start -= windowExpandSize;
+-	start_time = localtime(t_start);
+-	strftime(time_start, 13, "%Y%m%d%H%M", start_time);
+-	//Change t_end back to original, for t flag processing
+-	*t_start += windowExpandSize;
+-
+-	*t_end += windowExpandSize;
+-	end_time = localtime(t_end);
+-	strftime(time_end, 13, "%Y%m%d%H%M", end_time);
+-	//Change t_end back to original, for t flag processing
+-	*t_end -= windowExpandSize;
+-
+ 	return *t_start == 0 || *t_end == 0 ? 0 : 1;
+ 
+ } // End of ScanTimeFrame
+diff -ur nfdump-1.6.9/bin/util.h nfdump-1.6.9.time_window/bin/util.h
+--- nfdump-1.6.9/bin/util.h	2013-09-11 13:50:57.000000000 +0000
++++ nfdump-1.6.9.time_window/bin/util.h	2013-09-11 13:46:34.000000000 +0000
+@@ -75,7 +75,9 @@
+ 
+ time_t ISO2UNIX(char *timestring);
+ 
+-void setupStartEndTime(time_t *time_start, time_t *time_end);
++void setupDirTimeFrame(time_t *time_start, time_t *time_end);
++
++void setupFileTimeFrame(time_t *t_start, time_t *t_end);
+ 
+ void SetupInputFileSequence(char *multiple_dirs, char *single_file, char *multiple_files);
+ 

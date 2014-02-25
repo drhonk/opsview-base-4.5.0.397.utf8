@@ -1,0 +1,200 @@
+diff -ur nagvis-1.4rc3.original/nagvis/includes/classes/GlobalBackendndo2fs.php nagvis-1.4rc3/nagvis/includes/classes/GlobalBackendndo2fs.php
+--- nagvis-1.4rc3.original/nagvis/includes/classes/GlobalBackendndo2fs.php	2009-03-06 17:18:33.000000000 +0000
++++ nagvis-1.4rc3/nagvis/includes/classes/GlobalBackendndo2fs.php	2009-05-06 15:47:15.000000000 +0100
+@@ -586,7 +586,8 @@
+ 	 * @return	Array			Array with hostnames
+ 	 * @author	Lars Michelsen <lars@vertical-visions.de>
+ 	 */
+-	public function getHostsByHostgroupName($hostgroupName) {
++	public function getHostsByHostgroupName($hostgroupObject) {
++		$hostgroupName = $hostgroupObject->hostgroup_name;
+ 		$aReturn = Array();
+ 		
+ 		if(file_exists($this->pathVolatile.'/HOSTGROUPS/'.$hostgroupName)) {
+diff -ur nagvis-1.4rc3.original/nagvis/includes/classes/GlobalBackendndomy.php nagvis-1.4rc3/nagvis/includes/classes/GlobalBackendndomy.php
+--- nagvis-1.4rc3.original/nagvis/includes/classes/GlobalBackendndomy.php	2009-05-06 15:46:43.000000000 +0100
++++ nagvis-1.4rc3/nagvis/includes/classes/GlobalBackendndomy.php	2009-05-06 15:47:15.000000000 +0100
+@@ -301,9 +301,17 @@
+ 			$isActiveFilter = '';
+ 		}
+ 		
+-		$QUERYHANDLE = $this->mysqlQuery('SELECT name1,name2 FROM '.$this->dbPrefix.'objects WHERE objecttype_id='.$objectType.' AND '.$filter.$isActiveFilter.' instance_id='.$this->dbInstanceId.' ORDER BY name1');
++		if($type == "hostgroup" && $this->CORE->MAINCFG->getValue("backend_".$this->backendId, "use_opsview_tables") == 1) {
++			$QUERYHANDLE = $this->mysqlQuery('SELECT CONCAT(REPEAT("-", COUNT(parent.id)-1), "> ", node.name) AS name1, "" AS name2, CONCAT(node.name, ";", node.id) AS oid
++				FROM opsview_hostgroups AS node, opsview_hostgroups AS parent
++				WHERE node.lft BETWEEN parent.lft AND parent.rgt 
++				GROUP BY node.id
++				ORDER BY node.lft');
++		} else {
++			$QUERYHANDLE = $this->mysqlQuery('SELECT name1,name2,"" AS oid FROM '.$this->dbPrefix.'objects WHERE objecttype_id='.$objectType.' AND '.$filter.$isActiveFilter.' instance_id='.$this->dbInstanceId.' ORDER BY name1');
++		}
+ 		while($data = mysql_fetch_array($QUERYHANDLE)) {
+-			$ret[] = Array('name1' => $data['name1'],'name2' => $data['name2']);
++			$ret[] = Array('name1' => $data['name1'],'name2' => $data['name2'],'oid' => $data['oid']);
+ 		}
+ 		
+ 		// Free memory
+@@ -790,21 +798,30 @@
+ 	 * @return	Array			Array with hostnames
+ 	 * @author	Lars Michelsen <lars@vertical-visions.de>
+ 	 */
+-	public function getHostsByHostgroupName($hostgroupName) {
++	public function getHostsByHostgroupName($hostgroupObject) {
++		$hostgroupName = $hostgroupObject->hostgroup_name;
+ 		$arrReturn = Array();
+ 		
+-		$QUERYHANDLE = $this->mysqlQuery('SELECT 
+-				o2.name1
+-			FROM 
+-				'.$this->dbPrefix.'objects AS o,
+-				'.$this->dbPrefix.'hostgroups AS hg,
+-				'.$this->dbPrefix.'hostgroup_members AS hgm,
+-				'.$this->dbPrefix.'objects AS o2
+-			WHERE 
+-				(o.objecttype_id=3 AND o.name1 = binary \''.$hostgroupName.'\' AND o.instance_id='.$this->dbInstanceId.') 
+-				AND (hg.config_type='.$this->objConfigType.' AND hg.instance_id='.$this->dbInstanceId.' AND hg.hostgroup_object_id=o.object_id) 
+-				AND hgm.hostgroup_id=hg.hostgroup_id 
+-				AND (o2.objecttype_id=1 AND o2.object_id=hgm.host_object_id)');
++		if ($hostgroupObject->hostgroup_id > 0) {
++			$QUERYHANDLE = $this->mysqlQuery(
++				'SELECT opsview_hosts.name AS name1
++				FROM opsview_hostgroup_hosts, opsview_hosts
++				WHERE opsview_hostgroup_hosts.host_object_id = opsview_hosts.id
++				AND opsview_hostgroup_hosts.hostgroup_id = '.$hostgroupObject->hostgroup_id);
++		} else {
++			$QUERYHANDLE = $this->mysqlQuery('SELECT 
++					o2.name1
++				FROM 
++					'.$this->dbPrefix.'objects AS o,
++					'.$this->dbPrefix.'hostgroups AS hg,
++					'.$this->dbPrefix.'hostgroup_members AS hgm,
++					'.$this->dbPrefix.'objects AS o2
++				WHERE 
++					(o.objecttype_id=3 AND o.name1 = binary \''.$hostgroupName.'\' AND o.instance_id='.$this->dbInstanceId.') 
++					AND (hg.config_type='.$this->objConfigType.' AND hg.instance_id='.$this->dbInstanceId.' AND hg.hostgroup_object_id=o.object_id) 
++					AND hgm.hostgroup_id=hg.hostgroup_id 
++					AND (o2.objecttype_id=1 AND o2.object_id=hgm.host_object_id)');
++		}
+ 		
+ 		while($data = mysql_fetch_array($QUERYHANDLE)) {
+ 			// Assign actual dataset to return array
+diff -ur nagvis-1.4rc3.original/nagvis/includes/classes/GlobalMainCfg.php nagvis-1.4rc3/nagvis/includes/classes/GlobalMainCfg.php
+--- nagvis-1.4rc3.original/nagvis/includes/classes/GlobalMainCfg.php	2009-05-06 15:46:43.000000000 +0100
++++ nagvis-1.4rc3/nagvis/includes/classes/GlobalMainCfg.php	2009-05-06 15:47:15.000000000 +0100
+@@ -327,6 +327,10 @@
+ 					'editable' => 1,
+ 					'default' => '',
+ 					'match' => MATCH_STRING_URL),
++				'use_opsview_tables' => Array('must' => 0,
++					'editable' => 1,
++					'default' => '0',
++					'match' => MATCH_BOOLEAN),
+ 				'options' => Array()),
+ 			'rotationid' => Array('must' => 1,
+ 				'editable' => 1,
+diff -ur nagvis-1.4rc3.original/nagvis/includes/classes/GlobalMapCfg.php nagvis-1.4rc3/nagvis/includes/classes/GlobalMapCfg.php
+--- nagvis-1.4rc3.original/nagvis/includes/classes/GlobalMapCfg.php	2009-05-06 15:46:43.000000000 +0100
++++ nagvis-1.4rc3/nagvis/includes/classes/GlobalMapCfg.php	2009-05-06 15:47:15.000000000 +0100
+@@ -396,7 +396,7 @@
+ 					'match' => MATCH_OBJECTTYPE,
+ 					'field_type' => 'hidden'),
+ 				'hostgroup_name' => Array('must' => 1,
+-					'match' => MATCH_STRING,
++					'match' => MATCH_STRING_ID,
+ 					'field_type' => 'dropdown'),
+ 				'x' => Array('must' => 1,
+ 					'match' => MATCH_FLOAT),
+diff -ur nagvis-1.4rc3.original/nagvis/includes/classes/objects/NagiosHostgroup.php nagvis-1.4rc3/nagvis/includes/classes/objects/NagiosHostgroup.php
+--- nagvis-1.4rc3.original/nagvis/includes/classes/objects/NagiosHostgroup.php	2009-05-06 15:46:43.000000000 +0100
++++ nagvis-1.4rc3/nagvis/includes/classes/objects/NagiosHostgroup.php	2009-05-06 15:47:15.000000000 +0100
+@@ -157,7 +157,7 @@
+ 			// Get additional information like the alias (maybe bad place here)
+ 			$this->setConfiguration($this->BACKEND->BACKENDS[$this->backend_id]->getHostgroupInformations($this->hostgroup_name));
+ 			
+-			$arrHosts = $this->BACKEND->BACKENDS[$this->backend_id]->getHostsByHostgroupName($this->hostgroup_name);
++			$arrHosts = $this->BACKEND->BACKENDS[$this->backend_id]->getHostsByHostgroupName($this);
+ 			if(count($arrHosts) > 0) {
+ 				foreach($arrHosts AS &$hostName) {
+ 					$OBJ = new NagVisHost($this->CORE, $this->BACKEND, $this->backend_id, $hostName);
+diff -ur nagvis-1.4rc3.original/nagvis/includes/defines/matches.php nagvis-1.4rc3/nagvis/includes/defines/matches.php
+--- nagvis-1.4rc3.original/nagvis/includes/defines/matches.php	2009-05-06 15:46:43.000000000 +0100
++++ nagvis-1.4rc3/nagvis/includes/defines/matches.php	2009-05-06 15:47:15.000000000 +0100
+@@ -35,6 +35,8 @@
+ define('MATCH_STRING_PATH_EMPTY', '/^[0-9a-z\s\_\.\-\/\\\]*$/i');
+ define('MATCH_STRING_URL', '/^[0-9a-z\s\:\+\[\]\(\)\=\%\?\&\_\.\-\#\@\=\/\\\]+$/i');
+ define('MATCH_STRING_URL_EMPTY', '/^[0-9a-z\s\:\+\[\]\(\)\=\%\?\&\_\.\-\#\@\=\/\\\]*$/i');
++/* This allows a hostgroup to have ;{id} at the end */
++define('MATCH_STRING_ID', '/^[0-9a-z\s\:\+\[\]\(\)\_\.\,\-\?\!\#\@\=\/\\\]+(\;\d+)?$/i');
+ 
+ define('MATCH_INTEGER', '/^[0-9]+$/');
+ define('MATCH_FLOAT', '/^[0-9]+[\.\,]*[0-9]*$/');
+diff -ur nagvis-1.4rc3.original/nagvis/includes/js/frontend.js nagvis-1.4rc3/nagvis/includes/js/frontend.js
+--- nagvis-1.4rc3.original/nagvis/includes/js/frontend.js	2009-03-10 22:38:50.000000000 +0000
++++ nagvis-1.4rc3/nagvis/includes/js/frontend.js	2009-05-06 15:47:15.000000000 +0100
+@@ -730,6 +730,11 @@
+ 			break;
+ 			case 'hostgroup':
+ 				oObj = new NagVisHostgroup(aMapObjectConf[i]);
++				// Hack to append hostgroup id to name
++				var hostgroup_id = aMapObjectConf[i].hostgroup_id;
++				if (hostgroup_id) {
++					oObj.conf.name = oObj.conf.name + ";" + hostgroup_id;
++				}
+ 			break;
+ 			case 'servicegroup':
+ 				oObj = new NagVisServicegroup(aMapObjectConf[i]);
+diff -ur nagvis-1.4rc3.original/nagvis/includes/js/hover.js nagvis-1.4rc3/nagvis/includes/js/hover.js
+--- nagvis-1.4rc3.original/nagvis/includes/js/hover.js	2009-03-10 22:06:26.000000000 +0000
++++ nagvis-1.4rc3/nagvis/includes/js/hover.js	2009-05-06 15:47:15.000000000 +0100
+@@ -222,6 +222,11 @@
+ 	} else {
+ 		oSectionMacros.host = '<!--\\\sBEGIN\\\shost\\\s-->.+?<!--\\\sEND\\\shost\\\s-->';
+ 	}
++
++	// Macros which are only for hostgroups
++	if(oObj.conf.type == 'hostgroup') {
++		oMacros.obj_name = oObj.conf.name.replace(/;\d+/,'');
++	}
+ 	
+ 	// Macros which are only for servicegroups
+ 	if(oObj.conf.type == 'servicegroup') {
+diff -ur nagvis-1.4rc3.original/wui/ajax_handler.php nagvis-1.4rc3/wui/ajax_handler.php
+--- nagvis-1.4rc3.original/wui/ajax_handler.php	2009-05-06 15:46:43.000000000 +0100
++++ nagvis-1.4rc3/wui/ajax_handler.php	2009-05-06 15:47:15.000000000 +0100
+@@ -78,7 +78,7 @@
+ 			$aRet = Array(Array('name' => ''));
+ 			// Read all objects of the requested type from the backend
+ 			foreach($BACKEND->BACKENDS[$_GET['backend_id']]->getObjects($_GET['type'],'','') AS $arr) {
+-				$aRet[] = Array('name' => $arr['name1']);
++				$aRet[] = Array('name' => $arr['name1'], 'oid' => $arr['oid']);
+ 			}
+ 			
+ 			echo json_encode($aRet);
+diff -ur nagvis-1.4rc3.original/wui/includes/js/addmodify.js nagvis-1.4rc3/wui/includes/js/addmodify.js
+--- nagvis-1.4rc3.original/wui/includes/js/addmodify.js	2009-03-16 22:07:33.000000000 +0000
++++ nagvis-1.4rc3/wui/includes/js/addmodify.js	2009-05-06 15:48:09.000000000 +0100
+@@ -53,13 +53,22 @@
+ 					oName = aObjects[i].name;
+ 				}
+ 				
+-				if(selected != '' && oName == selected) {
++				var object_id;	/* This part is to pass an oid information back via ajax - this is required for Opsview hostgroups which could have duplicated names */
++				var object_name;
++				if (aObjects[i].oid && aObjects[i].oid != "") {
++					object_id = aObjects[i].oid;
++					object_name = oName;
++				} else {
++					object_id = oName;
++					object_name = object_id;
++				}
++				if(selected != '' && object_id == selected) {
+ 					bSelectDefault = true;
+ 					bSelect = true;
+ 					bSelected = true;
+ 				}
+ 				
+-				oField.options[i] = new Option(oName, oName, bSelectDefault, bSelect);
++				oField.options[i] = new Option(object_name, object_id, bSelectDefault, bSelect);
+ 			}
+ 		}
+ 		

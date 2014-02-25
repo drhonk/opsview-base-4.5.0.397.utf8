@@ -1,0 +1,12 @@
+diff -ur nagios-3.2.3.original/base/checks.c nagios-3.2.3/base/checks.c
+--- nagios-3.2.3.original/base/checks.c	2011-01-19 23:33:07.000000000 +0000
++++ nagios-3.2.3/base/checks.c	2011-01-19 23:37:12.000000000 +0000
+@@ -3354,7 +3354,7 @@
+ 	my_free(temp_host->perf_data);
+ 
+ 	/* parse check output to get: (1) short output, (2) long output, (3) perf data */
+-	parse_check_output(queued_check_result->output,&temp_host->plugin_output,&temp_host->long_plugin_output,&temp_host->perf_data,FALSE,TRUE);
++	parse_check_output(queued_check_result->output,&temp_host->plugin_output,&temp_host->long_plugin_output,&temp_host->perf_data,TRUE,TRUE);
+ 
+ 	/* make sure we have some data */
+ 	if(temp_host->plugin_output==NULL || !strcmp(temp_host->plugin_output,"")){

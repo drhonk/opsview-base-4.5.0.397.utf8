@@ -1,0 +1,53 @@
+diff -ur ndoutils-1.4b7.original/src/db.c ndoutils-1.4b7/src/db.c
+--- ndoutils-1.4b7.original/src/db.c	2009-09-01 12:24:51.000000000 +0000
++++ ndoutils-1.4b7/src/db.c	2009-10-05 14:56:49.000000000 +0000
+@@ -291,12 +291,25 @@
+ 	int result=NDO_OK;
+ 	int have_instance=NDO_FALSE;
+ 	time_t current_time;
++	int retries=0;
+ 
+ 	/* make sure we have an instance name */
+ 	if(idi->instance_name==NULL)
+ 		idi->instance_name=strdup("default");
+ 
+ 	/* get existing instance */
++	/* Opsview patch. Keep looping to get the instance id from the select */
++	/* This is because there will be a constraint on the instance_name */
++	/* Indentation not corrected for easier patching */
++	while (have_instance == NDO_FALSE) {
++
++	if(retries>0) {
++		syslog(LOG_USER|LOG_INFO,"Did not find instance_name '%s' - retrying", idi->instance_name);
++	}
++	if(retries>1) {
++		sleep(1);
++	}
++
+ 	if(asprintf(&buf,"SELECT instance_id FROM %s WHERE instance_name='%s'",ndo2db_db_tablenames[NDO2DB_DBTABLE_INSTANCES],idi->instance_name)==-1)
+ 		buf=NULL;
+ 	if((result=ndo2db_db_query(idi,buf))==NDO_OK){
+@@ -326,7 +339,10 @@
+ 			switch(idi->dbinfo.server_type){
+ 			case NDO2DB_DBSERVER_MYSQL:
+ #ifdef USE_MYSQL
+-				idi->dbinfo.instance_id=mysql_insert_id(&idi->dbinfo.mysql_conn);
++				/* Part of Opsview patch to ignore id and re-search again */
++				/*
++				idi->dbinfo.instance_id=mysql_insert_id(&idi->dbinfo.mysql_conn);
++				*/
+ #endif
+ 				break;
+ 			default:
+@@ -335,6 +351,11 @@
+ 	                }
+ 		free(buf);
+ 	        }
++
++	retries++;
++
++	/* End while for instance_name */
++	}
+ 	
+ 	ts=ndo2db_db_timet_to_sql(idi,idi->data_start_time);
+ 

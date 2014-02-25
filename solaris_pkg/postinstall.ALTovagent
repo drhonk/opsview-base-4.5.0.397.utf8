@@ -1,0 +1,48 @@
+#
+# $Id$
+#
+# postinstall script
+#
+PATH=/usr/sadm/bin:$PATH
+
+#/usr/sbin/chroot $BASEDIR /usr/bin/su - nagios -c "/usr/local/nagios/installer/opsview_base_postinstall" || die "Failed to complete postinstall tasks"
+
+exit 0
+
+
+######################################################################
+###         bomb out here - all done via SMF manifesst now         ###
+######################################################################
+
+START=S90
+STOP=K10
+
+# create rc script(s)
+for RC in opsview-agent
+do
+    for D in S 0 1 2 
+    do
+        installf $PKGINST $PKG_INSTALL_ROOT/etc/rc${D}.d/${STOP}${RC}=../init.d/$RC s
+    done
+
+    for D in 3
+    do
+        installf $PKGINST $PKG_INSTALL_ROOT/etc/rc${D}.d/${START}${RC}=../init.d/${RC} s
+    done
+done
+
+# also make sure nrpe_local etc directory exists
+installf $PKGINST $PKG_INSTALL_ROOT/usr/local/nagios/etc/nrpe_local d 0770 nagios nagios
+
+# signal end of packaging changes
+installf -f $PKGINST
+
+if [ "x$PKG_INSTALL_ROOT" = "x" ] || "$PKG_INSTALL_ROOT" = "/" ]; then
+    /etc/init.d/opsview-agent start
+fi
+
+UPGR_SCRIPT=/tmp/upgr.$PKGINST
+if [ -f $UPGR_SCRIPT ]; then
+    sh $UPGR_SCRIPT &
+fi
+exit 0

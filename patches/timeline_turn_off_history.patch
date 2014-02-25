@@ -1,0 +1,12 @@
+diff -ur timeline-libraries-2.3.0.original/timeline_2.3.0/timeline_ajax/simile-ajax-bundle.js timeline-libraries-2.3.0/timeline_2.3.0/timeline_ajax/simile-ajax-bundle.js
+--- timeline-libraries-2.3.0.original/timeline_2.3.0/timeline_ajax/simile-ajax-bundle.js	2009-08-13 13:59:56.000000000 +0100
++++ timeline-libraries-2.3.0/timeline_2.3.0/timeline_ajax/simile-ajax-bundle.js	2009-08-13 14:00:41.000000000 +0100
+@@ -1964,7 +1964,7 @@
+ 
+ 
+ /* history.js */
+-SimileAjax.History={maxHistoryLength:10,historyFile:"__history__.html",enabled:true,_initialized:false,_listeners:new SimileAjax.ListenerQueue(),_actions:[],_baseIndex:0,_currentIndex:0,_plainDocumentTitle:document.title};
++SimileAjax.History={maxHistoryLength:10,historyFile:"__history__.html",enabled:false,_initialized:false,_listeners:new SimileAjax.ListenerQueue(),_actions:[],_baseIndex:0,_currentIndex:0,_plainDocumentTitle:document.title};
+ SimileAjax.History.formatHistoryEntryTitle=function(A){return SimileAjax.History._plainDocumentTitle+" {"+A+"}";
+ };
+ SimileAjax.History.initialize=function(){if(SimileAjax.History._initialized){return ;

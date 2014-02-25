@@ -1,0 +1,21 @@
+diff -ur ndoutils-1.4b3.original/src/ndo2db.c ndoutils-1.4b3/src/ndo2db.c
+--- ndoutils-1.4b3.original/src/ndo2db.c	2008-03-04 12:24:00.000000000 +0000
++++ ndoutils-1.4b3/src/ndo2db.c	2008-03-04 14:31:49.609330552 +0000
+@@ -804,9 +809,14 @@
+ 		result=read(sd,buf,sizeof(buf)-1);
+ 
+ 		/* bail out on hard errors */
+-		if(result==-1 && (errno!=EAGAIN && errno!=EINTR)){
+-			error=NDO_TRUE;
+-			break;
++		if(result==-1) {
++			/* Altinity patch: EAGAIN and EINTR are soft errors, so try another read() */
++			if (errno==EAGAIN || errno==EINTR)
++				continue;
++			else {
++				error=NDO_TRUE;
++				break;
++				}
+ 		        }
+ 
+ 		/* zero bytes read means we lost the connection with the client */

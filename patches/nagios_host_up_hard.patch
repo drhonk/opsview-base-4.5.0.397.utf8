@@ -1,0 +1,15 @@
+diff -Bbur nagios-4.0.20121116.orig/base/checks.c nagios-4.0.20121116/base/checks.c
+--- nagios-4.0.20121116.orig/base/checks.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/base/checks.c	2012-11-26 16:41:25.000000000 +0000
+@@ -2707,11 +2707,8 @@
+ 			hst->current_state = HOST_UP;
+ 
+ 			/* set the state type */
+-			/* set state type to HARD for passive checks and active checks that were previously in a HARD STATE */
+-			if(hst->state_type == HARD_STATE || (hst->check_type == CHECK_TYPE_PASSIVE && passive_host_checks_are_soft == FALSE))
++			/* Opsview patch: HOST_UP is always considered to be a hard state */
+ 				hst->state_type = HARD_STATE;
+-			else
+-				hst->state_type = SOFT_STATE;
+ 
+ 			log_debug_info(DEBUGL_CHECKS, 1, "Host experienced a %s recovery (it's now UP).\n", (hst->state_type == HARD_STATE) ? "HARD" : "SOFT");

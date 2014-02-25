@@ -1,0 +1,89 @@
+diff -ur nmis-4.2.13.original/cgi-bin/nmiscgi.pl nmis-4.2.13/cgi-bin/nmiscgi.pl
+--- nmis-4.2.13.original/cgi-bin/nmiscgi.pl	2008-01-22 16:01:02.011599000 +0000
++++ nmis-4.2.13/cgi-bin/nmiscgi.pl	2008-01-22 16:01:37.279237904 +0000
+@@ -290,6 +290,7 @@
+ 	elsif ( $type eq "" and $node ne "") { &typeInfo; }
+ 	elsif ( $type eq "info" and $node ne "") { &typeInfo; }
+ 	elsif (	$type eq "health" and $node ne "" ) { &typeHealth; }
++	elsif (	$type eq "traffic" and $node ne "" ) { &typeTraffic; }
+ 	elsif (	$type eq "port" and $node ne "" ) { &typePort; }
+ 	elsif (	$type eq "portpvc" and $node ne "" ) { &typePVC; }
+ 	elsif (	$type eq "summary" and $node ne "" ) { &typeInfo; }
+@@ -3522,6 +3523,69 @@
+ } #typeDNS
+ 
+ 
++sub typeTraffic {
++
++    my $port;
++    my $reportStats;
++    my @tmparray;
++    my $ifLastChange;
++    my $tmpurl;
++    my %interfaceTable;
++
++    if ( !defined $sort1 ) { $sort1 = "totalUtil" }
++    if ( !defined $sort2 ) { $sort2 = "intString" }
++
++    pageStart( "Traffic Information about $node", "true", \%headeropts);
++    cssTableStart;
++    &nmisMenuSmall;
++    &nmisMenuBar;
++    $datestamp = returnDateStamp;
++    loadEventStateNoLock;
++
++    cssHeaderBar( "Traffic Information for $node at $datestamp", "grey" );
++
++    # Compare the Up time to the last uptime? and check if unhealthy?
++
++    # Get the System info from the file and whack it into the hash
++    loadNodeDetails;
++    loadSystemFile($node);
++
++    if ( $NMIS::nodeTable{$node}{collect} eq "true" ) {
++        %interfaceTable =
++          &loadCSV( "$NMIS::config{'<nmis_var>'}/$node-interface.dat",
++            "ifIndex", "\t" );
++    }
++
++    displaySystemHeader($node);
++
++    tableEnd;
++    cellEnd;
++    rowEnd;
++
++    print "<table class='white' summary='Display'>\n";
++
++    rowStart;
++    cellStart( "white", 12 );
++
++    if ( $NMIS::systemTable{nodeModel} =~
++/GSR|router|atm|catalyst|PIX|SunSolaris|generic|Win2000|Accelar|BayStack|SSII 3Com|SE800|SMS10K|FastIron|m10|ERX-1440/i
++      )
++    {
++
++        # Extract the interface statics and summaries for display in a second.
++        foreach $intf ( sort {$a <=> $b} (keys %interfaceTable) ) {
++            printf "<p align='center'><a href='$this_script?file=nmis.conf&node=%s&type=graph&graphtype=bits&glamount=48&glunits=hours&intf=%d' target='ViewWindow' onMouseOver=\"window.status='Drill into Serial4/1:2.';return true\"><img src='$this_script?file=nmis.conf&type=drawgraph&node=%s&group=&graph=bits&glamount=48&glunits=hours&width=640&height=100&intf=%d' alt='%s' border='0'><br>%s</a></p>\n", $node, $intf, $node, $intf, $interfaceTable{$intf}{Description}, $interfaceTable{$intf}{Description} if ($interfaceTable{$intf}{collect} eq "true");
++        }
++    }
++
++    cellEnd;
++    rowEnd;
++    tableEnd;
++
++    pageEnd;
++}    # typeTraffic
++
++
+ ### changed to allow multiple node select for adding outages.
+ sub typeOutage {
+ 	my $intHash;
+@@ -4407,6 +4471,7 @@
+ 
+ 	if ( $NMIS::nodeTable{$node}{collect} eq "true" ) {
+ 		cssPrintCell("button","<a href=\"$this_script?file=$conf&amp;node=$node&amp;type=health\">Health Statistics</a>");
++		cssPrintCell("button","<a href=\"$this_script?file=$conf&amp;node=$node&amp;type=traffic\">Traffic Statistics</a>");
+ 		cssPrintCell("button","<a href=\"$this_script?file=$conf&amp;node=$node&amp;type=link\">Link List</a>");
+ 		if ( -e "$NMIS::config{'<nmis_var>'}/$node-pvc.dat" ) {
+ 			cssPrintCell("button","<a href=\"$this_script?file=$conf&amp;node=$node&amp;type=portpvc\">PVC Statistics</a>");

@@ -1,0 +1,11 @@
+diff -ur nagiosgraph-0.8.2/insert.pl nagiosgraph-0.8.2.use_minicpan/insert.pl
+--- nagiosgraph-0.8.2/insert.pl	2006-11-10 21:15:55.000000000 +0000
++++ nagiosgraph-0.8.2.use_minicpan/insert.pl	2006-11-10 21:19:28.000000000 +0000
+@@ -6,6 +6,7 @@
+ #          http://www.opensource.org/licenses/artistic-license.php
+ 
+ use strict;
++use lib "/usr/local/nagios/perl/lib";
+ use RRDs;
+ use Nagios::Plugin 0.12;
+ 

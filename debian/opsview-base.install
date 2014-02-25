@@ -1,0 +1,11 @@
+debian/tmp/usr/local/nagios/bin /usr/local/nagios
+debian/tmp/usr/local/nagios/etc /usr/local/nagios
+debian/tmp/usr/local/nagios/installer /usr/local/nagios
+debian/tmp/usr/local/nagios/lib /usr/local/nagios
+debian/tmp/usr/local/nagios/libexec /usr/local/nagios
+debian/tmp/usr/local/nagios/nagvis /usr/local/nagios
+debian/tmp/usr/local/nagios/nmis /usr/local/nagios
+debian/tmp/usr/local/nagios/sbin /usr/local/nagios
+debian/tmp/usr/local/nagios/share /usr/local/nagios
+debian/tmp/usr/local/nagios/snmp /usr/local/nagios
+debian/tmp/usr/local/nagios/var /usr/local/nagios

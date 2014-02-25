@@ -1,0 +1,12 @@
+diff -ur nagvis-1.4.4/etc/maps/__automap.cfg nagvis-1.4.4-patched/etc/maps/__automap.cfg
+--- nagvis-1.4.4/etc/maps/__automap.cfg 2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/etc/maps/__automap.cfg 2012-04-04 05:18:38.000000000 +0100
+@@ -2,7 +2,7 @@
+ alias=Automap
+ allowed_user=EVERYONE
+ allowed_for_config=EVERYONE
+-iconset=std_small
++iconset=opsview_small
+ map_image=nagvis-demo.png
+ hover_childs_sort=s
+ hover_childs_order=asc

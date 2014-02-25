@@ -1,0 +1,19 @@
+diff -ur nagios-4.0.20130107.original/xdata/xodtemplate.c nagios-4.0.20130107/xdata/xodtemplate.c
+--- nagios-4.0.20130107.original/xdata/xodtemplate.c	2013-03-25 06:43:21.000000000 +0000
++++ nagios-4.0.20130107/xdata/xodtemplate.c	2013-03-25 08:08:59.000000000 +0000
+@@ -641,6 +641,15 @@
+ 			if(input[x] == ';') {
+ 				if(x == 0)
+ 					break;
++				// Opsview patch: This is quite ugly. This says that the comment delimiter is
++				// ignored if the string "check_(timeperiod_)?command" appears before it. Clearly, there are
++				// cases where this is not true. However, the alternative is to make a copy of the line
++				// and then "close the gap" when the semicolon is escaped, which might break
++				// other things. This could be introduced in future, with the cost at reload time
++				// to escape semi-colons
++				else if(((ptr=strstr(input,"check_command"))!=NULL || ((ptr=strstr(input,"check_timeperiod_command"))!=NULL)) && ((ptr - &input[0]) < x)){
++					// Let this go through
++					}
+ 				else if(input[x - 1] != '\\')
+ 					break;
+ 				}

@@ -1,0 +1,101 @@
+#!/bin/bash -x
+#
+# AUTHORS:
+#        Copyright (C) 2005 Altinity Limited
+#
+#    This file is part of Opsview
+#
+#    Opsview is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    Opsview is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with Opsview; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+
+echo $SCRIPTNAME: launching
+
+function create_users_for_darwin {
+  set -x
+    # Check for nagios group
+    dscl . -read /Groups/nagios > /dev/null 2>&1
+    rc=$?
+    if [[ $rc -eq 105 ]] || [[ $rc -eq 56 ]] ; then
+            dscl . -create /Groups/nagios
+            dscl . -create /Groups/nagios gid 147
+    elif [[ $rc -ne 0 ]] ; then
+            die "Problem with nagios group"
+    fi
+
+    # Check for nagios user
+    dscl . -read /Users/nagios > /dev/null 2>&1
+    rc=$?
+    if [[ $rc -eq 105 ]] || [[ $rc -eq 56 ]]  ; then
+            dscl . -create /Users/nagios
+            dscl . -create /Users/nagios shell /bin/sh
+            dscl . -create /Users/nagios realname "Nagios user"
+            dscl . -create /Users/nagios uid 147
+            dscl . -create /Users/nagios gid 147
+            dscl . -create /Users/nagios home /Users/nagios
+            # Need to set passwd to "*" to remove from the MacOSX login window
+            dscl . -create /Users/nagios passwd "*"
+            dscl . -create /Users/nagios expire 0
+            mkdir -p /Users/nagios
+            chown nagios:nagios /Users/nagios
+            dscl . -create /Users/nagios _shadow_passwd "*"
+            dscl . -append /Groups/nagios users nagios
+    elif [[ $rc -ne 0 ]] ; then
+            die "Problem with nagios user"
+    fi
+}
+
+function debug {
+    if [[ $debug -eq 1 ]] ; then
+            echo "Would run: $@"
+    else
+            "$@" || die "Cannot run: $*"
+    fi
+}
+
+function die { echo $1; exit 1; }
+
+debug=0
+while getopts "d" c; do
+    case $c in
+            d) debug=1;;
+    esac
+done
+shift $((OPTIND-1))
+
+os=`uname -s`
+
+if [[ $os = "Darwin" ]] ; then
+    echo 'Creating Darwin user: nagios'
+    create_users_for_darwin
+else
+    die "OS $os not supported for nagios user creation"
+fi
+
+#Start agent
+echo "Stopping Opsview Agent"
+/usr/bin/killall nrpe
+/usr/bin/killall /Applications/OpsviewAgent.app/bin/nrpe
+sleep 1
+chown -R nagios:nagios /Applications/OpsviewAgent.app/var
+rm -f /Applications/OpsviewAgent.app/var/nrpe.pid
+
+# get launchd to start the agent for us
+echo "Starting Opsview Agent"
+launchctl load /Library/LaunchDaemons/org.opsview.agent.plist
+launchctl start org.opsview.agent
+
+
+
+

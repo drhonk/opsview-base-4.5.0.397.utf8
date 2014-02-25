@@ -1,0 +1,52 @@
+#!/usr/bin/env perl
+#
+# small script to get svn version number out of either svn or git local
+# repository, depending on how code has been checked out
+#
+use strict;
+use warnings;
+use Cwd;
+
+my $revision = 0;
+my $date     = "";
+
+# Shortcut here if testing
+# Shortcut should be in Makefile, but don't how to get
+# conditional variables assigned
+if ( $ENV{OPSVIEW_TEST_HUDSON} ) {
+    print "0 \n";
+    exit;
+}
+
+if ( -d cwd() . '/.svn' ) {
+    my $svnrevision = qx/ svnversion -c . /;
+    chomp($svnrevision);
+
+    if ( $svnrevision !~ m/exported/xsm ) {
+        $svnrevision =~ s/.*://;
+        $svnrevision =~ s/M//;
+        $revision = $svnrevision;
+
+        my @svnlog = qx/svn info/;
+        foreach $_ (@svnlog) {
+            if (/Last Changed Date: (20\d\d)\-(\d\d)\-(\d\d)/) {
+                $date = $1 . $2 . $3;
+                last;
+            }
+        }
+    }
+
+}
+elsif ( -d cwd() . '/.git' ) {
+
+    my @svnlog = qx/git svn log --limit=1/;
+    my ($gitrevision) = $svnlog[1] =~ m/^r(\d+)\s/xsm;
+
+    if ( !$gitrevision ) {
+        die 'Unable to parse revision number out of git', $/;
+    }
+    $revision = $gitrevision;
+
+}
+
+print "$revision $date", $/;

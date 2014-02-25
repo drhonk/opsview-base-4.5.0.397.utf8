@@ -1,0 +1,25 @@
+diff -ur nagios-2.9.original/cgi/statusmap.c nagios-2.9/cgi/statusmap.c
+--- nagios-2.9.original/cgi/statusmap.c	2007-08-09 16:22:43.154272000 +0100
++++ nagios-2.9/cgi/statusmap.c	2007-08-09 16:26:10.372770920 +0100
+@@ -693,9 +693,9 @@
+ 		/* right hand column of top row */
+ 		printf("<td align=right valign=top>\n");
+ 
++		printf("<form method=\"POST\" action=\"%s\">\n",STATUSMAP_CGI);
+ 		printf("<table border=0 CLASS='optBox'>\n");
+ 		printf("<tr><td valign=top>\n");
+-		printf("<form method=\"POST\" action=\"%s\">\n",STATUSMAP_CGI);
+ 		printf("<input type='hidden' name='host' value='%s'>\n",host_name);
+ 		printf("<input type='hidden' name='layout' value='%d'>\n",layout_method);
+ 
+@@ -781,9 +781,9 @@
+ 
+ 		printf("</table>\n");
+ 
+-		printf("</form>\n");
+ 		printf("</td></tr>\n");
+ 		printf("</table>\n");
++		printf("</form>\n");
+ 
+ 		printf("</td>\n");
+ 	

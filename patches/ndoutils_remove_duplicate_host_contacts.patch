@@ -1,0 +1,84 @@
+diff -ur ndoutils-1.4b3.orig/src/ndomod.c ndoutils-1.4b3/src/ndomod.c
+--- ndoutils-1.4b3.orig/src/ndomod.c	2009-01-14 10:47:31.000000000 +0000
++++ ndoutils-1.4b3/src/ndomod.c	2009-01-14 11:06:05.000000000 +0000
+@@ -76,6 +76,12 @@
+ unsigned long ndomod_sink_buffer_slots=5000;
+ ndomod_sink_buffer sinkbuf;
+ 
++/* Opsview patch - remove duplicate contacts from host definitions */
++#ifdef BUILD_NAGIOS_2X
++contactgroupmember *contactgroupmember_seen_list=NULL;
++#endif
++/* end of Opsview patch */
++
+ extern int errno;
+ 
+ /**** NAGIOS VARIABLES ****/
+@@ -3060,6 +3066,12 @@
+ #ifdef BUILD_NAGIOS_2X
+ 	hostextinfo *temp_hostextinfo=NULL;
+ 	serviceextinfo *temp_serviceextinfo=NULL;
++/* Opsview patch - remove duplicate contacts from host definitions */
++    contactgroupmember *new_contactgroupmember_seen=NULL;
++    int contactgroupmember_found=0;
++    contactgroupmember *this_contactgroupmember_seen=NULL;
++    contactgroupmember *next_contactgroupmember_seen=NULL;
++/* end of Opsview patch */
+ #endif
+ 	int have_2d_coords=FALSE;
+ 	int x_2d=0;
+@@ -3651,6 +3663,37 @@
+ 				if(strstr(temp_contactgroupmember->contact_name,"/distprofile")!=NULL)
+ 					continue;
+ 
++/* Opsview patch - remove duplicate contacts from host definitions */
++                contactgroupmember_found=0;
++                for(this_contactgroupmember_seen=contactgroupmember_seen_list;this_contactgroupmember_seen!=NULL;this_contactgroupmember_seen=this_contactgroupmember_seen->next) {
++                    if(!strcmp(this_contactgroupmember_seen->contact_name, temp_contactgroupmember->contact_name)) {
++                        contactgroupmember_found=1;
++                        break;
++                    }
++                }
++                if(contactgroupmember_found==1) {
++                    continue;
++                }
++
++                new_contactgroupmember_seen=(contactgroupmember*)malloc(sizeof(contactgroupmember));
++                if(new_contactgroupmember_seen==NULL) {
++                    snprintf(temp_buffer,sizeof(temp_buffer)-1,"Error: Could not allocate memory for contacts groups found");
++                    temp_buffer[sizeof(temp_buffer)-1]='\x0';
++                    ndomod_write_to_logs(temp_buffer,NSLOG_INFO_MESSAGE);
++                    return NDO_ERROR;
++                }
++
++                new_contactgroupmember_seen->contact_name=strdup(temp_contactgroupmember->contact_name);
++                if(new_contactgroupmember_seen->contact_name == NULL) {
++                    snprintf(temp_buffer,sizeof(temp_buffer)-1,"Error: Could not allocate memory for contacts groups found contact name");
++                    temp_buffer[sizeof(temp_buffer)-1]='\x0';
++                    ndomod_write_to_logs(temp_buffer,NSLOG_INFO_MESSAGE);
++                    return NDO_ERROR;
++                }
++                new_contactgroupmember_seen->next=contactgroupmember_seen_list;
++                contactgroupmember_seen_list=new_contactgroupmember_seen;
++/* end of Opsview patch */
++
+ 				es[0]=ndo_escape_buffer(temp_contactgroupmember->contact_name);
+ 				
+ 				snprintf(temp_buffer,sizeof(temp_buffer)-1
+@@ -3665,6 +3708,16 @@
+ 				es[0]=NULL;
+ 				}
+ 		        }
++/* Opsview patch - remove duplicate contacts from host definitions - free up memory used */
++        for(this_contactgroupmember_seen=contactgroupmember_seen_list;this_contactgroupmember_seen!=NULL;this_contactgroupmember_seen=next_contactgroupmember_seen) {
++            next_contactgroupmember_seen=this_contactgroupmember_seen->next;
++            free(this_contactgroupmember_seen->contact_name);
++            this_contactgroupmember_seen->contact_name=NULL;
++            free(this_contactgroupmember_seen);
++            this_contactgroupmember_seen=NULL;
++        }
++        contactgroupmember_seen_list=NULL;
++/* end of Opsview patch */
+ #else
+ 		for(temp_contactsmember=temp_host->contacts;temp_contactsmember!=NULL;temp_contactsmember=temp_contactsmember->next){
+ 

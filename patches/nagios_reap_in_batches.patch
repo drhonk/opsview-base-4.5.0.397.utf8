@@ -1,0 +1,24 @@
+diff -Bbur nagios-4.0.20121116.orig/base/utils.c nagios-4.0.20121116/base/utils.c
+--- nagios-4.0.20121116.orig/base/utils.c	2012-11-30 11:51:07.000000000 +0000
++++ nagios-4.0.20121116/base/utils.c	2012-11-30 11:51:13.000000000 +0000
+@@ -1990,6 +1990,8 @@
+ 	time_t current_time;
+ 	struct dirent **dirfilelist;
+ 	int i, n;
++	int files_processed = 0;
++	int max_files_to_process = 1000;
+ 
+ 	log_debug_info(DEBUGL_CHECKS, 1, "Starting to read check result queue '%s'...\n", dirname);
+ 
+@@ -2088,6 +2090,11 @@
+ 			check_result_files++;
+ 			}
+ 
++		if(files_processed++ >= max_files_to_process) {
++	 		log_debug_info(DEBUGL_CHECKS, 0, "Reached max_files_to_process=%d\n", max_files_to_process);
++			break;
++		}
++
+ 		if(sigshutdown == TRUE || sigrestart == TRUE) {
+ 			log_debug_info(DEBUGL_CHECKS, 0, "Breaking out of check results: signal encountered\n");
+ 			break;

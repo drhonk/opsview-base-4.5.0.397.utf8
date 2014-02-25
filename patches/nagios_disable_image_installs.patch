@@ -1,0 +1,27 @@
+diff -ur nagios-4.0.20121116.orig_with_new_patches/html/Makefile.in nagios-4.0.20121116/html/Makefile.in
+--- nagios-4.0.20121116.orig_with_new_patches/html/Makefile.in	2012-11-19 17:44:39.000000000 +0000
++++ nagios-4.0.20121116/html/Makefile.in	2012-11-20 09:51:48.000000000 +0000
+@@ -68,14 +68,15 @@
+ #	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/docs; done
+ #	for file in docs/images/*.*; \
+ #	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/docs/images; done
+-	for file in images/*.gif; \
+-	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
+-	for file in images/*.jpg; \
+-	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
+-	for file in images/*.png; \
+-	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
+-	for file in images/*.ico; \
+-	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
++#	Disabled by Opsview, using our own icons instead. May install individual icons as necessary.
++#	for file in images/*.gif; \
++#	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
++#	for file in images/*.jpg; \
++#	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
++#	for file in images/*.png; \
++#	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
++#	for file in images/*.ico; \
++#	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
+ 	for file in images/logos/*.*; \
+ 	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images/logos; done
+ 	for file in includes/*.*; \

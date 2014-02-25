@@ -1,0 +1,167 @@
+diff -ur nfdump-1.6.9//bin/flist.c nfdump-final//bin/flist.c
+--- nfdump-1.6.9//bin/flist.c	2011-12-29 15:24:14.000000000 +0000
++++ nfdump-final//bin/flist.c	2013-06-27 11:52:05.000000000 +0100
+@@ -209,6 +209,7 @@
+ #define AcceptedFormatChar "YymdjHMsUWwuF"
+ 
+ static mode_t mode, dir_mode;
++static char t_start[11], t_end[11];
+ static const char *subdir_format;
+ 
+ static struct entry_filter_s {
+@@ -756,7 +757,11 @@
+ // printf("DBG: %u %i %s %s\n", ftsent->fts_info, ftsent->fts_level, ftsent->fts_path, ftsent->fts_name);
+ 
+ 		if ( fts_level == 0 ) {
+-			sub_index = ftsent->fts_pathlen + 1;
++			if ( ftsent->fts_path[ftsent->fts_pathlen-1] == '/') {
++				sub_index = ftsent->fts_pathlen;
++			} else {
++				sub_index = ftsent->fts_pathlen+1;
++			}
+ 			continue;
+ 		}
+ 
+@@ -782,6 +787,14 @@
+ 				   ))
+ 					fts_set(fts, ftsent, FTS_SKIP );
+ 
++				if ( fts_level == 3 ) {
++					if(*t_start && *t_end) {
++						if ( strcmp(fts_path, t_start) < 0 || strcmp(fts_path, t_end) > 0 ) {
++							fts_set(fts, ftsent, FTS_SKIP );
++						}
++					}
++				}
++
+ 				break;
+ 			case FTS_DP:
+ 				break;
+@@ -1217,3 +1230,23 @@
+ 
+ } // End of mkpath
+ 
++void setupStartEndTime(time_t *time_start, time_t *time_end)
++{
++        struct tm *start, *end;
++
++        if(!time_start)
++        {
++                return;
++        }
++        if(!time_end)
++        {
++		return;
++        }
++
++        start = localtime(time_start);
++        strftime(t_start, 11, "%Y/%m/%d", start);
++
++        end = localtime(time_end);
++        strftime(t_end, 11, "%Y/%m/%d", end);
++} // End of setupStartEndTime
++
+diff -ur nfdump-1.6.9//bin/nfdump.c nfdump-final//bin/nfdump.c
+--- nfdump-1.6.9//bin/nfdump.c	2013-06-27 11:37:13.000000000 +0100
++++ nfdump-final//bin/nfdump.c	2013-06-27 11:52:05.000000000 +0100
+@@ -1025,6 +1025,13 @@
+ 		exit(255);
+ 	}
+ 
++	if ( tstring ) {
++		if ( !ScanTimeFrame(tstring, &t_start, &t_end) )
++			exit(255);
++	}
++
++	setupStartEndTime(&t_start, &t_end);
++
+ 	SetupInputFileSequence(Mdirs, rfile, Rfile);
+ 
+ 	if ( print_stat ) {
+@@ -1197,11 +1204,6 @@
+ 
+ 	SetLimits(element_stat || aggregate || flow_stat, packet_limit_string, byte_limit_string);
+ 
+-	if ( tstring ) {
+-		if ( !ScanTimeFrame(tstring, &t_start, &t_end) )
+-			exit(255);
+-	}
+-
+ 
+ 	if ( !(flow_stat || element_stat || wfile || quiet ) && record_header ) {
+ 		if ( user_format ) {
+diff -ur nfdump-1.6.9//bin/util.c nfdump-final//bin/util.c
+--- nfdump-1.6.9//bin/util.c	2013-06-27 11:37:13.000000000 +0100
++++ nfdump-final//bin/util.c	2013-06-27 11:52:05.000000000 +0100
+@@ -60,6 +60,8 @@
+ /* Global vars */
+ 
+ extern char *CurrentIdent;
++static char time_start[13];
++static char time_end[13];
+ 
+ enum { NONE, LESS, MORE };
+ 
+@@ -345,6 +347,8 @@
+ 
+ int ScanTimeFrame(char *tstring, time_t *t_start, time_t *t_end) {
+ char *p;
++	struct tm *start_time, *end_time;
++	int windowExpandSize = 600;
+ 
+ 	if ( !tstring ) {
+ 		fprintf(stderr,"Time Window format error '%s'\n", tstring);
+@@ -384,6 +388,19 @@
+ 		ParseTime(p, t_end);
+ 	}
+ 
++	//Store twindow start and end time for InsertString checking
++	*t_start -= windowExpandSize;
++	start_time = localtime(t_start);
++	strftime(time_start, 13, "%Y%m%d%H%M", start_time);
++	//Change t_end back to original, for t flag processing
++	*t_start += windowExpandSize;
++
++	*t_end += windowExpandSize;
++	end_time = localtime(t_end);
++	strftime(time_end, 13, "%Y%m%d%H%M", end_time);
++	//Change t_end back to original, for t flag processing
++	*t_end -= windowExpandSize;
++
+ 	return *t_start == 0 || *t_end == 0 ? 0 : 1;
+ 
+ } // End of ScanTimeFrame
+@@ -502,6 +519,21 @@
+ } // End of InitStringlist
+ 
+ void InsertString(stringlist_t *list, char *string) {
++	char * fileTime = NULL;
++
++	//Make sure string passed in is not null
++	if(string)
++	{		
++		fileTime = strstr(string, "nfcapd.");
++
++		if(fileTime && *time_start && *time_end)
++		{
++			if((strcmp(fileTime+7, time_start) < 0) || (strcmp(fileTime+7, time_end) >= 0))
++			{
++				return;
++			}
++		}
++	}
+ 
+ 	if ( !list->list ) {
+ 		list->max_index   = list->block_size;
+diff -ur nfdump-1.6.9//bin/util.h nfdump-final//bin/util.h
+--- nfdump-1.6.9//bin/util.h	2011-12-29 15:24:14.000000000 +0000
++++ nfdump-final//bin/util.h	2013-06-27 11:52:05.000000000 +0100
+@@ -75,6 +75,8 @@
+ 
+ time_t ISO2UNIX(char *timestring);
+ 
++void setupStartEndTime(time_t *time_start, time_t *time_end);
++
+ void SetupInputFileSequence(char *multiple_dirs, char *single_file, char *multiple_files);
+ 
+ char *GetCurrentFilename(void);

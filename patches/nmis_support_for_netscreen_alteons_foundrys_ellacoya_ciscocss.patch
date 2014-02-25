@@ -1,0 +1,1035 @@
+diff -ur nmis-4.2.13.original/bin/nmis.pl nmis-4.2.13/bin/nmis.pl
+--- nmis-4.2.13.original/bin/nmis.pl	2008-04-25 21:24:34.707134000 +0200
++++ nmis-4.2.13/bin/nmis.pl	2008-03-07 16:39:30.000000000 +0100
+@@ -1802,6 +1787,14 @@
+ 					$ifOutOctets = 'ifHCOutOctets';
+ 					$ifInUcastPkts = 'ifHCInUcastPkts';
+ 					$ifOutUcastPkts = 'ifHCOutUcastPkts';
++
++					### E30's do have HC counters but appear not to respond to the standard OID
++					if ($NMIS::systemTable{nodeModel} =~ /EllacoyaE30/) {
++						$ifInOctets = 'ellacoyaifHCInOctets';
++						$ifOutOctets = 'ellacoyaifHCOutOctets';
++						$ifInUcastPkts = 'ellacoyaifHCInUcastPkts';
++						$ifOutUcastPkts = 'ellacoyaifHCOutUcastPkts';
++					}
+ 					# lets confirm with a message that we are polling HC counters
+ 					if ($debug) { print "\tPolling HC Counters for index $interfaceTable{$intf}{ifIndex} on $NMIS::systemTable{sysObjectName}\n"; }
+ 
+@@ -1851,12 +1844,25 @@
+ 						$ifOutOctets.".$interfaceTable{$intf}{ifIndex}"
+ 					);				
+ 				}
++				### Ellacoya E100's Only seem to have useful naming in the ifName object
++				if ($NMIS::systemTable{nodeModel} =~ /EllacoyaE100/)
++				{
++					$ifStats{ifDescr} = $session->snmpget('ifName'.".$interfaceTable{$intf}{ifIndex}");
++				}
+ 
+ 				if ( $SNMP_Simple::errmsg =~ /No answer|Unknown/ ) {
+ 					logMessage( "runInterface, $node, SNMP error: $SNMP_Simple::errmsg") if $debug;
+ 					$SNMP_Simple::errmsg = "";
+ 					goto END_runInterface;
+ 				}
++
++				### Ellacoya devices have a nasty habit of concatinating the ifAlias onto the ifDescr, split these off
++				if ($NMIS::systemTable{nodeModel} =~ /EllacoyaE30/) 
++				{
++					my ($ellName,$ellNumber,$allAlias) = split(/\,/,$ifStats{ifDescr},3);
++					$ifStats{ifDescr} = $ellName . "," . $ellNumber;
++				}
++
+ 				$ifStats{ifDescr} = rmBadChars($ifStats{ifDescr});
+ 
+ 				# add ifIndex number to ifDescr to differentiate interfaces for devices that do not have unique ifDescr.
+@@ -1942,9 +1948,9 @@
+ 					# run createInterfaceFile and loadInterfaceFile and everything is back to date.
+ 					# this handles auto discovery etc on the fly. 
+ 					### AS 1 Apr 02 - Integrating Phil Reilly's Nortel changes
+-					if (    $NMIS::systemTable{nodeModel} !~ /Catalyst|Accelar|BayStack|FoundrySwitch|Riverstone/ and 
++					if (    $NMIS::systemTable{nodeModel} !~ /Catalyst|Accelar|BayStack|FoundrySwitch|Riverstone|NetscreenFW|EllacoyaE100|AlteonLB/ and 
+ 						$ifStats{ifDescr} ne $interfaceTable{$intf}{ifDescr} and 
+-						$ifStats{ifDescr} ne "" 
++						$ifStats{ifDescr} ne ""
+ 					) {
+ 						if ($debug) { print "Creating an Interface file\n"; }
+ 						# Reload the interface config won't get that one right but should get the next one right
+@@ -3345,7 +3349,7 @@
+ 	# Threshold interface utilisation!  Easy to do, just take an hour or so.
+ 	# hmmmm I was wrong, about 20mins plus some testing. (I love reusable code)
+ 	### KS 2 Jan 03 - Changing check for Win2000 to Windows
+-	if ( 	$NMIS::systemTable{nodeModel} =~ /Catalyst6000|Catalyst5000Sup3|Catalyst5005|Catalyst5000|CiscoRouter|CatalystIOS|CiscoATM|generic|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|Redback|FoundrySwitch|Riverstone|MIB2|Juniper/i
++	if ( 	$NMIS::systemTable{nodeModel} =~ /Catalyst6000|Catalyst5000Sup3|Catalyst5005|Catalyst5000|CiscoRouter|CatalystIOS|CiscoATM|generic|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|Redback|FoundrySwitch|Riverstone|MIB2|Juniper|Ellacoya|NetscreenFW|ArrowPointLB/i
+ 		and $NMIS::nodeTable{$node}{collect} eq "true"
+ 	) {
+ 		%interfaceTable = &loadCSV("$NMIS::config{'<nmis_var>'}/$node-interface.dat","ifIndex","\t");
+@@ -4227,6 +4231,10 @@
+ 		### ehg 11 Sep 02 pull / from VPN3002 system descr
+ 		$NMIS::systemTable{sysDescr} =~ s/\// /g;
+ 
++		### Strip < > from the e30 system descr
++		$NMIS::systemTable{sysDescr} =~ s/^</ /g;
++		$NMIS::systemTable{sysDescr} =~ s/>$/ /g;
++
+ 		# if the vendors product oid file is loaded, this will give product name.
+ 		$NMIS::systemTable{sysObjectName} = SNMP_MIB::oid2name($NMIS::systemTable{sysObjectID});
+ 
+@@ -5686,7 +5694,7 @@
+ 	# An SNMP session exists already and we know the node type
+ 	# Depending on the node type get different information
+ 	# CiscoRouter/ATM
+-	if ( $NMIS::systemTable{nodeModel} =~ /CiscoRouter|CiscoATM|Juniper/ ) {
++	if ( $NMIS::systemTable{nodeModel} =~ /CiscoRouter|CiscoATM|Juniper|EllacoyaE30|NetscreenFW|ArrowPointLB/ ) {
+ 		if ($debug) { print "\t Collecting $NMIS::systemTable{ifNumber} Interfaces \n"; }
+ 		$validModel = "true";
+ 		# Loop to get interface information for Cisco router
+@@ -5718,9 +5726,38 @@
+ 				$interfaces->{$index}{ifDescr} = "null";
+ 				++$numInterfaces; 
+ 			}	
++
++			### Ellacoya devices have a nasty habit of concatinating the ifAlias onto the ifDescr, split these off
++			if (($NMIS::systemTable{nodeModel} =~ /EllacoyaE30/) and 
++				($interfaces->{$index}{Description} eq ""))
++			{
++				my $ellDescr = $interfaces->{$index}{ifDescr};
++				my ($ellName,$ellNumber,$ellAlias) = split(/\,/,$ellDescr,3);
++				$interfaces->{$index}{ifDescr} = $ellName . "," . $ellNumber;
++				$interfaces->{$index}{Description} = $ellAlias;
++			}
++
++			### NetscreenFW devices in some cases return a single space in the ifAlias, this breaks the interface file parsing
++			### if you get a single space assume it's a null
++			if (($NMIS::systemTable{nodeModel} =~ /NetscreenFW/) and ($interfaces->{$index}{Description} eq " "))
++			{
++				$interfaces->{$index}{Description} = "null";
++			}
++
++			### vlan interfaces on NetscreenFW devices appear to report an ifSpeed of 0, set this to 1Gig
++			### I'm assuming some people will want stats off these interfaces.
++			if (($NMIS::systemTable{nodeModel} =~ /NetscreenFW/) and
++				($interfaces->{$index}{ifSpeed} == 0 ) and
++				($interfaces->{$index}{ifDescr} =~ /vlan/)
++
++			) {
++				$interfaces->{$index}{ifSpeed} = "1000000000";
++			}
++
+ 			# ehg 3 Dec 2002 removed bad chars from interface descriptions
+ 			$interfaces->{$index}{ifDescr} = rmBadChars($interfaces->{$index}{ifDescr});
+ 			$interfaces->{$index}{Description} = rmBadChars($interfaces->{$index}{Description});
++			$interfaces->{$index}{Description} =~ s/^ //; 	## strip leading spaces from Description
+  
+ 			if ($debug) { print "\t ifIndex=$index descr=$interfaces->{$index}{ifDescr} admin=$interfaces->{$index}{ifAdminStatus} oper=$interfaces->{$index}{ifOperStatus} speed=$interfaces->{$index}{ifSpeed}\n"; }
+ 			
+@@ -6159,7 +6196,7 @@
+ 			# trap ifdescr 'noSuchName' error and fudge an ifdescr
+ 			if ( $SNMP_Simple::errmsg =~ /noSuchName/ ) {
+ 				$SNMP_Simple::errmsg = "";
+-				$interfaces->{$index}{ifDescr} = 'ifDescr_'.$index.'_' if $interfaces->{$index}{ifDescr} = "";
++				$interfaces->{$index}{ifDescr} = 'ifDescr_'.$index.'_' if $interfaces->{$index}{ifDescr} == "";
+ 			}
+ 			if ( $SNMP_Simple::errmsg =~ /No answer|Unknown/ ) {
+ 				logMessage( " createInterfaceFile, $node, SNMP error: $SNMP_Simple::errmsg") if $debug;
+@@ -6473,8 +6510,175 @@
+ 			}
+ 		} # FOR LOOP
+ 	} # a3com nodemodel=SSII 3Com
++	elsif ( $NMIS::systemTable{nodeModel} =~ /AlteonLB/ ) {
++		if ($debug) { print "\t Collecting $NMIS::systemTable{ifNumber} Interfaces \n"; }
++		$validModel = "true";
++
++		# Loop to get interface information for Alteons
++		my %ifIndexTable = $session->snmpgettablean('ifIndex');
++
++		my $cont=0;
++		foreach $index ( sort {$a <=> $b} keys %ifIndexTable) {
++			if (int($index) < 257) {
++			# Get Interface Information
++				(    	
++					$interfaces->{$index}{ifDescr},
++					$interfaces->{$index}{ifType},
++					$interfaces->{$index}{ifSpeed},
++					$interfaces->{$index}{ifAdminStatus},
++					$interfaces->{$index}{ifOperStatus},
++					$interfaces->{$index}{ifLastChange},
++				) = $session->snmpget( 
++					'ifDescr'.".$index",
++					'ifType'.".$index",
++					'ifSpeed'.".$index",
++					'ifAdminStatus'.".$index",
++					'ifOperStatus'.".$index",
++					'ifLastChange'.".$index",
++				);
++			} else {
++				$cont++;
++				if ($debug) { print "INDEX=$index  -  CONT=$cont\n\n"; }
++				# Get Interface Information
++				(     
++					$interfaces->{$index}{ifDescr},
++					$interfaces->{$index}{ifType},
++					$interfaces->{$index}{ifSpeed},
++					$interfaces->{$index}{ifAdminStatus},
++					$interfaces->{$index}{ifOperStatus},
++					$interfaces->{$index}{ifLastChange},
++					$interfaces->{$index}{Description}
++				) = $session->snmpget(
++					'ifDescr'.".$index",
++					'ifType'.".$index",
++					'ifSpeed'.".$index",
++					'ifAdminStatus'.".$index",
++					'ifOperStatus'.".$index",
++					'ifLastChange'.".$index",
++					'agPortCurCfgPortName'.".$cont"
++				);
++				$interfaces->{$index}{ifDescr} = "Alteon Port $cont";
++			}
++		if ( $SNMP_Simple::errmsg =~ /No answer from/ ) {
++		$message = "$node, SNMP error. errmsg=$SNMP_Simple::errmsg";
++		$SNMP_Simple::errmsg = "";
++		logMessage("createInterfaceFile, $message");
++		if ($debug) { print returnTime." createInterfaceFile, $message\n"; }
++		goto END_createInterfaceFile;                        }                        
++		if ( $interfaces->{$index}{ifDescr} eq "" ) {                                
++			$interfaces->{$index}{ifDescr} = "null";
++			++$numInterfaces;
++			}
++			
++		# ehg 3 Dec 2002 removed bad chars from interface descriptions
++		$interfaces->{$index}{ifDescr} = rmBadChars($interfaces->{$index}{ifDescr});
++		# add ifindex number to ifdescr to differentiate interfaces for devices that do not have unique ifDescr
++		if ( $NMIS::systemTable{sysObjectName} =~ /$NMIS::config{int_extend}/  ) {
++			$interfaces->{$index}{ifDescr} = $interfaces->{$index}{ifDescr} . "$index";
++			}
++		if ($debug) { print "\t ifIndex=$index descr=$interfaces->{$index}{ifDescr} admin=$interfaces->{$index}{ifAdminStatus} oper=$interfaces->{$index}{ifOperStatus} speed=$interfaces->{$index}{ifSpeed}\n"; }
++
++		# Set the ifType to be something meaningful!!!!
++		$interfaces->{$index}{ifType} = $ifTypeDefs{$interfaces->{$index}{ifType}}{ifType};
++
++		# Interfaces with N/A in them are bad!
++		if ( $interfaces->{$index}{ifSpeed} eq "0" and $interfaces->{$index}{ifType} =~ /ethernet/i ) {
++			$interfaces->{$index}{ifSpeed} = 10000000;
++			}
++		# Set AdminStatus and OperStatus to be a word!!
++		$interfaces->{$index}{ifAdminStatus} = $interfaceStatus[$interfaces->{$index}{ifAdminStatus}];
++		$interfaces->{$index}{ifOperStatus} = $interfaceStatus[$interfaces->{$index}{ifOperStatus}];
++		# get 'ifHighSpeed' if 'ifSpeed' = 4,294,967,295 - refer RFC2863 HC interfaces.
++		if ( $interfaces->{$index}{ifSpeed} == 4294967295 ) {
++			(       $interfaces->{$index}{ifSpeed}
++				) = $session->snmpget(
++				'ifHighSpeed'.".$index",
++			);
++			if ( $SNMP_Simple::errmsg =~ /No answer from/ ) {
++				$message = "$node, SNMP error. errmsg=$SNMP_Simple::errmsg";
++				$SNMP_Simple::errmsg = "";
++				logMessage("createInterfaceFile, $message");
++				if ($debug) { print returnTime." createInterfaceFile, $message\n"; }
++				goto END_createInterfaceFile;
++				}
++			$interfaces->{$index}{ifSpeed} *= 1000000;
++			}
++		} # For loop
++	} # End Alteon
++	elsif ( $NMIS::systemTable{nodeModel} =~ /EllacoyaE100/ ) {
++		if ($debug) { print "\t Collecting $NMIS::systemTable{ifNumber} Interfaces \n"; }
++		$validModel = "true";
++		# Loop to get interface information for Cisco router
++		my %ifIndexTable = $session->snmpgettablean('ifIndex');
++		foreach $index ( sort {$a <=> $b} keys %ifIndexTable) {
++			# Get Interface Information
++			(	$interfaces->{$index}{ifDescr},
++				$interfaces->{$index}{ifType},
++				$interfaces->{$index}{ifSpeed},
++				$interfaces->{$index}{ifAdminStatus},
++				$interfaces->{$index}{ifOperStatus},
++				$interfaces->{$index}{ifLastChange},
++				$interfaces->{$index}{Description}
++			) = $session->snmpget(  
++				'ifName'.".$index",
++				'ifType'.".$index",
++				'ifSpeed'.".$index",
++				'ifAdminStatus'.".$index",
++				'ifOperStatus'.".$index",
++				'ifLastChange'.".$index",
++				'ifAlias'.".$index"
++			); 
++			if ( $SNMP_Simple::errmsg =~ /No answer|Unknown/ ) {
++				logMessage( " createInterfaceFile, $node, SNMP error: $SNMP_Simple::errmsg") if $debug;
++				$SNMP_Simple::errmsg = "";
++				goto END_createInterfaceFile;
++			}
++			if ( $interfaces->{$index}{ifDescr} eq "" ) { 
++				$interfaces->{$index}{ifDescr} = "null";
++				++$numInterfaces; 
++			}	
++
++			### Ellacoya devices have a nasty habit of concatinating the ifAlias onto the ifDescr, split these off
++			if (($NMIS::systemTable{nodeModel} =~ /EllacoyaE30/) and 
++				($interfaces->{$index}{Description} eq ""))
++			{
++				my $ellDescr = $interfaces->{$index}{ifDescr};
++				my ($ellName,$ellNumber,$ellAlias) = split(/\,/,$ellDescr,3);
++				$interfaces->{$index}{ifDescr} = $ellName . "," . $ellNumber;
++				$interfaces->{$index}{Description} = $ellAlias;
++			}
++
++			# ehg 3 Dec 2002 removed bad chars from interface descriptions
++			$interfaces->{$index}{ifDescr} = rmBadChars($interfaces->{$index}{ifDescr});
++			$interfaces->{$index}{Description} = rmBadChars($interfaces->{$index}{Description});
++			$interfaces->{$index}{Description} =~ s/^ //; 	## strip leading spaces from Description
++ 
++			if ($debug) { print "\t ifIndex=$index descr=$interfaces->{$index}{ifDescr} admin=$interfaces->{$index}{ifAdminStatus} oper=$interfaces->{$index}{ifOperStatus} speed=$interfaces->{$index}{ifSpeed}\n"; }
++			
++			# Set the ifType to be something meaningful!!!!
++			$interfaces->{$index}{ifType} = $ifTypeDefs{$interfaces->{$index}{ifType}}{ifType};
++			
++			# Set AdminStatus and OperStatus to be a word!!
++			$interfaces->{$index}{ifAdminStatus} = $interfaceStatus[$interfaces->{$index}{ifAdminStatus}];
++			$interfaces->{$index}{ifOperStatus} = $interfaceStatus[$interfaces->{$index}{ifOperStatus}];
++			
++			# get 'ifHighSpeed' if 'ifSpeed' = 4,294,967,295 - refer RFC2863 HC interfaces.
++			if ( $interfaces->{$index}{ifSpeed} == 4294967295 ) {
++				(	$interfaces->{$index}{ifSpeed}
++					) = $session->snmpget(  
++					'ifHighSpeed'.".$index",
++				); 
++				if ( $SNMP_Simple::errmsg =~ /No answer|Unknown/ ) {
++					logMessage( " createInterfaceFile, $node, SNMP error: $SNMP_Simple::errmsg") if $debug;
++					$SNMP_Simple::errmsg = "";
++					goto END_createInterfaceFile;
++				}
++				$interfaces->{$index}{ifSpeed} *= 1000000;
++			}
++		}
++	}
+ 	else {
+-		$validModel eq "false"; 
++		$validModel = "false"; 
+ 	}
+ 	# IP Address Table
+ 	#ip.ipAddrTable.ipAddrEntry.ipAdEntAddr.10.64.100.145 = ipAdEntAddr: 10.64.100.145
+@@ -6552,10 +6756,25 @@
+ 						$interfaces->{$index}{ifDescr} eq "null" or
+ 						$collect eq "false" 
+ 				) {
+-					$interfaces->{$index}{collect} = "false";
+-					$interfaces->{$index}{nocollect} = "ifAdminStatus eq down|testing|null or ifDescr eq null"; # reason
+-					print "\t collect=false: Admin down or null ifDescr\n" if $debug;
+-				} 
++					### NetscreenFW exception 
++					### If your netscreen interface is on another VR the adminStatus is reported as down
++					### while the oper status is up
++					if ( $NMIS::systemTable{nodeModel} =~ /NetscreenFW/ and
++						$interfaces->{$index}{ifAdminStatus} eq "down" and 
++						$interfaces->{$index}{ifOperStatus} eq "up" 
++					) {
++
++						$interfaces->{$index}{ifAdminStatus} = 'up';
++						$interfaces->{$index}{collect} = "true";
++						print "\t collect=true: ifOperStatus eq 'up'\n" if $debug;
++					}
++					### treat everything else as normal
++					else {
++						$interfaces->{$index}{collect} = "false";
++						$interfaces->{$index}{nocollect} = "ifAdminStatus eq down|testing|null or ifDescr eq null"; # reason
++						print "\t collect=false: Admin down or null ifDescr\n" if $debug;
++					}
++				}
+ 				# if it is a router and the interface name has any of these strings
+ 				elsif ( $NMIS::systemTable{nodeModel} =~ /router|ciscoatm/i ) {
+ 					if ( $interfaces->{$index}{ifDescr} =~ /$qr_no_collect_ifDescr_gen/i ) {
+@@ -6708,6 +6927,16 @@
+  						$interfaces->{$index}{nocollect} = "ifType eq tunnel|softwareLoopback|other|pppMultilinkBundle"; # reason
+                        print "\t collect=false: ifType eq 'tunnel|softwareLoopback|other|pppMultilinkBundle'\n" if $debug; }
+ 				} 
++				### AlteonLB
++				elsif ( $NMIS::systemTable{nodeModel} =~ /AlteonLB/ ) {
++					if ( $interfaces->{$index}{ifType}  =~ /propVirtual/i)
++					{ 
++						$interfaces->{$index}{collect} = "false"; 
++ 						$interfaces->{$index}{nocollect} = "ifType eq propVirtual"; # reason
++                       				print "\t collect=false: ifType eq 'propVirtual'\n" if $debug; 
++					}
++					
++				}
+ 				
+ 				# drop server interfaces that dont have an ip address configured.
+ 				#if (  $NMIS::systemTable{nodeType} eq 'server' and ! $interfaces->{$index}{ipAdEntAddr}  ) {
+diff -ur nmis-4.2.13.original/cgi-bin/nmiscgi.pl nmis-4.2.13/cgi-bin/nmiscgi.pl
+--- nmis-4.2.13.original/cgi-bin/nmiscgi.pl	2008-04-25 21:24:34.724132000 +0200
++++ nmis-4.2.13/cgi-bin/nmiscgi.pl	2008-03-07 16:39:55.000000000 +0100
+@@ -1656,7 +1656,7 @@
+     print "<table class=\"white\" summary=\"Display\">";
+ 
+ 	if ( $NMIS::nodeTable{$node}{collect} eq "true" and $NMIS::nodeTable{$node}{active} ne "false" ) {
+-		if ( $NMIS::systemTable{nodeModel} =~ /router|atm|catalyst|PIX|FreeBSD|SunSolaris|generic|MIB2|Windows|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone|Juniper/i ) {
++		if ( $NMIS::systemTable{nodeModel} =~ /router|atm|catalyst|PIX|FreeBSD|SunSolaris|generic|MIB2|Windows|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone|Juniper|Ellacoya|AlteonLB|NetscreenFW|ArrowPointLB/i ) {
+ 			# Extract the interface statics and summaries for display in a second.
+ 			foreach $intf (keys %interfaceTable ) {
+ 				#if ( $interfaceTable{$intf}{ifDescr} ne "" ) {
+@@ -1788,7 +1788,7 @@
+ 				#}
+ 			} # FOR LOOP
+ 
+-			if ( $NMIS::systemTable{nodeModel} =~ /router|atm|generic|MIB2|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|SSII 3Com|Redback|Juniper/i ) {
++			if ( $NMIS::systemTable{nodeModel} =~ /router|atm|generic|MIB2|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|SSII 3Com|Redback|Juniper|Ellacoya|AlteonLB|NetscreenFW|ArrowPointLB/i ) {
+ 				cssPrintHeadRow("Interface Table","menubar",11);
+ 				$tmpurl = "file=&amp;node=&amp;type=graph&amp;graphtype=$NMIS::config{portstats}&amp;glamount=$glamount&amp;glunits=$glunits&amp;intf=$intf";
+ 				print "			<tr>";
+@@ -2698,7 +2698,7 @@
+ 	print "	<form name=\"graph\" action=\"$this_script\">";
+ #EO_HTML
+ 
+-	if ( $NMIS::systemTable{nodeModel} =~ /router|atm|Catalyst|PIX|FreeBSD|SunSolaris|generic|MIB2|Windows|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone|Juniper/i ) {
++	if ( $NMIS::systemTable{nodeModel} =~ /router|atm|Catalyst|PIX|FreeBSD|SunSolaris|generic|MIB2|Windows|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone|Juniper|Ellacoya|AlteonLB|NetscreenFW|ArrowPointLB/i ) {
+ 		# Extract the interface statics and summaries for display in a second.
+ 		foreach $intf (keys %interfaceTable ) {
+ 			if ( $interfaceTable{$intf}{collect} eq "true" ) {
+@@ -2790,7 +2790,7 @@
+ 		} # FOR LOOP
+ 
+ 		# only show collected interface here...as only have rrd for collected interfaces.
+-		if ( $NMIS::systemTable{nodeModel} =~ /router|catalystios|atm|generic|MIB2|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|SSII 3Com|Redback|Juniper/i ) {
++		if ( $NMIS::systemTable{nodeModel} =~ /router|catalystios|atm|generic|MIB2|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|SSII 3Com|Redback|Juniper|Ellacoya|AlteonLB|NetscreenFW|ArrowPointLB/i ) {
+ 			cssPrintHeadRow("Interface Table","menubar",11);
+ 			print "			<tr>";
+ 			print "<td class=\"menubar\"><a href=\"$this_script?file=$conf&amp;node=$node&amp;type=port&amp;sort1=ifDescr&amp;sort2=$sort1\">Name</a></td>";
+@@ -3568,7 +3568,7 @@
+     cellStart( "white", 12 );
+ 
+     if ( $NMIS::systemTable{nodeModel} =~
+-/GSR|router|atm|catalyst|PIX|SunSolaris|generic|Win2000|Accelar|BayStack|SSII 3Com|SE800|SMS10K|FastIron|m10|ERX-1440/i
++/GSR|router|atm|catalyst|PIX|SunSolaris|generic|Win2000|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone|Juniper|Ellacoya|AlteonLB|NetscreenFW|ArrowPointLB/i
+       )
+     {
+ 
+@@ -3833,7 +3832,8 @@
+           <option value="health">health</option>
+           <option value="link">link</option>
+           <option value="event">event</option>
+-		  <option value="port">port</option>
++	  <option value="port">port</option>
++	  <option value="traffic">traffic</option>
+ 		</select>
+ 	</td>
+ 	<td class="menugrey">
+@@ -5275,10 +5275,10 @@
+ 			#"LINE1:inp2#FF0000:Max values\n",
+ 			"LINE3:mavgin#0000AA:Input Moving average, weight $weight",
+ 			"LINE2:mavgout#00AA00:Output Moving average, weight $weight\\l",
+-			"GPRINT:inputBits:AVERAGE:Avg In bits/sec %1.2lf",
+-			"GPRINT:inputBits:MAX:Max In bits/sec %1.2lf\\l",
+-			"GPRINT:outputBits:AVERAGE:Avg Out bits/sec %1.2lf",
+-			"GPRINT:outputBits:MAX:Max Out bits/sec %1.2lf\\l",
++			"GPRINT:inputBits:AVERAGE:Avg In bits/sec %1.2lf%s",
++			"GPRINT:inputBits:MAX:Max In bits/sec %1.2lf%s\\l",
++			"GPRINT:outputBits:AVERAGE:Avg Out bits/sec %1.2lf%s",
++			"GPRINT:outputBits:MAX:Max Out bits/sec %1.2lf%s\\l",
+ 			"HRULE:$interfaceTable{$intf}{ifSpeed}#ff0000",
+ 			"GPRINT:status:AVERAGE:Avg Availability %1.2lf",
+ 			"COMMENT:Interface Speed $speed"
+diff -ur nmis-4.2.13.original/conf/models.csv nmis-4.2.13/conf/models.csv
+--- nmis-4.2.13.original/conf/models.csv	2008-04-25 21:24:34.561156000 +0200
++++ nmis-4.2.13/conf/models.csv	2008-03-07 16:40:29.000000000 +0100
+@@ -34,4 +34,12 @@
+ 32	lan	Riverstone	switch	Riverstone Networks	ROS	true	Riverstone Networks	switch_syslog
+ 33	lan	MIB2	switch	Dell Computer Corporation	IOS	true	PowerConnect 5224 	switch_syslog
+ 34	wan	Juniper	router	Juniper Networks, Inc.	JunOS	true	Juniper Networks	unclassified_syslog
++35	wan	JuniperERX	router	Juniper Networks/Unisphere	Edge Routing Switch SW	true	Juniper Networks	unclassified_syslog
++36	wan	EllacoyaE30	switch	Ellacoya Networks, Inc.	e30	true	e30	unclassified_syslog
++37	wan	AlteonLB	switch	Alteon Networks, Inc.	Alteon	true	Alteon	unclassified_syslog
++38	wan	AlteonLB	switch	Alteon Networks, Inc.	Alteon	true	Nortel Application Switch	unclassified_syslog
++39	wan	NetscreenFW	router	NetScreen Technologies, Inc.	SSG|ISG	true	SSG|ISG	unclassified_syslog
++40	wan	ArrowPointLB	router	Cisco Systems	SW	true	Content Switch SW	unclassified_syslog
++41	wan	EllacoyaE100	switch	Ellacoya Networks, Inc.	e100	true	e100	unclassified_syslog
++42	wan	NetscreenFW	router	NetScreen Technologies, Inc.	NetScreen	true	NetScreen	unclassified_syslog
+ default	unknown	generic	unknown	unknown	unknown	true	unknown	unclassified_syslog
+diff -ur nmis-4.2.13.original/mibs/CISCO-PRODUCTS-MIB.oid nmis-4.2.13/mibs/CISCO-PRODUCTS-MIB.oid
+--- nmis-4.2.13.original/mibs/CISCO-PRODUCTS-MIB.oid	2003-08-25 02:02:20.000000000 +0200
++++ nmis-4.2.13/mibs/CISCO-PRODUCTS-MIB.oid	2008-03-07 16:40:16.000000000 +0100
+@@ -57,12 +57,14 @@
+ "cisco1004"		"1.3.6.1.4.1.9.1.44"
+ "cisco7507"		"1.3.6.1.4.1.9.1.45"
+ "cisco7513"		"1.3.6.1.4.1.9.1.46"
++"cisco7506"		"1.3.6.1.4.1.9.1.47"
+ "cisco7505"		"1.3.6.1.4.1.9.1.48"
+ "cisco1005"		"1.3.6.1.4.1.9.1.49"
+ "cisco4700"		"1.3.6.1.4.1.9.1.50"
+ "ciscoPro1003"		"1.3.6.1.4.1.9.1.51"
+ "ciscoPro1004"		"1.3.6.1.4.1.9.1.52"
+ "ciscoPro1005"		"1.3.6.1.4.1.9.1.53"
++"ciscoPro1020"		"1.3.6.1.4.1.9.1.54"
+ "ciscoPro2500PCE"		"1.3.6.1.4.1.9.1.55"
+ "ciscoPro2501"		"1.3.6.1.4.1.9.1.56"
+ "ciscoPro2503"		"1.3.6.1.4.1.9.1.57"
+@@ -73,6 +75,7 @@
+ "ciscoPro2514"		"1.3.6.1.4.1.9.1.62"
+ "ciscoPro2516"		"1.3.6.1.4.1.9.1.63"
+ "ciscoPro2519"		"1.3.6.1.4.1.9.1.64"
++"ciscoPro2521"		"1.3.6.1.4.1.9.1.65"
+ "ciscoPro4500"		"1.3.6.1.4.1.9.1.66"
+ "cisco2517"		"1.3.6.1.4.1.9.1.67"
+ "cisco2518"		"1.3.6.1.4.1.9.1.68"
+@@ -89,8 +92,18 @@
+ "cisco751"		"1.3.6.1.4.1.9.1.81"
+ "cisco752"		"1.3.6.1.4.1.9.1.82"
+ "cisco753"		"1.3.6.1.4.1.9.1.83"
++"ciscoPro741"		"1.3.6.1.4.1.9.1.84"
++"ciscoPro742"		"1.3.6.1.4.1.9.1.85"
++"ciscoPro743"		"1.3.6.1.4.1.9.1.86"
++"ciscoPro744"		"1.3.6.1.4.1.9.1.87"
++"ciscoPro761"		"1.3.6.1.4.1.9.1.88"
++"ciscoPro762"		"1.3.6.1.4.1.9.1.89"
+ "ciscoPro765"		"1.3.6.1.4.1.9.1.92"
+ "ciscoPro766"		"1.3.6.1.4.1.9.1.93"
++"cisco741"		"1.3.6.1.4.1.9.1.94"
++"cisco742"		"1.3.6.1.4.1.9.1.95"
++"cisco743"		"1.3.6.1.4.1.9.1.96"
++"cisco744"		"1.3.6.1.4.1.9.1.97"
+ "cisco761"		"1.3.6.1.4.1.9.1.98"
+ "cisco762"		"1.3.6.1.4.1.9.1.99"
+ "cisco765"		"1.3.6.1.4.1.9.1.102"
+@@ -102,6 +115,8 @@
+ "cisco7206"		"1.3.6.1.4.1.9.1.108"
+ "ciscoAS5200"		"1.3.6.1.4.1.9.1.109"
+ "cisco3640"		"1.3.6.1.4.1.9.1.110"
++"ciscoCatalyst3500"		"1.3.6.1.4.1.9.1.111"
++"ciscoWSX3011"		"1.3.6.1.4.1.9.1.112"
+ "cisco1601"		"1.3.6.1.4.1.9.1.113"
+ "cisco1602"		"1.3.6.1.4.1.9.1.114"
+ "cisco1603"		"1.3.6.1.4.1.9.1.115"
+@@ -111,6 +126,8 @@
+ "ciscoPro1603"		"1.3.6.1.4.1.9.1.119"
+ "ciscoPro1604"		"1.3.6.1.4.1.9.1.120"
+ "cisco3620"		"1.3.6.1.4.1.9.1.122"
++"ciscoPro3620"		"1.3.6.1.4.1.9.1.123"
++"ciscoPro3640"		"1.3.6.1.4.1.9.1.124"
+ "cisco7204"		"1.3.6.1.4.1.9.1.125"
+ "cisco771"		"1.3.6.1.4.1.9.1.126"
+ "cisco772"		"1.3.6.1.4.1.9.1.127"
+@@ -279,6 +296,9 @@
+ "cisco7750Ssp80"		"1.3.6.1.4.1.9.1.303"
+ "ciscoMGX8230"		"1.3.6.1.4.1.9.1.304"
+ "ciscoMGX8250"		"1.3.6.1.4.1.9.1.305"
++"ciscoCVA122"		"1.3.6.1.4.1.9.1.306"
++"ciscoCVA124"		"1.3.6.1.4.1.9.1.307"
++"ciscoAS5850"		"1.3.6.1.4.1.9.1.308"
+ "cat6509Sp"		"1.3.6.1.4.1.9.1.310"
+ "ciscoMGX8240"		"1.3.6.1.4.1.9.1.311"
+ "cat4840gL3"		"1.3.6.1.4.1.9.1.312"
+@@ -312,7 +332,9 @@
+ "cisco3662AcCo"		"1.3.6.1.4.1.9.1.342"
+ "cisco3662DcCo"		"1.3.6.1.4.1.9.1.343"
+ "ciscoUBR7111"		"1.3.6.1.4.1.9.1.344"
++"ciscoUBR7111E"		"1.3.6.1.4.1.9.1.345"
+ "ciscoUBR7114"		"1.3.6.1.4.1.9.1.346"
++"ciscoUBR7114E"		"1.3.6.1.4.1.9.1.347"
+ "cisco12010"		"1.3.6.1.4.1.9.1.348"
+ "cisco8110"		"1.3.6.1.4.1.9.1.349"
+ "ciscoUBR905"		"1.3.6.1.4.1.9.1.351"
+@@ -321,6 +343,7 @@
+ "cisco7150Dualfe"		"1.3.6.1.4.1.9.1.355"
+ "cisco7150Octt1"		"1.3.6.1.4.1.9.1.356"
+ "cisco7150Dualt3"		"1.3.6.1.4.1.9.1.357"
++"ciscoOlympus"		"1.3.6.1.4.1.9.1.358"
+ "catalyst2950t24"		"1.3.6.1.4.1.9.1.359"
+ "ciscoVPS1110"		"1.3.6.1.4.1.9.1.360"
+ "ciscoContentEngine"		"1.3.6.1.4.1.9.1.361"
+@@ -331,14 +354,19 @@
+ "catalyst355024"		"1.3.6.1.4.1.9.1.366"
+ "catalyst355048"		"1.3.6.1.4.1.9.1.367"
+ "catalyst355012T"		"1.3.6.1.4.1.9.1.368"
++"catalyst2924LREXL"		"1.3.6.1.4.1.9.1.369"
++"catalyst2912LREXL"		"1.3.6.1.4.1.9.1.370"
+ "ciscoCVA122E"		"1.3.6.1.4.1.9.1.371"
+ "ciscoCVA124E"		"1.3.6.1.4.1.9.1.372"
+ "ciscoURM"		"1.3.6.1.4.1.9.1.373"
+ "ciscoURM2FE"		"1.3.6.1.4.1.9.1.374"
+ "ciscoURM2FE2V"		"1.3.6.1.4.1.9.1.375"
++"cisco7401VXR"		"1.3.6.1.4.1.9.1.376"
+ "ciscoCAP340"		"1.3.6.1.4.1.9.1.379"
+ "ciscoCAP350"		"1.3.6.1.4.1.9.1.380"
+ "ciscoDPA7610"		"1.3.6.1.4.1.9.1.381"
++"cisco828"		"1.3.6.1.4.1.9.1.382"
++"cisco806"		"1.3.6.1.4.1.9.1.384"
+ "cisco12416"		"1.3.6.1.4.1.9.1.385"
+ "cat2948gL3Dc"		"1.3.6.1.4.1.9.1.386"
+ "cat4908gL3Dc"		"1.3.6.1.4.1.9.1.387"
+@@ -357,8 +385,11 @@
+ "ciscoWSC6513"		"1.3.6.1.4.1.9.1.400"
+ "cisco7603"		"1.3.6.1.4.1.9.1.401"
+ "cisco7606"		"1.3.6.1.4.1.9.1.402"
++"cisco7401ASR"		"1.3.6.1.4.1.9.1.403"
++"ciscoVG248"		"1.3.6.1.4.1.9.1.404"
+ "ciscoHSE"		"1.3.6.1.4.1.9.1.405"
+ "ciscoONS15540ESP"		"1.3.6.1.4.1.9.1.406"
++"ciscoSN5420"		"1.3.6.1.4.1.9.1.407"
+ "ciscoCe507"		"1.3.6.1.4.1.9.1.409"
+ "ciscoCe560"		"1.3.6.1.4.1.9.1.410"
+ "ciscoCe590"		"1.3.6.1.4.1.9.1.411"
+@@ -371,21 +402,41 @@
+ "cisco2611M"		"1.3.6.1.4.1.9.1.419"
+ "cisco12404"		"1.3.6.1.4.1.9.1.423"
+ "cisco9004"		"1.3.6.1.4.1.9.1.424"
++"cisco3631Co"		"1.3.6.1.4.1.9.1.425"
++"catalyst295012G"		"1.3.6.1.4.1.9.1.427"
++"catalyst295024G"		"1.3.6.1.4.1.9.1.428"
++"catalyst295048G"		"1.3.6.1.4.1.9.1.429"
++"catalyst295024S"		"1.3.6.1.4.1.9.1.430"
++"catalyst355012G"		"1.3.6.1.4.1.9.1.431"
+ "ciscoCE507AV"		"1.3.6.1.4.1.9.1.432"
+ "ciscoCE560AV"		"1.3.6.1.4.1.9.1.433"
+ "ciscoIE2105"		"1.3.6.1.4.1.9.1.434"
+ "ciscoMGX8850Pxm1E"		"1.3.6.1.4.1.9.1.435"
+ "cisco3745"		"1.3.6.1.4.1.9.1.436"
++"cisco10005"		"1.3.6.1.4.1.9.1.437"
++"cisco10008"		"1.3.6.1.4.1.9.1.438"
+ "cisco7304"		"1.3.6.1.4.1.9.1.439"
+ "ciscoRpmXf"		"1.3.6.1.4.1.9.1.440"
+ "cisco1721"		"1.3.6.1.4.1.9.1.444"
+ "cisco827H"		"1.3.6.1.4.1.9.1.446"
++"cat4006"		"1.3.6.1.4.1.9.1.448"
+ "ciscoWSC6503"		"1.3.6.1.4.1.9.1.449"
++"ciscoPIXFirewall506E"		"1.3.6.1.4.1.9.1.450"
++"ciscoPIXFirewall515E"		"1.3.6.1.4.1.9.1.451"
++"cat355024Dc"		"1.3.6.1.4.1.9.1.452"
++"cat355024Mmf"		"1.3.6.1.4.1.9.1.453"
+ "ciscoCE2636"		"1.3.6.1.4.1.9.1.454"
+ "ciscoDwCE"		"1.3.6.1.4.1.9.1.455"
++"cisco7750Mrp300"		"1.3.6.1.4.1.9.1.456"
+ "ciscoRPMPR"		"1.3.6.1.4.1.9.1.457"
+ "cisco14MGX8830Pxm1E"		"1.3.6.1.4.1.9.1.458"
++"ciscoWlse"		"1.3.6.1.4.1.9.1.459"
++"ciscoONS15530"		"1.3.6.1.4.1.9.1.460"
++"ciscoONS15530NEBS"		"1.3.6.1.4.1.9.1.461"
++"ciscoONS15530ETSI"		"1.3.6.1.4.1.9.1.462"
+ "cisco6400UAC"		"1.3.6.1.4.1.9.1.464"
++"ciscoAIRAP1200"		"1.3.6.1.4.1.9.1.474"
++"ciscoSN5428"		"1.3.6.1.4.1.9.1.475"
+ "cisco2610XM"		"1.3.6.1.4.1.9.1.466"
+ "cisco2611XM"		"1.3.6.1.4.1.9.1.467"
+ "cisco2620XM"		"1.3.6.1.4.1.9.1.468"
+@@ -393,31 +444,403 @@
+ "cisco2650XM"		"1.3.6.1.4.1.9.1.470"
+ "cisco2651XM"		"1.3.6.1.4.1.9.1.471"
+ "catalyst295024GDC"		"1.3.6.1.4.1.9.1.472"
++"cisco7301"		"1.3.6.1.4.1.9.1.476"
++"cisco12816"		"1.3.6.1.4.1.9.1.477"
++"cisco12810"		"1.3.6.1.4.1.9.1.478"
++"cisco3250"		"1.3.6.1.4.1.9.1.479"
++"catalyst295024SX"		"1.3.6.1.4.1.9.1.480"
+ "ciscoONS15540ESPx"		"1.3.6.1.4.1.9.1.481"
++"catalyst295024LRESt"		"1.3.6.1.4.1.9.1.482"
++"catalyst29508LRESt"		"1.3.6.1.4.1.9.1.483"
++"catalyst295024LREG"		"1.3.6.1.4.1.9.1.484"
++"catalyst355024PWR"		"1.3.6.1.4.1.9.1.485"
+ "ciscoCDM4630"		"1.3.6.1.4.1.9.1.486"
+ "ciscoCDM4650"		"1.3.6.1.4.1.9.1.487"
++"catalyst2955T12"		"1.3.6.1.4.1.9.1.488"
++"catalyst2955C12"		"1.3.6.1.4.1.9.1.489"
+ "ciscoCE508"		"1.3.6.1.4.1.9.1.490"
+ "ciscoCE565"		"1.3.6.1.4.1.9.1.491"
+ "ciscoCE7325"		"1.3.6.1.4.1.9.1.492"
++"ciscoONS15454"		"1.3.6.1.4.1.9.1.493"
++"ciscoONS15327"		"1.3.6.1.4.1.9.1.494"
++"cisco837"		"1.3.6.1.4.1.9.1.495"
++"ciscoSOHO97"		"1.3.6.1.4.1.9.1.496"
++"cisco831"		"1.3.6.1.4.1.9.1.497"
++"ciscoSOHO91"		"1.3.6.1.4.1.9.1.498"
++"cisco836"		"1.3.6.1.4.1.9.1.499"
++"ciscoSOHO96"		"1.3.6.1.4.1.9.1.500"
++"cat4507"		"1.3.6.1.4.1.9.1.501"
++"cat4506"		"1.3.6.1.4.1.9.1.502"
++"cat4503"		"1.3.6.1.4.1.9.1.503"
+ "ciscoCE7305"		"1.3.6.1.4.1.9.1.504"
+ "ciscoCE510"		"1.3.6.1.4.1.9.1.505"
+ "ciscoAIRAP1100"		"1.3.6.1.4.1.9.1.507"
++"catalyst2955S12"		"1.3.6.1.4.1.9.1.508"
+ "cisco7609"		"1.3.6.1.4.1.9.1.509"
++"catalyst375024"		"1.3.6.1.4.1.9.1.511"
++"catalyst375048"		"1.3.6.1.4.1.9.1.512"
++"catalyst375024TS"		"1.3.6.1.4.1.9.1.513"
++"catalyst375024T"		"1.3.6.1.4.1.9.1.514"
++"catalyst37xxStack"		"1.3.6.1.4.1.9.1.516"
+ "ciscoGSS"		"1.3.6.1.4.1.9.1.517"
+ "ciscoPrimaryGSSM"		"1.3.6.1.4.1.9.1.518"
+ "ciscoStandbyGSSM"		"1.3.6.1.4.1.9.1.519"
++"ciscoMWR1941DC"		"1.3.6.1.4.1.9.1.520"
+ "ciscoDSC9216K9"		"1.3.6.1.4.1.9.1.521"
+ "cat6500FirewallSm"		"1.3.6.1.4.1.9.1.522"
+ "ciscoCSM"		"1.3.6.1.4.1.9.1.524"
+ "ciscoAIRAP1210"		"1.3.6.1.4.1.9.1.525"
++"catalyst297024"		"1.3.6.1.4.1.9.1.527"
+ "cisco7613"		"1.3.6.1.4.1.9.1.528"
++"catalyst3750Ge12Sfp"		"1.3.6.1.4.1.9.1.530"
+ "ciscoCR4430"		"1.3.6.1.4.1.9.1.531"
+ "ciscoCR4450"		"1.3.6.1.4.1.9.1.532"
+ "ciscoAIRBR1410"		"1.3.6.1.4.1.9.1.533"
++"ciscoWSC6509neba"		"1.3.6.1.4.1.9.1.534"
++"catalyst375048PS"		"1.3.6.1.4.1.9.1.535"
++"catalyst375024PS"		"1.3.6.1.4.1.9.1.536"
++"catalyst4510"		"1.3.6.1.4.1.9.1.537"
++"cisco1711"		"1.3.6.1.4.1.9.1.538"
++"cisco1712"		"1.3.6.1.4.1.9.1.539"
+ "catalyst29408TT"		"1.3.6.1.4.1.9.1.540"
+ "catalyst29408TF"		"1.3.6.1.4.1.9.1.542"
++"cisco3825"		"1.3.6.1.4.1.9.1.543"
++"cisco3845"		"1.3.6.1.4.1.9.1.544"
++"cisco2430Iad24Fxs"		"1.3.6.1.4.1.9.1.545"
++"cisco2431Iad8Fxs"		"1.3.6.1.4.1.9.1.546"
++"cisco2431Iad16Fxs"		"1.3.6.1.4.1.9.1.547"
++"cisco2431Iad1T1E1"		"1.3.6.1.4.1.9.1.548"
++"cisco2432Iad24Fxs"		"1.3.6.1.4.1.9.1.549"
++"cisco1701ADSLBRI"		"1.3.6.1.4.1.9.1.550"
+ "catalyst2950St24LRE997"		"1.3.6.1.4.1.9.1.551"
+ "ciscoAirAp350IOS"		"1.3.6.1.4.1.9.1.552"
++"cisco3220"		"1.3.6.1.4.1.9.1.553"
+ "cat6500SslSm"		"1.3.6.1.4.1.9.1.554"
+ "ciscoSIMSE"		"1.3.6.1.4.1.9.1.555"
+ "ciscoESSE"		"1.3.6.1.4.1.9.1.556"
++"catalyst6kSup720"		"1.3.6.1.4.1.9.1.557"
++"ciscoVG224"		"1.3.6.1.4.1.9.1.558"
++"catalyst295048T"		"1.3.6.1.4.1.9.1.559"
++"catalyst295048SX"		"1.3.6.1.4.1.9.1.560"
++"catalyst297024TS"		"1.3.6.1.4.1.9.1.561"
++"ciscoNmNam"		"1.3.6.1.4.1.9.1.562"
++"catalyst356024PS"		"1.3.6.1.4.1.9.1.563"
++"catalyst356048PS"		"1.3.6.1.4.1.9.1.564"
++"ciscoAIRBR1300"		"1.3.6.1.4.1.9.1.565"
++"cisco851"		"1.3.6.1.4.1.9.1.566"
++"cisco857"		"1.3.6.1.4.1.9.1.567"
++"cisco876"		"1.3.6.1.4.1.9.1.568"
++"cisco877"		"1.3.6.1.4.1.9.1.569"
++"cisco878"		"1.3.6.1.4.1.9.1.570"
++"cisco871"		"1.3.6.1.4.1.9.1.571"
++"catalyst6kGateway"		"1.3.6.1.4.1.9.1.573"
++"catalyst375024ME"		"1.3.6.1.4.1.9.1.574"
++"catalyst4000NAM"		"1.3.6.1.4.1.9.1.575"
++"cisco2811"		"1.3.6.1.4.1.9.1.576"
++"cisco2821"		"1.3.6.1.4.1.9.1.577"
++"cisco2851"		"1.3.6.1.4.1.9.1.578"
++"ciscoMCS7815I"		"1.3.6.1.4.1.9.1.582"
++"ciscoMCS7825H"		"1.3.6.1.4.1.9.1.583"
++"ciscoMCS7835H"		"1.3.6.1.4.1.9.1.584"
++"ciscoMCS7835I"		"1.3.6.1.4.1.9.1.585"
++"ciscoMCS7845H"		"1.3.6.1.4.1.9.1.586"
++"ciscoMCS7845I"		"1.3.6.1.4.1.9.1.587"
++"ciscoMCS7855I"		"1.3.6.1.4.1.9.1.588"
++"ciscoMCS7865I"		"1.3.6.1.4.1.9.1.589"
++"cisco12006"		"1.3.6.1.4.1.9.1.590"
++"catalyst3750G16TD"		"1.3.6.1.4.1.9.1.591"
++"ciscoIGESM"		"1.3.6.1.4.1.9.1.592"
++"ciscoCCM"		"1.3.6.1.4.1.9.1.593"
++"ciscoCe511K9"		"1.3.6.1.4.1.9.1.595"
++"ciscoCe566K9"		"1.3.6.1.4.1.9.1.596"
++"ciscoMGX8880"		"1.3.6.1.4.1.9.1.598"
++"ciscoWsSvcWLAN1K9"		"1.3.6.1.4.1.9.1.599"
++"ciscoCe7306K9"		"1.3.6.1.4.1.9.1.600"
++"ciscoCe7326K9"		"1.3.6.1.4.1.9.1.601"
++"catalyst3750G24PS"		"1.3.6.1.4.1.9.1.602"
++"catalyst3750G48PS"		"1.3.6.1.4.1.9.1.603"
++"catalyst3750G48TS"		"1.3.6.1.4.1.9.1.604"
++"ciscoBMGX8830Pxm45"		"1.3.6.1.4.1.9.1.606"
++"ciscoBMGX8830Pxm1E"		"1.3.6.1.4.1.9.1.607"
++"ciscoBMGX8850Pxm45"		"1.3.6.1.4.1.9.1.608"
++"ciscoBMGX8850Pxm1E"		"1.3.6.1.4.1.9.1.609"
++"ciscoNetworkRegistrar"		"1.3.6.1.4.1.9.1.611"
++"ciscoCe501K9"		"1.3.6.1.4.1.9.1.612"
++"ciscoCRS16S"		"1.3.6.1.4.1.9.1.613"
++"catalyst3560G24PS"		"1.3.6.1.4.1.9.1.614"
++"catalyst3560G24TS"		"1.3.6.1.4.1.9.1.615"
++"catalyst3560G48PS"		"1.3.6.1.4.1.9.1.616"
++"catalyst3560G48TS"		"1.3.6.1.4.1.9.1.617"
++"ciscoAIRAP1130"		"1.3.6.1.4.1.9.1.618"
++"cisco2801"		"1.3.6.1.4.1.9.1.619"
++"cisco1841"		"1.3.6.1.4.1.9.1.620"
++"ciscoWsSvcMWAM1"		"1.3.6.1.4.1.9.1.621"
++"ciscoNMCUE"		"1.3.6.1.4.1.9.1.622"
++"ciscoAIMCUE"		"1.3.6.1.4.1.9.1.623"
++"catalyst3750G24TS1U"		"1.3.6.1.4.1.9.1.624"
++"cisco371098HP001"		"1.3.6.1.4.1.9.1.625"
++"catalyst4948"		"1.3.6.1.4.1.9.1.626"
++"ciscoWLSE1130"		"1.3.6.1.4.1.9.1.630"
++"ciscoWLSE1030"		"1.3.6.1.4.1.9.1.631"
++"ciscoHSE1140"		"1.3.6.1.4.1.9.1.632"
++"catalyst356024TS"		"1.3.6.1.4.1.9.1.633"
++"catalyst356048TS"		"1.3.6.1.4.1.9.1.634"
++"cisco1801"		"1.3.6.1.4.1.9.1.638"
++"cisco1802"		"1.3.6.1.4.1.9.1.639"
++"cisco1803"		"1.3.6.1.4.1.9.1.640"
++"cisco1811"		"1.3.6.1.4.1.9.1.641"
++"cisco1812"		"1.3.6.1.4.1.9.1.642"
++"ciscoCRS8S"		"1.3.6.1.4.1.9.1.643"
++"ciscoIDS4210"		"1.3.6.1.4.1.9.1.645"
++"ciscoIDS4215"		"1.3.6.1.4.1.9.1.646"
++"ciscoIDS4235"		"1.3.6.1.4.1.9.1.647"
++"ciscoIPS4240"		"1.3.6.1.4.1.9.1.648"
++"ciscoIDS4250"		"1.3.6.1.4.1.9.1.649"
++"ciscoIDS4250SX"		"1.3.6.1.4.1.9.1.650"
++"ciscoIDS4250XL"		"1.3.6.1.4.1.9.1.651"
++"ciscoIPS4255"		"1.3.6.1.4.1.9.1.652"
++"ciscoIDSIDSM2"		"1.3.6.1.4.1.9.1.653"
++"ciscoIDSNMCIDS"		"1.3.6.1.4.1.9.1.654"
++"ciscoIPSSSM20"		"1.3.6.1.4.1.9.1.655"
++"catalyst375024FS"		"1.3.6.1.4.1.9.1.656"
++"ciscoWSC6504E"		"1.3.6.1.4.1.9.1.657"
++"cisco7604"		"1.3.6.1.4.1.9.1.658"
++"catalyst494810GE"		"1.3.6.1.4.1.9.1.659"
++"ciscoIGESMSFP"		"1.3.6.1.4.1.9.1.660"
++"ciscoFE6326K9"		"1.3.6.1.4.1.9.1.661"
++"ciscoIPSSSM10"		"1.3.6.1.4.1.9.1.662"
++"ciscoNme16Es1Ge"		"1.3.6.1.4.1.9.1.663"
++"ciscoNmeX24Es1Ge"		"1.3.6.1.4.1.9.1.664"
++"ciscoNmeXd24Es2St"		"1.3.6.1.4.1.9.1.665"
++"ciscoNmeXd48Es2Ge"		"1.3.6.1.4.1.9.1.666"
++"ciscoAs5400XM"		"1.3.6.1.4.1.9.1.668"
++"ciscoASA5510"		"1.3.6.1.4.1.9.1.669"
++"ciscoASA5520"		"1.3.6.1.4.1.9.1.670"
++"ciscoASA5520sc"		"1.3.6.1.4.1.9.1.671"
++"ciscoASA5540"		"1.3.6.1.4.1.9.1.672"
++"ciscoASA5540sc"		"1.3.6.1.4.1.9.1.673"
++"ciscoWsSvcFwm1sc"		"1.3.6.1.4.1.9.1.674"
++"ciscoPIXFirewall535sc"		"1.3.6.1.4.1.9.1.675"
++"ciscoPIXFirewall525sc"		"1.3.6.1.4.1.9.1.676"
++"ciscoPIXFirewall515Esc"		"1.3.6.1.4.1.9.1.677"
++"ciscoPIXFirewall515sc"		"1.3.6.1.4.1.9.1.678"
++"ciscoAs5350XM"		"1.3.6.1.4.1.9.1.679"
++"ciscoFe7326K9"		"1.3.6.1.4.1.9.1.680"
++"ciscoFe511K9"		"1.3.6.1.4.1.9.1.681"
++"ciscoSCEDispatcher"		"1.3.6.1.4.1.9.1.682"
++"ciscoSCE1000"		"1.3.6.1.4.1.9.1.683"
++"ciscoSCE2000"		"1.3.6.1.4.1.9.1.684"
++"ciscoAIRAP1240"		"1.3.6.1.4.1.9.1.685"
++"ciscoDSC9120CLK9"		"1.3.6.1.4.1.9.1.686"
++"ciscoFe611K9"		"1.3.6.1.4.1.9.1.687"
++"catalyst3750Ge12SfpDc"		"1.3.6.1.4.1.9.1.688"
++"ciscoICM"		"1.3.6.1.4.1.9.1.693"
++"catalyst296024"		"1.3.6.1.4.1.9.1.694"
++"catalyst296048"		"1.3.6.1.4.1.9.1.695"
++"catalyst2960G24"		"1.3.6.1.4.1.9.1.696"
++"catalyst2960G48"		"1.3.6.1.4.1.9.1.697"
++"ciscoNme16Es1GeNoPwr"		"1.3.6.1.4.1.9.1.702"
++"ciscoNmeX24Es1GeNoPwr"		"1.3.6.1.4.1.9.1.703"
++"ciscoNmeXd24Es2StNoPwr"		"1.3.6.1.4.1.9.1.704"
++"ciscoNmeXd48Es2GeNoPwr"		"1.3.6.1.4.1.9.1.705"
++"catalyst6kMsfc2a"		"1.3.6.1.4.1.9.1.706"
++"ciscoCe611K9"		"1.3.6.1.4.1.9.1.708"
++"ciscoWLSEs20"		"1.3.6.1.4.1.9.1.709"
++"ciscoMPX"		"1.3.6.1.4.1.9.1.710"
++"ciscoNMCUEEC"		"1.3.6.1.4.1.9.1.711"
++"ciscoWLSE1132"		"1.3.6.1.4.1.9.1.712"
++"ciscoME6340ACA"		"1.3.6.1.4.1.9.1.713"
++"ciscoME6340DCA"		"1.3.6.1.4.1.9.1.714"
++"ciscoME6340DCB"		"1.3.6.1.4.1.9.1.715"
++"catalyst296024TT"		"1.3.6.1.4.1.9.1.716"
++"catalyst296048TT"		"1.3.6.1.4.1.9.1.717"
++"ciscoIGESMSFPT"		"1.3.6.1.4.1.9.1.718"
++"ciscoMEC6524gs8s"		"1.3.6.1.4.1.9.1.719"
++"ciscoMEC6524gt8s"		"1.3.6.1.4.1.9.1.720"
++"catalystsExpress50024TT"		"1.3.6.1.4.1.9.1.724"
++"catalystsExpress50024LC"		"1.3.6.1.4.1.9.1.725"
++"catalystsExpress50024PC"		"1.3.6.1.4.1.9.1.726"
++"catalystsExpress50012TC"		"1.3.6.1.4.1.9.1.727"
++"ciscoIGESMT"		"1.3.6.1.4.1.9.1.728"
++"ciscoACE10K9"		"1.3.6.1.4.1.9.1.730"
++"cisco5750"		"1.3.6.1.4.1.9.1.731"
++"ciscoMWR1941DCA"		"1.3.6.1.4.1.9.1.732"
++"cisco815"		"1.3.6.1.4.1.9.1.733"
++"cisco240024TSA"		"1.3.6.1.4.1.9.1.734"
++"cisco240024TSD"		"1.3.6.1.4.1.9.1.735"
++"cisco340024TSA"		"1.3.6.1.4.1.9.1.736"
++"cisco340024TSD"		"1.3.6.1.4.1.9.1.737"
++"ciscoCrs18Linecard"		"1.3.6.1.4.1.9.1.738"
++"ciscoCrs1Fabric"		"1.3.6.1.4.1.9.1.739"
++"ciscoFE2636"		"1.3.6.1.4.1.9.1.740"
++"ciscoIDS4220"		"1.3.6.1.4.1.9.1.741"
++"ciscoIDS4230"		"1.3.6.1.4.1.9.1.742"
++"ciscoIPS4260"		"1.3.6.1.4.1.9.1.743"
++"ciscoASA5505"		"1.3.6.1.4.1.9.1.745"
++"ciscoMCS7825I"		"1.3.6.1.4.1.9.1.746"
++"ciscoWsC3750g24ps"		"1.3.6.1.4.1.9.1.747"
++"ciscoWs3020Hpq"		"1.3.6.1.4.1.9.1.748"
++"ciscoWs3030Del"		"1.3.6.1.4.1.9.1.749"
++"ciscoSpaOc48posSfp"		"1.3.6.1.4.1.9.1.750"
++"ciscoWLSE1133"		"1.3.6.1.4.1.9.1.752"
++"ciscoASA5550"		"1.3.6.1.4.1.9.1.753"
++"ciscoNMAONK9"		"1.3.6.1.4.1.9.1.754"
++"ciscoNMAONWS"		"1.3.6.1.4.1.9.1.755"
++"ciscoNMAONAPS"		"1.3.6.1.4.1.9.1.756"
++"ciscoWae612K9"		"1.3.6.1.4.1.9.1.757"
++"ciscoAIRAP1250"		"1.3.6.1.4.1.9.1.758"
++"ciscoCe512K9"		"1.3.6.1.4.1.9.1.759"
++"ciscoFe512K9"		"1.3.6.1.4.1.9.1.760"
++"ciscoCe612K9"		"1.3.6.1.4.1.9.1.761"
++"ciscoFe612K9"		"1.3.6.1.4.1.9.1.762"
++"ciscoASA5550sc"		"1.3.6.1.4.1.9.1.763"
++"ciscoASA5520sy"		"1.3.6.1.4.1.9.1.764"
++"ciscoASA5540sy"		"1.3.6.1.4.1.9.1.765"
++"ciscoASA5550sy"		"1.3.6.1.4.1.9.1.766"
++"ciscoWsSvcFwm1sy"		"1.3.6.1.4.1.9.1.767"
++"ciscoPIXFirewall515sy"		"1.3.6.1.4.1.9.1.768"
++"ciscoPIXFirewall515Esy"		"1.3.6.1.4.1.9.1.769"
++"ciscoPIXFirewall525sy"		"1.3.6.1.4.1.9.1.770"
++"ciscoPIXFirewall535sy"		"1.3.6.1.4.1.9.1.771"
++"ciscoASA5510sc"		"1.3.6.1.4.1.9.1.773"
++"ciscoASA5510sy"		"1.3.6.1.4.1.9.1.774"
++"ciscoOe512K9"		"1.3.6.1.4.1.9.1.776"
++"ciscoOe612K9"		"1.3.6.1.4.1.9.1.777"
++"catalyst3750G24WS25"		"1.3.6.1.4.1.9.1.778"
++"catalyst3750G24WS50"		"1.3.6.1.4.1.9.1.779"
++"ciscoMe3400g12CsA"		"1.3.6.1.4.1.9.1.780"
++"ciscoMe3400g12CsD"		"1.3.6.1.4.1.9.1.781"
++"cisco877M"		"1.3.6.1.4.1.9.1.782"
++"cisco1801M"		"1.3.6.1.4.1.9.1.783"
++"catalystWsCBS3040FSC"		"1.3.6.1.4.1.9.1.784"
++"ciscoOe511K9"		"1.3.6.1.4.1.9.1.785"
++"ciscoOe611K9"		"1.3.6.1.4.1.9.1.786"
++"ciscoOe7326K9"		"1.3.6.1.4.1.9.1.787"
++"ciscoMe492410GE"		"1.3.6.1.4.1.9.1.788"
++"catalyst3750E24TD"		"1.3.6.1.4.1.9.1.789"
++"catalyst3750E48TD"		"1.3.6.1.4.1.9.1.790"
++"catalyst3750E48PD"		"1.3.6.1.4.1.9.1.791"
++"catalyst3750E24PD"		"1.3.6.1.4.1.9.1.792"
++"catalyst3560E24TD"		"1.3.6.1.4.1.9.1.793"
++"catalyst3560E48TD"		"1.3.6.1.4.1.9.1.794"
++"catalyst3560E24PD"		"1.3.6.1.4.1.9.1.795"
++"catalyst3560E48PD"		"1.3.6.1.4.1.9.1.796"
++"catalyst35608PC"		"1.3.6.1.4.1.9.1.797"
++"catalyst29608TC"		"1.3.6.1.4.1.9.1.798"
++"catalyst2960G8TC"		"1.3.6.1.4.1.9.1.799"
++"ciscoTSPri"		"1.3.6.1.4.1.9.1.800"
++"ciscoTSSec"		"1.3.6.1.4.1.9.1.801"
++"ciscoUWIpPhone7920"		"1.3.6.1.4.1.9.1.803"
++"cisco3200WirelessMic"		"1.3.6.1.4.1.9.1.804"
++"ciscoISRWireless"		"1.3.6.1.4.1.9.1.805"
++"ciscoIPSVirtual"		"1.3.6.1.4.1.9.1.806"
++"ciscoIDS4215Virtual"		"1.3.6.1.4.1.9.1.807"
++"ciscoIDS4235Virtual"		"1.3.6.1.4.1.9.1.808"
++"ciscoIDS4250Virtual"		"1.3.6.1.4.1.9.1.809"
++"ciscoIDS4250SXVirtual"		"1.3.6.1.4.1.9.1.810"
++"ciscoIDS4250XLVirtual"		"1.3.6.1.4.1.9.1.811"
++"ciscoIDS4240Virtual"		"1.3.6.1.4.1.9.1.812"
++"ciscoIDS4255Virtual"		"1.3.6.1.4.1.9.1.813"
++"ciscoIDS4260Virtual"		"1.3.6.1.4.1.9.1.814"
++"ciscoIDSIDSM2Virtual"		"1.3.6.1.4.1.9.1.815"
++"ciscoIPSSSM20Virtual"		"1.3.6.1.4.1.9.1.816"
++"ciscoIPSSSM10Virtual"		"1.3.6.1.4.1.9.1.817"
++"ciscoNMWLCE"		"1.3.6.1.4.1.9.1.818"
++"cisco5720"		"1.3.6.1.4.1.9.1.820"
++"cisco7201"		"1.3.6.1.4.1.9.1.821"
++"ciscoCrs14S"		"1.3.6.1.4.1.9.1.822"
++"ciscoNmWae"		"1.3.6.1.4.1.9.1.823"
++"ciscoACE4710K9"		"1.3.6.1.4.1.9.1.824"
++"ciscoMe3400g2csA"		"1.3.6.1.4.1.9.1.825"
++"ciscoNmeNam"		"1.3.6.1.4.1.9.1.826"
++"ciscoUbr7225Vxr"		"1.3.6.1.4.1.9.1.827"
++"ciscoAirWlc2106K9"		"1.3.6.1.4.1.9.1.828"
++"ciscoIPS4270"		"1.3.6.1.4.1.9.1.830"
++"ciscoIPS4270Virtual"		"1.3.6.1.4.1.9.1.831"
++"ciscoWSC6509ve"		"1.3.6.1.4.1.9.1.832"
++"cisco5740"		"1.3.6.1.4.1.9.1.833"
++"cisco7603s"		"1.3.6.1.4.1.9.1.862"
++"cisco7606s"		"1.3.6.1.4.1.9.1.863"
++"cisco7609s"		"1.3.6.1.4.1.9.1.864"
++"ciscoNMECUE"		"1.3.6.1.4.1.9.1.866"
++"ciscoAIM2CUE"		"1.3.6.1.4.1.9.1.867"
++"ciscoUC500"		"1.3.6.1.4.1.9.1.868"
++"cisco860Ap"		"1.3.6.1.4.1.9.1.869"
++"cisco880Ap"		"1.3.6.1.4.1.9.1.870"
++"cisco890Ap"		"1.3.6.1.4.1.9.1.871"
++"cisco1900Ap"		"1.3.6.1.4.1.9.1.872"
++"cisco340024FSA"		"1.3.6.1.4.1.9.1.873"
++"catalyst4503e"		"1.3.6.1.4.1.9.1.874"
++"catalyst4506e"		"1.3.6.1.4.1.9.1.875"
++"catalyst4507re"		"1.3.6.1.4.1.9.1.876"
++"catalyst4510re"		"1.3.6.1.4.1.9.1.877"
++"ciscoUC520s8U4FXOK9"		"1.3.6.1.4.1.9.1.878"
++"ciscoUC520s8U4FXOWK9"		"1.3.6.1.4.1.9.1.879"
++"ciscoUC520s8U2BRIK9"		"1.3.6.1.4.1.9.1.880"
++"ciscoUC520s8U2BRIWK9"		"1.3.6.1.4.1.9.1.881"
++"ciscoUC520s16U4FXOK9"		"1.3.6.1.4.1.9.1.882"
++"ciscoUC520s16U4FXOWK9"		"1.3.6.1.4.1.9.1.883"
++"ciscoUC520s16U2BRIK9"		"1.3.6.1.4.1.9.1.884"
++"ciscoUC520s16U2BRIWK9"		"1.3.6.1.4.1.9.1.885"
++"ciscoUC520m32U8FXOK9"		"1.3.6.1.4.1.9.1.886"
++"ciscoUC520m32U8FXOWK9"		"1.3.6.1.4.1.9.1.887"
++"ciscoUC520m32U4BRIK9"		"1.3.6.1.4.1.9.1.888"
++"ciscoUC520m32U4BRIWK9"		"1.3.6.1.4.1.9.1.889"
++"ciscoUC520m48U12FXOK9"		"1.3.6.1.4.1.9.1.890"
++"ciscoUC520m48U12FXOWK9"		"1.3.6.1.4.1.9.1.891"
++"ciscoUC520m48U6BRIK9"		"1.3.6.1.4.1.9.1.892"
++"ciscoUC520m48U6BRIWK9"		"1.3.6.1.4.1.9.1.893"
++"ciscoUC520m48U1T1E1FK9"		"1.3.6.1.4.1.9.1.894"
++"ciscoUC520m48U1T1E1BK9"		"1.3.6.1.4.1.9.1.895"
++"catalyst65xxVirtualSwitch"		"1.3.6.1.4.1.9.1.896"
++"ciscoMCS7816I"		"1.3.6.1.4.1.9.1.898"
++"ciscoMCS7828I"		"1.3.6.1.4.1.9.1.899"
++"ciscoMCS7816H"		"1.3.6.1.4.1.9.1.900"
++"ciscoMCS7828H"		"1.3.6.1.4.1.9.1.901"
++"cisco1861Uc2BK9"		"1.3.6.1.4.1.9.1.902"
++"cisco1861Uc4FK9"		"1.3.6.1.4.1.9.1.903"
++"cisco1861Srst2BK9"		"1.3.6.1.4.1.9.1.904"
++"cisco1861Srst4FK9"		"1.3.6.1.4.1.9.1.905"
++"ciscoNmeApa"		"1.3.6.1.4.1.9.1.906"
++"ciscoOe7330K9"		"1.3.6.1.4.1.9.1.907"
++"ciscoOe7350K9"		"1.3.6.1.4.1.9.1.908"
++"cat4900M"		"1.3.6.1.4.1.9.1.917"
++"catWsCbs3032Del"		"1.3.6.1.4.1.9.1.920"
++"cisco520WirelessController"		"1.3.6.1.4.1.9.1.926"
++"cat296048TCS"		"1.3.6.1.4.1.9.1.927"
++"cat296024TCS"		"1.3.6.1.4.1.9.1.928"
++"cat296024S"		"1.3.6.1.4.1.9.1.929"
++"cat3560e12d"		"1.3.6.1.4.1.9.1.930"
++"ciscoCDScde100"		"1.3.6.1.4.1.9.1.936"
++"ciscoCDScde200"		"1.3.6.1.4.1.9.1.937"
++"ciscoCDScde300"		"1.3.6.1.4.1.9.1.938"
++"cisco1861SrstCue2BK9"		"1.3.6.1.4.1.9.1.939"
++"cisco1861SrstCue4FK9"		"1.3.6.1.4.1.9.1.940"
++"ciscoVFrameDataCenter"		"1.3.6.1.4.1.9.1.941"
++"ciscoVQEServer"		"1.3.6.1.4.1.9.1.942"
++"ciscoVgd1t3"		"1.3.6.1.4.1.9.1.945"
++"ciscoN5kC5020pBa"		"1.3.6.1.4.1.9.1.954"
++"ciscoN5kC5020pBd"		"1.3.6.1.4.1.9.1.955"
++"ciscoOe674"		"1.3.6.1.4.1.9.1.957"
++"ciscoVQETools"		"1.3.6.1.4.1.9.1.969"
++"ciscoUC520m24U4BRIK9"		"1.3.6.1.4.1.9.1.970"
++"ciscoUC520m24U8FXOK9"		"1.3.6.1.4.1.9.1.971"
++"ciscoUC520s16U2BRIWK9J"		"1.3.6.1.4.1.9.1.972"
++"ciscoUC520s8U2BRIWK9J"		"1.3.6.1.4.1.9.1.973"
++"ciscoVSIntSp"		"1.3.6.1.4.1.9.1.974"
++"ciscoVSSP"		"1.3.6.1.4.1.9.1.975"
++"ciscoVSHydecoder"		"1.3.6.1.4.1.9.1.976"
++"ciscoVSDecoder"		"1.3.6.1.4.1.9.1.977"
++"ciscoVSEncoder4P"		"1.3.6.1.4.1.9.1.978"
++"ciscoVSEncoder1P"		"1.3.6.1.4.1.9.1.979"
++"ciscoSCS1000K9"		"1.3.6.1.4.1.9.1.980"
++"cisco1805"		"1.3.6.1.4.1.9.1.981"
++"ciscoCe7341"		"1.3.6.1.4.1.9.1.982"
++"ciscoCe7371"		"1.3.6.1.4.1.9.1.983"
++"ciscoOe574"		"1.3.6.1.4.1.9.1.985"
++"ciscoOe474"		"1.3.6.1.4.1.9.1.986"
++"ciscoOe274"		"1.3.6.1.4.1.9.1.987"
++"ciscoAp801agn"		"1.3.6.1.4.1.9.1.988"
++"ciscoAp801gn"		"1.3.6.1.4.1.9.1.989"
++"ciscoCe674"		"1.3.6.1.4.1.9.1.996"
++"ciscoVQEIST"		"1.3.6.1.4.1.9.1.997"
+diff -ur nmis-4.2.13.original/mibs/nmis_mibs.oid nmis-4.2.13/mibs/nmis_mibs.oid
+--- nmis-4.2.13.original/mibs/nmis_mibs.oid	2005-09-30 13:59:49.000000000 +0200
++++ nmis-4.2.13/mibs/nmis_mibs.oid	2008-03-07 16:40:17.000000000 +0100
+@@ -737,6 +737,7 @@
+ "cisco3662DcCo"		"1.3.6.1.4.1.9.1.343"
+ "cisco3725"		"1.3.6.1.4.1.9.1.414"
+ "cisco3745"		"1.3.6.1.4.1.9.1.436"
++"cisco3825"             "1.3.6.1.4.1.9.1.543"
+ "cisco4000"		"1.3.6.1.4.1.9.1.7"
+ "cisco4224"		"1.3.6.1.4.1.9.1.399"
+ "cisco4500"		"1.3.6.1.4.1.9.1.14"
+@@ -962,7 +963,7 @@
+ "ciscoFrameRelayMIB"		"1.3.6.1.4.1.9.9.49"
+ "ciscoGSS"		"1.3.6.1.4.1.9.1.517"
+ "ciscoGatewayServer"		"1.3.6.1.4.1.9.1.1"
+-"ciscoHSE1105"		"1.3.6.1.4.1.9.1.405"
++"ciscoHSE"		"1.3.6.1.4.1.9.1.405"
+ "ciscoIAD2420"		"1.3.6.1.4.1.9.1.362"
+ "ciscoIE2105"		"1.3.6.1.4.1.9.1.434"
+ "ciscoIGS"		"1.3.6.1.4.1.9.1.5"

@@ -1,0 +1,487 @@
+diff -ur nagios-4.0.20130912/base/commands.c nagios-4.0.20130912.with_sync//base/commands.c
+--- nagios-4.0.20130912/base/commands.c	2013-10-11 12:40:51.000000000 +0000
++++ nagios-4.0.20130912.with_sync//base/commands.c	2013-10-11 12:35:51.000000000 +0000
+@@ -417,6 +417,8 @@
+ 		command_type = CMD_SAVE_STATE_INFORMATION;
+ 	else if(!strcmp(command_id, "READ_STATE_INFORMATION"))
+ 		command_type = CMD_READ_STATE_INFORMATION;
++	else if(!strcmp(command_id, "SYNC_STATE_INFORMATION"))
++		command_type = CMD_SYNC_STATE_INFORMATION;
+ 
+ 	else if(!strcmp(command_id, "ENABLE_EVENT_HANDLERS"))
+ 		command_type = CMD_ENABLE_EVENT_HANDLERS;
+@@ -955,6 +957,10 @@
+ 			ret = read_initial_state_information();
+ 			break;
+ 
++		case CMD_SYNC_STATE_INFORMATION:
++			ret = sync_state_information();
++			break;
++
+ 		case CMD_ENABLE_NOTIFICATIONS:
+ 			enable_all_notifications();
+ 			break;
+diff -ur nagios-4.0.20130912/base/config.c nagios-4.0.20130912.with_sync//base/config.c
+--- nagios-4.0.20130912/base/config.c	2013-10-11 12:40:50.000000000 +0000
++++ nagios-4.0.20130912.with_sync//base/config.c	2013-10-11 12:35:51.000000000 +0000
+@@ -1100,6 +1100,8 @@
+ 			status_file = nspath_absolute(value, config_file_dir);
+ 		else if(strstr(input, "state_retention_file=") == input)
+ 			retention_file = nspath_absolute(value, config_file_dir);
++		else if(strstr(input, "sync_retention_file=") == input)
++			sync_retention_file = nspath_absolute(value, config_file_dir);
+ 		/* END status data variables */
+ 
+ 		/*** BEGIN perfdata variables ***/
+diff -ur nagios-4.0.20130912/base/nagios.c nagios-4.0.20130912.with_sync//base/nagios.c
+--- nagios-4.0.20130912/base/nagios.c	2013-09-12 15:07:14.000000000 +0000
++++ nagios-4.0.20130912.with_sync//base/nagios.c	2013-10-11 12:35:51.000000000 +0000
+@@ -491,6 +491,8 @@
+ 			initialize_retention_data(config_file);
+ 			read_initial_state_information();
+ 			timing_point("Retention data and initial state parsed\n");
++			sync_state_information();
++			timing_point("State information synchronised\n");
+ 
+ 			/* initialize the event timing loop */
+ 			init_timing_loop();
+@@ -744,6 +744,8 @@
+ 			timing_point("Retention data initialized\n");
+ 			read_initial_state_information();
+ 			timing_point("Initial state information read\n");
++			sync_state_information();
++			timing_point("State information synchronised\n");
+ 
+ 			/* initialize comment data */
+ 			initialize_comment_data();
+diff -ur nagios-4.0.20130912/base/sretention.c nagios-4.0.20130912.with_sync//base/sretention.c
+--- nagios-4.0.20130912/base/sretention.c	2013-09-12 15:07:14.000000000 +0000
++++ nagios-4.0.20130912.with_sync//base/sretention.c	2013-10-11 12:40:10.000000000 +0000
+@@ -105,3 +105,21 @@
+ 
+ 	return OK;
+ 	}
++
++/* syncs host and state information from sync file */
++/* Should this go within read_state_information()? */
++int sync_state_information(void) {
++   int result = OK;
++
++   if(retain_state_information == FALSE)
++       return OK;
++
++/********* IMPLEMENTATION-SPECIFIC INPUT FUNCTION ********/
++   result = xrddefault_sync_state_information();
++
++   if(result == ERROR)
++       return ERROR;
++
++   return OK;
++   }
++
+diff -ur nagios-4.0.20130912/base/utils.c nagios-4.0.20130912.with_sync//base/utils.c
+--- nagios-4.0.20130912/base/utils.c	2013-10-11 12:40:51.000000000 +0000
++++ nagios-4.0.20130912.with_sync//base/utils.c	2013-10-11 12:35:51.000000000 +0000
+@@ -135,6 +135,7 @@
+ int use_retained_scheduling_info = FALSE;
+ int retention_scheduling_horizon = DEFAULT_RETENTION_SCHEDULING_HORIZON;
+ char *retention_file = NULL;
++char *sync_retention_file = NULL;
+ 
+ unsigned long modified_process_attributes = MODATTR_NONE;
+ unsigned long modified_host_process_attributes = MODATTR_NONE;
+diff -ur nagios-4.0.20130912/common/comments.c nagios-4.0.20130912.with_sync//common/comments.c
+--- nagios-4.0.20130912/common/comments.c	2013-09-12 15:07:14.000000000 +0000
++++ nagios-4.0.20130912.with_sync//common/comments.c	2013-10-11 12:35:51.000000000 +0000
+@@ -663,9 +663,26 @@
+ 	comment *temp_comment = NULL;
+ 
+ 	for(temp_comment = comment_list; temp_comment != NULL; temp_comment = temp_comment->next) {
+-		if(temp_comment->comment_id == comment_id && temp_comment->comment_type == comment_type)
++		if(comment_type != ANY_COMMENT && temp_comment->comment_type != comment_type)
++			continue;
++		if(temp_comment->comment_id == comment_id)
+ 			return temp_comment;
+ 		}
+ 
+ 	return NULL;
+ 	}
++
++/* find a comment by comment_type, host_name, service_desc (NULL if hostcomment), entry_time, author, comment_data */
++comment *find_comment_by_similar_content(int comment_type, char *hostname, char *service_description, char *author, char *comment_data) {
++    comment *temp_comment = NULL;
++    for(temp_comment=comment_list; temp_comment != NULL; temp_comment=temp_comment->next) {
++        if(temp_comment->comment_type==comment_type
++            && strcmp(temp_comment->host_name,hostname) == 0
++            && (service_description == NULL || strcmp(temp_comment->service_description, service_description) == 0)
++            && strcmp(temp_comment->author, author) == 0
++            && strcmp(temp_comment->comment_data, comment_data) == 0)
++            return temp_comment;
++            }
++    return NULL;
++    }
++
+diff -ur nagios-4.0.20130912/common/downtime.c nagios-4.0.20130912.with_sync//common/downtime.c
+--- nagios-4.0.20130912/common/downtime.c	2013-10-11 12:40:50.000000000 +0000
++++ nagios-4.0.20130912.with_sync//common/downtime.c	2013-10-11 12:35:51.000000000 +0000
+@@ -1218,6 +1218,36 @@
+ 	}
+ 
+ 
++/* finds a specific downtime entry by similar content (in a distributed environment, downtime_ids are not synchronised) */
++scheduled_downtime *find_downtime_by_similar_content(int type, char *host_name, char *service_description, char *author, char *comment_data, time_t start_time, time_t end_time, int fixed, unsigned long duration){
++   scheduled_downtime *temp_downtime=NULL;
++
++   if(service_description==NULL) {
++       if(type==ANY_DOWNTIME)
++           type=HOST_DOWNTIME;
++       /* Must specify a service_description if you are searching services - obviously! */
++       if(type==SERVICE_DOWNTIME)
++           return NULL;
++       }
++
++   for(temp_downtime=scheduled_downtime_list;temp_downtime!=NULL;temp_downtime=temp_downtime->next){
++       if(type!=ANY_DOWNTIME && temp_downtime->type!=type)
++           continue;
++       if(temp_downtime->start_time==start_time
++           && temp_downtime->end_time==end_time
++           && temp_downtime->fixed==fixed
++           && temp_downtime->duration==duration
++           && strcmp(temp_downtime->host_name,host_name)==0
++           && (service_description==NULL || (temp_downtime->type == SERVICE_DOWNTIME && strcmp(temp_downtime->service_description,service_description)==0))
++           && strcmp(temp_downtime->author,author)==0
++           && strcmp(temp_downtime->comment,comment_data)==0
++           )
++           return temp_downtime;
++           }
++
++   return NULL;
++   }
++
+ 
+ /******************************************************************/
+ /********************* CLEANUP FUNCTIONS **************************/
+diff -ur nagios-4.0.20130912/include/comments.h nagios-4.0.20130912.with_sync//include/comments.h
+--- nagios-4.0.20130912/include/comments.h	2013-09-12 15:07:15.000000000 +0000
++++ nagios-4.0.20130912.with_sync//include/comments.h	2013-10-11 12:35:51.000000000 +0000
+@@ -38,6 +38,7 @@
+ 
+ #define HOST_COMMENT			1
+ #define SERVICE_COMMENT			2
++#define ANY_COMMENT             3
+ 
+ 
+ /****************************** ENTRY TYPES ********************************/
+@@ -97,6 +98,7 @@
+ struct comment *find_comment(unsigned long, int);                            /* finds a specific comment */
+ struct comment *find_service_comment(unsigned long);                         /* finds a specific service comment */
+ struct comment *find_host_comment(unsigned long);                            /* finds a specific host comment */
++struct comment *find_comment_by_similar_content(int, char *, char *, char *, char *); /* finds a comment based on content - used for distributed nagios instances */
+ 
+ struct comment *get_first_comment_by_host(char *);
+ struct comment *get_next_comment_by_host(char *, struct comment *);
+diff -ur nagios-4.0.20130912/include/common.h nagios-4.0.20130912.with_sync//include/common.h
+--- nagios-4.0.20130912/include/common.h	2013-10-11 12:40:51.000000000 +0000
++++ nagios-4.0.20130912.with_sync//include/common.h	2013-10-11 12:35:51.000000000 +0000
+@@ -355,6 +355,11 @@
+ /* custom command introduced in Nagios 3.x */
+ #define CMD_CUSTOM_COMMAND                              999
+ 
++/* Opsview specific commands */
++#define CMD_SYNC_STATE_INFORMATION                      300
++
++
++
+ /**************************** COMMAND ERRORS *****************************/
+ #define CMD_ERROR_OK 0 /* No errors encountered */
+ #define CMD_ERROR_UNKNOWN_COMMAND 1 /* Unknown/unsupported command */
+diff -ur nagios-4.0.20130912/include/downtime.h nagios-4.0.20130912.with_sync//include/downtime.h
+--- nagios-4.0.20130912/include/downtime.h	2013-09-12 15:07:15.000000000 +0000
++++ nagios-4.0.20130912.with_sync//include/downtime.h	2013-10-11 12:35:51.000000000 +0000
+@@ -102,6 +102,7 @@
+ struct scheduled_downtime *find_downtime(int, unsigned long);
+ struct scheduled_downtime *find_host_downtime(unsigned long);
+ struct scheduled_downtime *find_service_downtime(unsigned long);
++struct scheduled_downtime *find_downtime_by_similar_content(int, char *, char *, char *, char *, time_t, time_t, int, unsigned long);
+ 
+ void free_downtime_data(void);                                       /* frees memory allocated to scheduled downtime list */
+ 
+diff -ur nagios-4.0.20130912/include/nagios.h nagios-4.0.20130912.with_sync//include/nagios.h
+--- nagios-4.0.20130912/include/nagios.h	2013-10-11 12:40:50.000000000 +0000
++++ nagios-4.0.20130912.with_sync//include/nagios.h	2013-10-11 12:35:51.000000000 +0000
+@@ -149,6 +149,7 @@
+ extern int use_retained_scheduling_info;
+ extern int retention_scheduling_horizon;
+ extern char *retention_file;
++extern char *sync_retention_file;
+ extern unsigned long retained_host_attribute_mask;
+ extern unsigned long retained_service_attribute_mask;
+ extern unsigned long retained_contact_host_attribute_mask;
+diff -ur nagios-4.0.20130912/include/sretention.h nagios-4.0.20130912.with_sync//include/sretention.h
+--- nagios-4.0.20130912/include/sretention.h	2013-09-12 15:07:15.000000000 +0000
++++ nagios-4.0.20130912.with_sync//include/sretention.h	2013-10-11 12:35:51.000000000 +0000
+@@ -27,5 +27,6 @@
+ int cleanup_retention_data(void);
+ int save_state_information(int);                 /* saves all host and state information */
+ int read_initial_state_information(void);        /* reads in initial host and state information */
++int sync_state_information(void);                /* syncs hosts and state information from sync file */
+ 
+ NAGIOS_END_DECL
+diff -ur nagios-4.0.20130912/xdata/xrddefault.c nagios-4.0.20130912.with_sync//xdata/xrddefault.c
+--- nagios-4.0.20130912/xdata/xrddefault.c	2013-10-11 12:40:50.000000000 +0000
++++ nagios-4.0.20130912.with_sync//xdata/xrddefault.c	2013-10-11 12:36:27.000000000 +0000
+@@ -69,6 +69,7 @@
+ 
+ 	/* free memory */
+ 	my_free(retention_file);
++	my_free(sync_retention_file);
+ 
+ 	return OK;
+ 	}
+@@ -448,7 +449,7 @@
+ /***************** DEFAULT STATE INPUT FUNCTION *******************/
+ /******************************************************************/
+ 
+-int xrddefault_read_state_information(void) {
++int xrddefault_read_retention_file_information(char *temp_retention_file, int overwrite_data) {
+ 	char *input = NULL;
+ 	char *inputbuf = NULL;
+ 	char *temp_ptr = NULL;
+@@ -502,6 +503,9 @@
+ 	struct timeval tv[2];
+ 	double runtime[2];
+ 	int found_directive = FALSE;
++	int retain_flag = TRUE;
++	time_t last_check = 0L;
++	int add_object;
+ 	int is_in_effect = FALSE;
+ 	int start_notification_sent = FALSE;
+ 
+@@ -509,7 +513,7 @@
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "xrddefault_read_state_information() start\n");
+ 
+ 	/* make sure we have what we need */
+-	if(retention_file == NULL) {
++	if(temp_retention_file == NULL) {
+ 
+ 		logit(NSLOG_RUNTIME_ERROR, TRUE, "Error: We don't have a filename for retention data!\n");
+ 
+@@ -520,7 +524,7 @@
+ 		gettimeofday(&tv[0], NULL);
+ 
+ 	/* open the retention file for reading */
+-	if((thefile = mmap_fopen(retention_file)) == NULL)
++	if((thefile = mmap_fopen(temp_retention_file)) == NULL)
+ 		return ERROR;
+ 
+ 	/* what attributes should be masked out? */
+@@ -591,7 +595,7 @@
+ 
+ 				case XRDDEFAULT_HOSTSTATUS_DATA:
+ 
+-					if(temp_host != NULL) {
++					if(temp_host != NULL && retain_flag) {
+ 
+ 						/* adjust modified attributes if necessary */
+ 						if(temp_host->retain_nonstatus_information == FALSE)
+@@ -650,6 +654,7 @@
+ 					/* reset vars */
+ 					was_flapping = FALSE;
+ 					allow_flapstart_notification = TRUE;
++					retain_flag = TRUE;
+ 
+ 					my_free(host_name);
+ 					host_name = NULL;
+@@ -658,7 +663,7 @@
+ 
+ 				case XRDDEFAULT_SERVICESTATUS_DATA:
+ 
+-					if(temp_service != NULL) {
++					if(temp_service != NULL && retain_flag) {
+ 
+ 						/* adjust modified attributes if necessary */
+ 						if(temp_service->retain_nonstatus_information == FALSE)
+@@ -721,6 +726,7 @@
+ 					/* reset vars */
+ 					was_flapping = FALSE;
+ 					allow_flapstart_notification = TRUE;
++					retain_flag = TRUE;
+ 
+ 					my_free(host_name);
+ 					my_free(service_description);
+@@ -757,6 +763,21 @@
+ 				case XRDDEFAULT_HOSTCOMMENT_DATA:
+ 				case XRDDEFAULT_SERVICECOMMENT_DATA:
+ 
++					add_object = TRUE;
++
++					if(overwrite_data==FALSE) {
++						/* search for comment. If exists, then drop. If doesn't exist, then flow through but need to get a comment_id */
++						if(find_comment_by_similar_content((data_type==XRDDEFAULT_HOSTCOMMENT_DATA)?HOST_COMMENT:SERVICE_COMMENT,host_name,(data_type==XRDDEFAULT_HOSTCOMMENT_DATA?NULL:service_description),author,comment_data)!=NULL)
++							add_object=FALSE;
++						else {
++							/* Get next available comment_id */
++							while(find_comment(next_comment_id,ANY_COMMENT)!=NULL)
++								next_comment_id++;
++							comment_id=next_comment_id;
++						}
++					}
++
++					if(add_object==TRUE) {
+ 					/* add the comment */
+ 					add_comment((data_type == XRDDEFAULT_HOSTCOMMENT_DATA) ? HOST_COMMENT : SERVICE_COMMENT, entry_type, host_name, service_description, entry_time, author, comment_data, comment_id, persistent, expires, expire_time, source);
+ 
+@@ -786,6 +807,12 @@
+ 					if(remove_comment == TRUE)
+ 						delete_comment((data_type == XRDDEFAULT_HOSTCOMMENT_DATA) ? HOST_COMMENT : SERVICE_COMMENT, comment_id);
+ 
++					/* Reset any temporary pointers */
++					temp_host=NULL;
++					temp_service=NULL;
++
++					} /* END if add_object==TRUE */
++
+ 					/* free temp memory */
+ 					my_free(host_name);
+ 					my_free(service_description);
+@@ -806,6 +833,22 @@
+ 				case XRDDEFAULT_HOSTDOWNTIME_DATA:
+ 				case XRDDEFAULT_SERVICEDOWNTIME_DATA:
+ 
++					add_object = TRUE;
++
++					if(overwrite_data==FALSE) {
++						/* search for downtime. If exists, then drop. If doesn't exist, then flow through but need to get a downtime id */
++						if(find_downtime_by_similar_content(ANY_DOWNTIME,host_name,(data_type==XRDDEFAULT_HOSTDOWNTIME_DATA?NULL:service_description),author,comment_data,start_time,end_time,fixed,duration)!=NULL)
++							add_object=FALSE;
++						else {
++							/* Get next available downtime id */
++							while(find_downtime(ANY_DOWNTIME,next_downtime_id)!=NULL)
++								next_downtime_id++;
++							downtime_id=next_downtime_id;
++						}
++					}
++
++                   if (add_object==TRUE) {
++
+ 					/* add the downtime */
+ 					if(data_type == XRDDEFAULT_HOSTDOWNTIME_DATA)
+ 						add_host_downtime(host_name, entry_time, author, comment_data, start_time, flex_downtime_start, end_time, fixed, triggered_by, duration, downtime_id, is_in_effect, start_notification_sent);
+@@ -815,6 +858,8 @@
+ 					/* must register the downtime with Nagios so it can schedule it, add comments, etc. */
+ 					register_downtime((data_type == XRDDEFAULT_HOSTDOWNTIME_DATA) ? HOST_DOWNTIME : SERVICE_DOWNTIME, downtime_id);
+ 
++					} /* END add_object==TRUE */
++
+ 					/* free temp memory */
+ 					my_free(host_name);
+ 					my_free(service_description);
+@@ -1011,7 +1056,7 @@
+ 							/* break out */
+ 							break;
+ 							}
+-						if(temp_host->retain_status_information == TRUE) {
++						if(retain_flag && temp_host->retain_status_information == TRUE) {
+ 							if(!strcmp(var, "has_been_checked"))
+ 								temp_host->has_been_checked = (atoi(val) > 0) ? TRUE : FALSE;
+ 							else if(!strcmp(var, "check_execution_time"))
+@@ -1038,8 +1083,13 @@
+ 								my_free(temp_host->perf_data);
+ 								temp_host->perf_data = (char *)strdup(val);
+ 								}
+-							else if(!strcmp(var, "last_check"))
+-								temp_host->last_check = strtoul(val, NULL, 10);
++							else if(!strcmp(var, "last_check")) {
++								last_check = strtoul(val, NULL, 10);
++								if (overwrite_data==FALSE && last_check<temp_host->last_check)
++									retain_flag = FALSE;
++								else
++									temp_host->last_check=last_check;
++								}
+ 							else if(!strcmp(var, "next_check")) {
+ 								if(use_retained_scheduling_info == TRUE && scheduling_info_is_ok == TRUE)
+ 									temp_host->next_check = strtoul(val, NULL, 10);
+@@ -1099,7 +1149,7 @@
+ 							else
+ 								found_directive = FALSE;
+ 							}
+-						if(temp_host->retain_nonstatus_information == TRUE) {
++						if(retain_flag && temp_host->retain_nonstatus_information == TRUE) {
+ 							/* null-op speeds up logic */
+ 							if(found_directive == TRUE);
+ 
+@@ -1278,7 +1328,7 @@
+ 							/* mask out attributes we don't want to retain */
+ 							temp_service->modified_attributes &= ~service_attribute_mask;
+ 							}
+-						if(temp_service->retain_status_information == TRUE) {
++						if(retain_flag && temp_service->retain_status_information == TRUE) {
+ 							if(!strcmp(var, "has_been_checked"))
+ 								temp_service->has_been_checked = (atoi(val) > 0) ? TRUE : FALSE;
+ 							else if(!strcmp(var, "check_execution_time"))
+@@ -1329,8 +1379,13 @@
+ 								my_free(temp_service->perf_data);
+ 								temp_service->perf_data = (char *)strdup(val);
+ 								}
+-							else if(!strcmp(var, "last_check"))
+-								temp_service->last_check = strtoul(val, NULL, 10);
++							else if(!strcmp(var, "last_check")) {
++								last_check = strtoul(val, NULL, 10);
++								if (overwrite_data==FALSE && last_check<temp_service->last_check)
++									retain_flag=FALSE;
++								else
++									temp_service->last_check=last_check;
++								}
+ 							else if(!strcmp(var, "next_check")) {
+ 								if(use_retained_scheduling_info == TRUE && scheduling_info_is_ok == TRUE)
+ 									temp_service->next_check = strtoul(val, NULL, 10);
+@@ -1370,7 +1425,7 @@
+ 							else
+ 								found_directive = FALSE;
+ 							}
+-						if(temp_service->retain_nonstatus_information == TRUE) {
++						if(retain_flag && temp_service->retain_nonstatus_information == TRUE) {
+ 							/* null-op speeds up logic */
+ 							if(found_directive == TRUE);
+ 
+@@ -1697,6 +1752,10 @@
+ 	my_free(inputbuf);
+ 	mmap_fclose(thefile);
+ 
++	/* If this is a sync file, remove it */
++	if(overwrite_data==FALSE)
++		unlink(temp_retention_file);
++
+ 	if(sort_downtime() != OK)
+ 		return ERROR;
+ 	if(sort_comments() != OK)
+@@ -1718,5 +1777,19 @@
+ 		printf("\n\n");
+ 		}
+ 
++	log_debug_info(DEBUGL_FUNCTIONS,0,"xrddefault_read_state_information() end\n");
++
+ 	return OK;
+ 	}
++
++int xrddefault_read_state_information(void) {
++    return xrddefault_read_retention_file_information(retention_file, TRUE);
++}
++
++int xrddefault_sync_state_information(void){
++    int result = OK;
++    if(sync_retention_file != NULL)
++        result = xrddefault_read_retention_file_information(sync_retention_file, FALSE);
++    return result;
++}
++
+diff -ur nagios-4.0.20130912/xdata/xrddefault.h nagios-4.0.20130912.with_sync//xdata/xrddefault.h
+--- nagios-4.0.20130912/xdata/xrddefault.h	2013-09-12 15:07:15.000000000 +0000
++++ nagios-4.0.20130912.with_sync//xdata/xrddefault.h	2013-10-11 12:35:51.000000000 +0000
+@@ -39,5 +39,6 @@
+ int xrddefault_cleanup_retention_data(void);
+ int xrddefault_save_state_information(void);        /* saves all host and service state information */
+ int xrddefault_read_state_information(void);        /* reads in initial host and service state information */
++int xrddefault_sync_state_information(void);        /* syncs in host and service state information via sync file */
+ 
+ #endif

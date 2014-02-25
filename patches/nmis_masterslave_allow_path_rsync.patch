@@ -1,0 +1,51 @@
+diff -ur nmis-4.2.13.original/lib/masterslave.pm nmis-4.2.13/lib/masterslave.pm
+--- nmis-4.2.13.original/lib/masterslave.pm	2005-03-02 07:44:18.000000000 +0000
++++ nmis-4.2.13/lib/masterslave.pm	2008-01-04 15:45:27.062089768 +0000
+@@ -128,30 +128,33 @@
+ 	foreach $name ( keys %slave ) {
+ 
+ 		# /var directory
++		# Altinity patch: Make these directories full path, instead of using rsync modules
+ 		if ( $NMIS::debug ) {
+ 			print "\n\t Pulling $name \var directory to master\n";
+-			$dump = `rsync -Wvvaz --exclude=event.dat --include=*.dat --exclude=* $slave{$name}{Host}::$slave{$name}{Var}/ $NMIS::config{'<nmis_var>'}`;
+-			print "\t runMaster: asked for rsync -Wvvaz --exclude=event.dat --include=*.dat --exclude=* $slave{$name}{Host}::$slave{$name}{Var}/ $NMIS::config{'<nmis_var>'}\n";
++			$dump = `rsync -Wvvaz --exclude=event.dat --include=*.dat --exclude=* $slave{$name}{Host}:$slave{$name}{Var}/ $NMIS::config{'<nmis_var>'}`;
++			print "\t runMaster: asked for rsync -Wvvaz --exclude=event.dat --include=*.dat --exclude=* $slave{$name}{Host}:$slave{$name}{Var}/ $NMIS::config{'<nmis_var>'}\n";
+ 			$dump =~ s/\n/\n\t\t/g;
+ 			print "\t\t$dump\n";
+ 		}
+ 		else {
+-			system("rsync -Wqaz --exclude=event.dat --include=*.dat --exclude=* $slave{$name}{Host}::$slave{$name}{Var}/ $NMIS::config{'<nmis_var>'}") == 0 or
++			system("rsync -Wqaz --exclude=event.dat --include=*.dat --exclude=* $slave{$name}{Host}:$slave{$name}{Var}/ $NMIS::config{'<nmis_var>'}") == 0 or
+ 				logMessage( "runMaster","Could not rsync $slave{$name}{Host}::$slave{$name}{Var}");
+ 		}
+ 
++		# Altinity patch: We remove this bit - the summary data already returns most of the node data, so 
++		# we're not sure what this provides in addition
+ 		# node file
+-		if ( $NMIS::debug ) {
+-			print "\n\t Pulling $name nodes.csv to master\n";
+-			$dump = `rsync -Wvvz $slave{$name}{Host}::$slave{$name}{NodeFile} $NMIS::config{'<nmis_conf>'}/$slave{$name}{Name}_nodes.csv`;
+-			print "\t runMaster: asked for rsync -Wvvz $slave{$name}{Host}::$slave{$name}{NodeFile} $NMIS::config{'<nmis_conf>'}/$slave{$name}{Name}_nodes.csv\n";
+-			$dump =~ s/\n/\n\t\t/g;
+-			print "\t\t$dump\n";
+-		}
+-		else {
+-			system( "rsync -Wqz $slave{$name}{Host}::$slave{$name}{NodeFile} $NMIS::config{'<nmis_conf>'}/$slave{$name}{Name}_nodes.csv") == 0 or
+-				logMessage( "runMaster","Could not rsync $slave{$name}{Host}::$slave{$name}{NodeFile}");
+-		}
++		#if ( $NMIS::debug ) {
++		#	print "\n\t Pulling $name nodes.csv to master\n";
++		#	$dump = `rsync -Wvvz $slave{$name}{Host}::$slave{$name}{NodeFile} $NMIS::config{'<nmis_conf>'}/$slave{$name}{Name}_nodes.csv`;
++		#	print "\t runMaster: asked for rsync -Wvvz $slave{$name}{Host}::$slave{$name}{NodeFile} $NMIS::config{'<nmis_conf>'}/$slave{$name}{Name}_nodes.csv\n";
++		#	$dump =~ s/\n/\n\t\t/g;
++		#	print "\t\t$dump\n";
++		#}
++		#else {
++		#	system( "rsync -Wqz $slave{$name}{Host}::$slave{$name}{NodeFile} $NMIS::config{'<nmis_conf>'}/$slave{$name}{Name}_nodes.csv") == 0 or
++		#		logMessage( "runMaster","Could not rsync $slave{$name}{Host}::$slave{$name}{NodeFile}");
++		#}
+ 	}
+ }
+ 

@@ -1,0 +1,39 @@
+diff -ur nagios-plugins-1.4.11.orig/configure.in nagios-plugins-1.4.11/configure.in
+--- nagios-plugins-1.4.11.orig/configure.in	2007-12-13 17:39:36.000000000 -0500
++++ nagios-plugins-1.4.11/configure.in	2008-03-05 08:44:35.000000000 -0500
+@@ -1104,7 +1104,7 @@
+                             [sets path to rpcinfo]), PATH_TO_RPCINFO=$withval)
+ AC_DEFINE_UNQUOTED(PATH_TO_RPCINFO,"$PATH_TO_RPCINFO",[path to rpcinfo binary])
+ 
+-AC_PATH_PROG(PATH_TO_LMSTAT,lmstat)
++AC_PATH_PROG(PATH_TO_LMSTAT,lmstat,lmstat)
+ if test -x "$PATH_TO_LMSTAT"
+ then
+ 	AC_DEFINE_UNQUOTED(PATH_TO_LMSTAT,"$PATH_TO_LMSTAT",[path to lmstat])
+@@ -1112,12 +1112,12 @@
+ 	AC_MSG_WARN([Get lmstat from Globetrotter Software to monitor flexlm licenses])
+ fi
+ 
+-AC_PATH_PROG(PATH_TO_SMBCLIENT,smbclient)
++AC_PATH_PROG(PATH_TO_SMBCLIENT,smbclient,smbclient)
+ AC_ARG_WITH(smbclient_command,
+             ACX_HELP_STRING([--with-smbclient-command=PATH],
+                             [sets path to smbclient]), 
+             PATH_TO_SMBCLIENT=$withval)
+-if test -n "$PATH_TO_SMBCLIENT"
++if test -x "$PATH_TO_SMBCLIENT"
+ then
+ 	AC_DEFINE_UNQUOTED(PATH_TO_SMBCLIENT,"$PATH_TO_SMBCLIENT",[path to smbclient binary])
+ else
+diff -ur nagios-plugins-1.4.11.orig/plugins-scripts/check_flexlm.pl nagios-plugins-1.4.11/plugins-scripts/check_flexlm.pl
+--- nagios-plugins-1.4.11.orig/plugins-scripts/check_flexlm.pl	2003-02-04 01:16:16.000000000 -0500
++++ nagios-plugins-1.4.11/plugins-scripts/check_flexlm.pl	2008-03-05 09:01:53.000000000 -0500
+@@ -44,7 +44,7 @@
+ sub print_help ();
+ sub print_usage ();
+ 
+-$ENV{'PATH'}='';
++#$ENV{'PATH'}='';
+ $ENV{'BASH_ENV'}=''; 
+ $ENV{'ENV'}='';
+ 

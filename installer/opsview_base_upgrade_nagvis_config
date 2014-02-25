@@ -1,0 +1,113 @@
+#!/usr/bin/perl
+#
+# SYNTAX:
+#   opsview_base_upgrade_nagvis_config_file [-d]
+#
+# DESCRIPTION:
+#   Postinstall script for opsview-base.
+#   -d    - show steps being taken
+#
+# AUTHORS:
+#   Copyright (C) 2003-2013 Opsview Limited. All rights reserved
+#
+#    This file is part of Opsview
+#
+#    Opsview is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    Opsview is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with Opsview; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+
+use strict;
+use warnings;
+
+use FindBin qw($Bin $Script);
+use Getopt::Std;
+use IO::File;
+
+####################
+## NOTES: this script has to run without any dependancy on opsview-perl
+## i.e. only core modules can be used here
+#####################
+
+my %options;
+getopts( 'd', \%options ) or die 'Incorrect options', $/;
+
+my $nagvis_config_file = '/usr/local/nagios/nagvis/etc/nagvis.ini.php';
+my ( $nagios_id, $nagios_gid ) = ( getpwnam("nagios") )[ 2, 3 ];
+my $nagcmd_gid = getgrnam("nagcmd");
+
+open my $nagvis_config_file_fh, '<', $nagvis_config_file || die 'Unable to open ', $nagvis_config_file, ' for reading: ', $!, $/;
+my @nagvis_config = <$nagvis_config_file_fh>;
+close($nagvis_config_file_fh) || die 'Error closing file: ', $!, $/;
+
+logmsg( 'Checking ', $nagvis_config_file, ' for required upgrades', $/ );
+
+check_in_section( 'backend_runtime', 'Use opsview helper tables', 'use_opsview_tables', 1 );
+
+check_in_section( 'defaults', 'Link to Opsview status pages', 'use_opsview_links', 1 );
+
+open $nagvis_config_file_fh, '>', $nagvis_config_file || die 'Unable to open ', $nagvis_config_file, ' for writing: ', $!, $/;
+print {$nagvis_config_file_fh} @nagvis_config;
+close($nagvis_config_file_fh) || die 'Error closing file: ', $!, $/;
+
+# == == == == == == == == == ==
+sub logmsg {
+    print $Script, ': ', @_ if ( $options{d} );
+}
+
+sub check_in_section {
+    my ( $section, $comment, $variable, $value ) = @_;
+
+    my $found_section  = 0;
+    my $insert_at_line = 0;
+
+CONFIG:
+    foreach my $config_line ( 0 .. $#nagvis_config ) {
+        next CONFIG
+            if ( !$found_section
+            && $nagvis_config[$config_line] !~ m/^\[$section\]/xsm );
+
+        # skip section header but grab line it's on
+        if ( $nagvis_config[$config_line] =~ m/^\[$section\]/xsm ) {
+            $found_section = $config_line;
+            next CONFIG;
+        }
+
+        # variable missing so records that it is to be added
+        # insert entry at start of section instead of at end
+        if ( $nagvis_config[$config_line] =~ m/^\[/xsm ) {
+            $insert_at_line = $found_section + 1;
+            last CONFIG;
+        }
+
+        # found line with variable - allow to be commented out too
+        if ( $nagvis_config[$config_line] =~ m/^(?:;)?$variable=/ ) {
+            logmsg( 'Found on line ', $config_line, ': ', $nagvis_config[$config_line] );
+            $insert_at_line = 0;
+            last CONFIG;
+        }
+
+    }
+
+    if ( !$found_section ) {
+        warn 'WARNING: ', $Script, ' - did not find section "', $section, '" to add in variable "', $variable, '"', $/;
+    }
+
+    if ($insert_at_line) {
+        logmsg( 'Adding in ', $variable, ' to configuration file at line ', $insert_at_line, $/ );
+
+        splice @nagvis_config, $insert_at_line, 0, ';' . $comment . $/, $variable . '=' . $value . $/;
+    }
+
+    return;
+}

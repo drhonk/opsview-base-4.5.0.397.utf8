@@ -1,0 +1,11 @@
+--- admin.pl.original	2010-10-07 12:22:41.000000000 +0000
++++ admin.pl	2010-10-07 12:32:36.000000000 +0000
+@@ -59,6 +59,8 @@
+ 
+ my $type = $q->param('type');
+ my $node = $q->param('node');
++# Only allow valid node name characters through
++$node =~ s/[^\w\:\.-]//g;
+ my $admin = $q->param('admin');
+ my $space = $q->param('space');
+ my $summary = $q->param('summary');

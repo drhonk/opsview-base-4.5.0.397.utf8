@@ -1,0 +1,63 @@
+diff -ur nagios-plugins-1.4.15.original/perlmods/install_order nagios-plugins-1.4.15/perlmods/install_order
+--- nagios-plugins-1.4.15.original/perlmods/install_order	2010-07-27 20:47:16.000000000 +0000
++++ nagios-plugins-1.4.15/perlmods/install_order	2012-07-02 10:00:57.000000000 +0000
+@@ -1,5 +1,12 @@
+ # Modules installed in this order
+ Test-Simple
++# From here...
++Try-Tiny
++Test-Fatal
++Module-Runtime
++Test-Requires
++Module-Implementation
++# To here... are Params::Validate requirements. Maybe P::V should be substituted
+ Params-Validate
+ Math-Calc-Units
+ Class-Accessor
+diff -ur nagios-plugins-1.4.15.original/tools/build_perl_modules nagios-plugins-1.4.15/tools/build_perl_modules
+--- nagios-plugins-1.4.15.original/tools/build_perl_modules	2010-07-27 20:47:16.000000000 +0000
++++ nagios-plugins-1.4.15/tools/build_perl_modules	2012-07-02 10:00:57.000000000 +0000
+@@ -30,6 +30,11 @@
+ my $destdir = $opts->{d};
+ die "Must set a destination directory" unless $destdir;
+ 
++my $mb_destdir = '';
++if ( $ENV{DESTDIR} ) {
++    $mb_destdir = "--destdir $ENV{DESTDIR}";
++}
++
+ chdir $moddir or die "Cannot change to $moddir";
+ open F, "install_order" or die "Cannot open install_order file";
+ my @files = grep { ! /^#/ && chop } <F>;
+@@ -65,8 +70,15 @@
+ 		unless (-e $dir) {
+ 			system("gunzip -c $tarball | tar -xf -") == 0 or die "Cannot extract $tarball";
+ 			chdir $dir or die "Can't chdir into $dir";
+-			system("perl Makefile.PL PREFIX=$destdir INSTALLDIRS=site LIB=$destdir/lib") == 0 or die "Can't run perl Makefile.PL";
+-			system("make") == 0 or die "Can't run make";
++
++			if ( -f "Build.PL" ) {
++				system( "perl Build.PL $mb_destdir --install_base=$destdir --install_path lib=$destdir/lib --install_path arch=$destdir/lib/$Config{archname}" ) == 0 or die "Can't run perl Build.PL";
++				system( "./Build" ) == 0 or die "Can't run build";
++			}
++			else {
++				system("perl Makefile.PL PREFIX=$destdir INSTALLDIRS=site LIB=$destdir/lib") == 0 or die "Can't run perl Makefile.PL";
++				system("make") == 0 or die "Can't run make";
++			}
+ 			chdir $topdir or die "Can't chdir to top";;
+ 		}
+ 	}
+@@ -82,7 +94,12 @@
+ 		system("make test") == 0 or die "Can't run make test failed";
+ 	}
+ 	if ($opts->{i}) {
+-		system("make install SITEPREFIX=$destdir") == 0 or die "Can't run make install";
++		if ( -f "Build.PL" ) {
++			system( "./Build install" ) == 0 or die "Can't run ./Build install";
++		}
++		else {
++			system("make install SITEPREFIX=$destdir") == 0 or die "Can't run make install";
++		}
+ 	}
+ 	chdir $topdir or die "Can't go back to $topdir";
+ }

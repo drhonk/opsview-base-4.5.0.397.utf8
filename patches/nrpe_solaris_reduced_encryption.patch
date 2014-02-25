@@ -1,0 +1,26 @@
+diff -ur nrpe-2.12/src/check_nrpe.c nrpe-2.12.solaris_reduced_encryption//src/check_nrpe.c
+--- nrpe-2.12/src/check_nrpe.c	Wed May  9 14:34:58 2012
++++ nrpe-2.12.solaris_reduced_encryption//src/check_nrpe.c	Wed May  9 14:33:53 2012
+@@ -149,7 +149,8 @@
+ 	/* do SSL handshake */
+ 	if(result==STATE_OK && use_ssl==TRUE){
+ 		if((ssl=SSL_new(ctx))!=NULL){
+-			SSL_CTX_set_cipher_list(ctx,"ADH");
++			/* Opsview patch: Remove AES256 to remove dependency on SUNWcry(r) packages */
++			SSL_CTX_set_cipher_list(ctx,"ADH:-ADH-AES256-SHA");
+ 			SSL_set_fd(ssl,sd);
+ 			if((rc=SSL_connect(ssl))!=1){
+ 				printf("CHECK_NRPE: Error - Could not complete SSL handshake.\n");
+diff -ur nrpe-2.12/src/nrpe.c nrpe-2.12.solaris_reduced_encryption//src/nrpe.c
+--- nrpe-2.12/src/nrpe.c	Wed May  9 14:34:58 2012
++++ nrpe-2.12.solaris_reduced_encryption//src/nrpe.c	Wed May  9 14:34:24 2012
+@@ -242,7 +242,8 @@
+ 
+ 		/* use anonymous DH ciphers */
+ /* Opsview: We set the only cipher to use is 256 or 128 bit to reduce security exposure */
+-		SSL_CTX_set_cipher_list(ctx,"ADH-AES256-SHA:ADH-AES128-SHA");
++		/* Opsview patch: Remove AES256 to remove dependency on SUNWcry(r) packages */
++		SSL_CTX_set_cipher_list(ctx,"ADH-AES128-SHA");
+ 		dh=get_dh512();
+ 		SSL_CTX_set_tmp_dh(ctx,dh);
+ 		DH_free(dh);

@@ -1,0 +1,57 @@
+diff -ur ndoutils-1.4b7.original/src/dbhandlers.c ndoutils-1.4b7/src/dbhandlers.c
+--- ndoutils-1.4b7.original/src/dbhandlers.c	2009-05-24 20:49:36.000000000 +0100
++++ ndoutils-1.4b7/src/dbhandlers.c	2010-07-06 20:38:00.000000000 +0100
+@@ -1431,8 +1431,13 @@
+ 	result=ndo2db_convert_standard_data_elements(idi,&type,&flags,&attr,&tstamp);
+ 
+ 	/* only process some types of service checks... */
++	/* Opsview patch: Only process service checks that have already run */
++	/*
+ 	if(type!=NEBTYPE_SERVICECHECK_INITIATE && type!=NEBTYPE_SERVICECHECK_PROCESSED)
+ 		return NDO_OK;
++	*/
++	if(type!=NEBTYPE_SERVICECHECK_PROCESSED)
++		return NDO_OK;
+ 
+ #ifdef BUILD_NAGIOS_3X
+ 	/* skip precheck events - they aren't useful to us */
+@@ -1494,6 +1499,8 @@
+ 		   )==-1)
+ 		buf1=NULL;
+ 
++	/* Opsview patch: Remove unique key on table, so INSERT does not require ON DUPLICATE KEY */
++	/*
+ 	if(asprintf(&buf,"INSERT INTO %s SET %s, command_object_id='%lu', command_args='%s', command_line='%s' ON DUPLICATE KEY UPDATE %s"
+ 		    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_SERVICECHECKS]
+ 		    ,buf1
+@@ -1503,6 +1510,15 @@
+ 		    ,buf1
+ 		   )==-1)
+ 		buf=NULL;
++	*/
++	if(asprintf(&buf,"INSERT INTO %s SET %s, command_object_id='%lu', command_args='%s', command_line='%s'"
++		,ndo2db_db_tablenames[NDO2DB_DBTABLE_SERVICECHECKS]
++		,buf1
++		,command_id
++		,es[0]
++		,es[1]
++	)==-1)
++		buf=NULL;
+ 
+ 	result=ndo2db_db_query(idi,buf);
+ 	free(buf);
+diff -ur ndoutils-1.4b7.original/src/ndomod.c ndoutils-1.4b7/src/ndomod.c
+--- ndoutils-1.4b7.original/src/ndomod.c	2009-05-24 20:49:36.000000000 +0100
++++ ndoutils-1.4b7/src/ndomod.c	2010-07-06 21:23:24.000000000 +0100
+@@ -1658,6 +1658,11 @@
+ 
+ 		scdata=(nebstruct_service_check_data *)data;
+ 
++		/* Opsview patch: Only allow NEBTYPE_SERVICECHECK_PROCESSED to pass through */
++		/* As will be ignored at dbhandlers.c anyway */
++		if(scdata->type!=NEBTYPE_SERVICECHECK_PROCESSED)
++			break;
++
+ 		es[0]=ndo_escape_buffer(scdata->host_name);
+ 		es[1]=ndo_escape_buffer(scdata->service_description);
+ 		es[2]=ndo_escape_buffer(scdata->command_name);

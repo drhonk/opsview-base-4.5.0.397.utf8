@@ -1,0 +1,50 @@
+diff -ur ndoutils-2-0.original//include/nagios-4x/objects.h ndoutils-2-0/include/nagios-4x/objects.h
+--- ndoutils-2-0.original//include/nagios-4x/objects.h	2012-12-19 13:37:37.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/objects.h	2012-12-19 13:39:37.000000000 +0000
+@@ -484,6 +484,7 @@
+ 	char	*plugin_output;
+ 	char    *long_plugin_output;
+ 	char    *perf_data;
++	char    *processed_command;
+ 	int     state_type;
+ 	int     current_attempt;
+ 	unsigned long current_event_id;
+diff -ur ndoutils-2-0.original//src/dbhandlers.c ndoutils-2-0/src/dbhandlers.c
+--- ndoutils-2-0.original//src/dbhandlers.c	2012-12-19 13:37:37.000000000 +0000
++++ ndoutils-2-0/src/dbhandlers.c	2012-12-19 13:38:33.000000000 +0000
+@@ -1575,10 +1575,8 @@
+ 	result=ndo2db_convert_standard_data_elements(idi,&type,&flags,&attr,&tstamp);
+ 
+ 	/* only process finished host checks... */
+-	/*
+ 	if(type!=NEBTYPE_HOSTCHECK_PROCESSED)
+ 		return NDO_OK;
+-	*/
+ 
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+ 	/* skip precheck events - they aren't useful to us */
+@@ -1648,6 +1646,8 @@
+ 		   )==-1)
+ 		buf1=NULL;
+ 
++   /* Opsview patch: Remove unique key on table, so insert does not require ON DUPLICATE KEY */
++   /*
+ 	if(asprintf(&buf,"INSERT INTO %s SET %s, command_object_id='%lu', command_args='%s', command_line='%s' ON DUPLICATE KEY UPDATE %s"
+ 		    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_HOSTCHECKS]
+ 		    ,buf1
+@@ -1657,6 +1657,15 @@
+ 		    ,buf1
+ 		   )==-1)
+ 		buf=NULL;
++   */
++   if(asprintf(&buf,"INSERT INTO %s SET %s, command_object_id='%lu', command_args='%s', command_line='%s'"
++       ,ndo2db_db_tablenames[NDO2DB_DBTABLE_HOSTCHECKS]
++       ,buf1
++       ,command_id
++       ,es[0]
++       ,es[1]
++       )==-1)
++       buf=NULL;
+ 
+ 	result=ndo2db_db_query(idi,buf);
+ 	free(buf);

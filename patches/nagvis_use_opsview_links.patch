@@ -1,0 +1,88 @@
+diff -ur nagvis-1.4rc3.orig/nagvis/includes/classes/GlobalMainCfg.php nagvis-1.4rc3/nagvis/includes/classes/GlobalMainCfg.php
+--- nagvis-1.4rc3.orig/nagvis/includes/classes/GlobalMainCfg.php	2009-04-23 11:54:00.000000000 +0000
++++ nagvis-1.4rc3/nagvis/includes/classes/GlobalMainCfg.php	2009-04-23 11:54:15.000000000 +0000
+@@ -177,7 +177,11 @@
+ 				'usegdlibs' => Array('must' => 0,
+ 					'editable' => 1,
+ 					'default' => '1',
+-          'deprecated' => 1,
++					'deprecated' => 1,
++					'match' => MATCH_BOOLEAN),
++				'use_opsview_links' => Array('must' => 0,
++					'editable' => 1,
++					'default' => '0',
+ 					'match' => MATCH_BOOLEAN)),
+ 			'wui' => Array(
+ 				'allowedforconfig' => Array(
+diff -ur nagvis-1.4rc3.orig/nagvis/includes/classes/objects/NagiosHostgroup.php nagvis-1.4rc3/nagvis/includes/classes/objects/NagiosHostgroup.php
+--- nagvis-1.4rc3.orig/nagvis/includes/classes/objects/NagiosHostgroup.php	2009-04-23 11:54:00.000000000 +0000
++++ nagvis-1.4rc3/nagvis/includes/classes/objects/NagiosHostgroup.php	2009-04-23 11:54:15.000000000 +0000
+@@ -175,6 +175,30 @@
+ 		}
+ 	}
+ 	
++	/**
++	 * PUBLIC getUrl()
++	 *
++	 * Override class method to return the correct url depending
++     * on the configuration settings
++	 *
++	 * @return String  URL
++	 * @author	Opsview (www.opsview.com)
++	 */
++	public function getUrl() {
++        if( $this->CORE->MAINCFG->getValue('defaults', 'use_opsview_links') == 0 ) {
++            /* use nagvis default */
++            return $this->url;
++        } else {
++            if( $this->hostgroup_id > 0 ) {
++                /* redirect to hostgroup id */
++                return $this->CORE->MAINCFG->getValue('paths', 'opsviewbase')."/status/hostgroup/".$this->hostgroup_id;
++            } else {
++                /* redirect to hostgroup name */
++                return $this->CORE->MAINCFG->getValue('paths', 'opsviewbase')."/status/hostgroup/name/".$this->hostgroup_name;
++            }
++        }
++    }
++
+ 	# End public methods
+ 	# #########################################################################
+ 	
+Only in nagvis-1.4rc3/nagvis/includes/classes/objects: NagiosHostgroup.php.orig
+diff -ur nagvis-1.4rc3.orig/nagvis/includes/classes/objects/NagiosHost.php nagvis-1.4rc3/nagvis/includes/classes/objects/NagiosHost.php
+--- nagvis-1.4rc3.orig/nagvis/includes/classes/objects/NagiosHost.php	2009-03-07 22:12:09.000000000 +0000
++++ nagvis-1.4rc3/nagvis/includes/classes/objects/NagiosHost.php	2009-04-23 11:55:08.000000000 +0000
+@@ -33,6 +33,7 @@
+ 	protected $address;
+ 	protected $statusmap_image;
+ 	protected $notes;
++	protected $url;
+ 	
+ 	protected $perfdata;
+ 	protected $last_check;
+@@ -267,6 +268,24 @@
+ 	public function hasMembers() {
+ 		return isset($this->members[0]);
+ 	}
++
++    /**
++     * PUBLIC getUrl()
++     *
++     * Override class method to return the correct url depending
++     * on the configuration settings
++     *
++     * @return String  URL
++     * @author  Opsview (www.opsview.com)
++     */
++    public function getUrl() {
++        if( $this->CORE->MAINCFG->getValue('defaults', 'use_opsview_links') == 0 ) { 
++            /* use nagvis default */
++            return $this->url;
++        } else {
++            return $this->CORE->MAINCFG->getValue('paths', 'opsviewbase')."/status/service?host=".$this->host_name;
++        }
++    }
+ 	
+ 	# End public methods
+ 	# #########################################################################
+Only in nagvis-1.4rc3/nagvis/includes/classes/objects: NagiosHost.php.orig

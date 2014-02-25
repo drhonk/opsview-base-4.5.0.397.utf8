@@ -1,0 +1,327 @@
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/comments.h ndoutils-2-0/include/nagios-4x/comments.h
+--- ndoutils-2-0.orig/include/nagios-4x/comments.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/comments.h	2012-11-29 15:44:08.000000000 +0000
+@@ -38,6 +38,7 @@
+ 
+ #define HOST_COMMENT			1
+ #define SERVICE_COMMENT			2
++#define ANY_COMMENT             3
+ 
+ 
+ /****************************** ENTRY TYPES ********************************/
+@@ -97,6 +98,7 @@
+ struct comment *find_comment(unsigned long, int);                            /* finds a specific comment */
+ struct comment *find_service_comment(unsigned long);                         /* finds a specific service comment */
+ struct comment *find_host_comment(unsigned long);                            /* finds a specific host comment */
++struct comment *find_comment_by_similar_content(int, char *, char *, char *, char *); /* finds a comment based on content - used for distributed nagios instances */
+ 
+ struct comment *get_first_comment_by_host(char *);
+ struct comment *get_next_comment_by_host(char *, struct comment *);
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/common.h ndoutils-2-0/include/nagios-4x/common.h
+--- ndoutils-2-0.orig/include/nagios-4x/common.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/common.h	2012-11-29 15:44:33.000000000 +0000
+@@ -21,8 +21,8 @@
+ 
+ #include "shared.h"
+ 
+-#define PROGRAM_VERSION "3.99.95"
+-#define PROGRAM_MODIFICATION_DATE "09-14-2012"
++#define PROGRAM_VERSION "4.0.20121116"
++#define PROGRAM_MODIFICATION_DATE "11-16-2012"
+ 
+ NAGIOS_BEGIN_DECL
+ 
+@@ -32,6 +32,7 @@
+ extern int date_format;
+ extern int interval_length;
+ extern char *illegal_output_chars;
++extern char illegal_output_char_map[256];
+ 
+ extern int log_rotation_method;
+ extern int check_external_commands;
+@@ -344,6 +345,9 @@
+ /* custom command introduced in Nagios 3.x */
+ #define CMD_CUSTOM_COMMAND                              999
+ 
++/* Opsview specific commands */
++#define CMD_SYNC_STATE_INFORMATION                      300
++
+ 
+ /**************************** CHECK TYPES ********************************/
+ 
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/config.h ndoutils-2-0/include/nagios-4x/config.h
+--- ndoutils-2-0.orig/include/nagios-4x/config.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/config.h	2012-11-29 15:44:50.000000000 +0000
+@@ -3,7 +3,6 @@
+  *
+  * Nagios Config Header File
+  * Written By: Ethan Galstad (egalstad@nagios.org)
+- * Last Modified: 11-02-2008
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+@@ -32,7 +31,7 @@
+ #define USE_EVENT_BROKER /**/
+ 
+ /* commands used by CGIs */
+-#define TRACEROUTE_COMMAND "/bin/traceroute"
++#define TRACEROUTE_COMMAND "/usr/bin/traceroute"
+ /* #undef PING_COMMAND */
+ /* #undef PING_PACKETS_FIRST */
+ 
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/downtime.h ndoutils-2-0/include/nagios-4x/downtime.h
+--- ndoutils-2-0.orig/include/nagios-4x/downtime.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/downtime.h	2012-11-29 15:45:11.000000000 +0000
+@@ -39,6 +39,7 @@
+ 	char *service_description;
+ 	time_t entry_time;
+ 	time_t start_time;
++	time_t flex_downtime_start;		/* Time the flexible downtime started */
+ 	time_t end_time;
+ 	int fixed;
+ 	unsigned long triggered_by;
+@@ -86,20 +87,21 @@
+ int check_for_expired_downtime(void);
+ #endif
+ 
+-int add_host_downtime(char *, time_t, char *, char *, time_t, time_t, int, unsigned long, unsigned long, unsigned long, int);
+-int add_service_downtime(char *, char *, time_t, char *, char *, time_t, time_t, int, unsigned long, unsigned long, unsigned long, int);
++int add_host_downtime(char *, time_t, char *, char *, time_t, time_t, time_t, int, unsigned long, unsigned long, unsigned long, int);
++int add_service_downtime(char *, char *, time_t, char *, char *, time_t, time_t, time_t, int, unsigned long, unsigned long, unsigned long, int);
+ 
+ /* If you are going to be adding a lot of downtime in sequence, set
+    defer_downtime_sorting to 1 before you start and then call
+    sort_downtime afterwards. Things will go MUCH faster. */
+ 
+ extern int defer_downtime_sorting;
+-int add_downtime(int, char *, char *, time_t, char *, char *, time_t, time_t, int, unsigned long, unsigned long, unsigned long, int);
++int add_downtime(int, char *, char *, time_t, char *, char *, time_t, time_t, time_t, int, unsigned long, unsigned long, unsigned long, int);
+ int sort_downtime(void);
+ 
+ struct scheduled_downtime *find_downtime(int, unsigned long);
+ struct scheduled_downtime *find_host_downtime(unsigned long);
+ struct scheduled_downtime *find_service_downtime(unsigned long);
++struct scheduled_downtime *find_downtime_by_similar_content(int, char *, char *, char *, char *, time_t, time_t, int, unsigned long);
+ 
+ void free_downtime_data(void);                                       /* frees memory allocated to scheduled downtime list */
+ 
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/locations.h ndoutils-2-0/include/nagios-4x/locations.h
+--- ndoutils-2-0.orig/include/nagios-4x/locations.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/locations.h	2012-11-29 15:45:27.000000000 +0000
+@@ -2,7 +2,6 @@
+  *
+  * Nagios Locations Header File
+  * Written By: Ethan Galstad (egalstad@nagios.org)
+- * Last Modified: 04-30-2007
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 as
+@@ -29,11 +28,12 @@
+ #define DEFAULT_DOWNTIME_FILE			"/usr/local/nagios/var/downtime.dat"
+ #define DEFAULT_RETENTION_FILE			"/usr/local/nagios/var/retention.dat"
+ #define DEFAULT_COMMAND_FILE			"/usr/local/nagios/var/rw/nagios.cmd"
++#define DEFAULT_QUERY_SOCKET            "/usr/local/nagios/var/rw/nagios.qh"
+ #define DEFAULT_CONFIG_FILE			"/usr/local/nagios/etc/nagios.cfg"
+ #define DEFAULT_PHYSICAL_HTML_PATH		"/usr/local/nagios/share"
+-#define DEFAULT_URL_HTML_PATH			"/nagios"
++#define DEFAULT_URL_HTML_PATH			"/"
+ #define DEFAULT_PHYSICAL_CGIBIN_PATH		"/usr/local/nagios/sbin"
+-#define DEFAULT_URL_CGIBIN_PATH			"/nagios/cgi-bin"
++#define DEFAULT_URL_CGIBIN_PATH			"/cgi-bin"
+ #define DEFAULT_CGI_CONFIG_FILE			"/usr/local/nagios/etc/cgi.cfg"
+ #define DEFAULT_LOCK_FILE			"/usr/local/nagios/var/nagios.lock"
+ #define DEFAULT_OBJECT_CACHE_FILE		"/usr/local/nagios/var/objects.cache"
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/logging.h ndoutils-2-0/include/nagios-4x/logging.h
+--- ndoutils-2-0.orig/include/nagios-4x/logging.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/logging.h	2012-11-29 15:45:38.000000000 +0000
+@@ -82,6 +82,7 @@
+ int write_log_file_info(time_t *); 			/* records log file/version info */
+ int open_debug_log(void);
+ int close_debug_log(void);
++int close_log_file(void);
+ #endif /* !NSCGI */
+ 
+ NAGIOS_END_DECL
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/macros.h ndoutils-2-0/include/nagios-4x/macros.h
+--- ndoutils-2-0.orig/include/nagios-4x/macros.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/macros.h	2012-11-29 15:45:52.000000000 +0000
+@@ -38,7 +38,7 @@
+ 
+ #define MAX_USER_MACROS				256	/* maximum number of $USERx$ macros */
+ 
+-#define MACRO_X_COUNT				156	/* size of macro_x[] array */
++#define MACRO_X_COUNT				157	/* size of macro_x[] array */
+ 
+ NAGIOS_BEGIN_DECL
+ 
+@@ -217,6 +217,7 @@
+ #define MACRO_HOSTVALUE                         153
+ #define MACRO_SERVICEVALUE                      154
+ #define MACRO_PROBLEMVALUE                      155
++#define MACRO_CONTACTGROUPLIST                  156
+ 
+ 
+ /************* MACRO CLEANING OPTIONS *****************/
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/nagios.h ndoutils-2-0/include/nagios-4x/nagios.h
+--- ndoutils-2-0.orig/include/nagios-4x/nagios.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/nagios.h	2012-11-29 15:46:08.000000000 +0000
+@@ -35,7 +35,9 @@
+  * global variables only used in the core. Reducing this list would be
+  * a Good Thing(tm).
+  */
++extern char *nagios_binary_path;
+ extern char *config_file;
++extern char *config_file_dir;
+ extern char *command_file;
+ extern char *temp_file;
+ extern char *temp_path;
+@@ -43,6 +45,8 @@
+ extern char *lock_file;
+ extern char *object_precache_file;
+ 
++extern unsigned int nofile_limit, nproc_limit, max_apps;
++
+ extern int num_check_workers;
+ extern char *qh_socket_path;
+ 
+@@ -232,6 +236,34 @@
+ 
+ extern struct check_engine nagios_check_engine;
+ 
++/*
++ * Everything we need to keep system load in check.
++ * Don't use this from modules.
++ */
++struct load_control {
++	time_t last_check;  /* last time we checked the real load */
++	time_t last_change; /* last time we changed settings */
++	time_t check_interval; /* seconds between load checks */
++	double load[3];      /* system load, as reported by getloadavg() */
++	float backoff_limit; /* limit we must reach before we back off */
++	float rampup_limit;  /* limit we must reach before we ramp back up */
++	unsigned int backoff_change; /* backoff by this much */
++	unsigned int rampup_change;  /* ramp up by this much */
++	unsigned int changes;  /* number of times we've changed settings */
++	unsigned int jobs_max;   /* upper setting for jobs_limit */
++	unsigned int jobs_limit; /* current limit */
++	unsigned int jobs_min;   /* lower setting for jobs_limit */
++	unsigned int jobs_running;  /* jobs currently running */
++	unsigned int nproc_limit;  /* rlimit for user processes */
++	unsigned int nofile_limit; /* rlimit for open files */
++	unsigned int options; /* various option flags */
++};
++extern struct load_control loadctl;
++
++/* options for load control */
++#define LOADCTL_ENABLED    (1 << 0)
++
++
+ 	/************* MISC LENGTH/SIZE DEFINITIONS ***********/
+ 
+ 	/*
+@@ -336,6 +368,29 @@
+ #define EVENT_SLEEP                     98      /* asynchronous sleep event that occurs when event queues are empty */
+ #define EVENT_USER_FUNCTION             99      /* USER-defined function (modules) */
+ 
++#define EVENT_TYPE_STR( type)	( \
++	type == EVENT_SERVICE_CHECK ? "EVENT_SERVICE_CHECK" : \
++	type == EVENT_COMMAND_CHECK ? "EVENT_COMMAND_CHECK" : \
++	type == EVENT_LOG_ROTATION ? "EVENT_LOG_ROTATION" : \
++	type == EVENT_PROGRAM_SHUTDOWN ? "EVENT_PROGRAM_SHUTDOWN" : \
++	type == EVENT_PROGRAM_RESTART ? "EVENT_PROGRAM_RESTART" : \
++	type == EVENT_CHECK_REAPER ? "EVENT_CHECK_REAPER" : \
++	type == EVENT_ORPHAN_CHECK ? "EVENT_ORPHAN_CHECK" : \
++	type == EVENT_RETENTION_SAVE ? "EVENT_RETENTION_SAVE" : \
++	type == EVENT_STATUS_SAVE ? "EVENT_STATUS_SAVE" : \
++	type == EVENT_SCHEDULED_DOWNTIME ? "EVENT_SCHEDULED_DOWNTIME" : \
++	type == EVENT_SFRESHNESS_CHECK ? "EVENT_SFRESHNESS_CHECK" : \
++	type == EVENT_EXPIRE_DOWNTIME ? "EVENT_EXPIRE_DOWNTIME" : \
++	type == EVENT_HOST_CHECK ? "EVENT_HOST_CHECK" : \
++	type == EVENT_HFRESHNESS_CHECK ? "EVENT_HFRESHNESS_CHECK" : \
++	type == EVENT_RESCHEDULE_CHECKS ? "EVENT_RESCHEDULE_CHECKS" : \
++	type == EVENT_EXPIRE_COMMENT ? "EVENT_EXPIRE_COMMENT" : \
++	type == EVENT_CHECK_PROGRAM_UPDATE ? "EVENT_CHECK_PROGRAM_UPDATE" : \
++	type == EVENT_SLEEP ? "EVENT_SLEEP" : \
++	type == EVENT_USER_FUNCTION ? "EVENT_USER_FUNCTION" : \
++	"UNKNOWN_EVENT_TYPE" \
++)
++
+ 
+ 
+ 	/******* INTER-CHECK DELAY CALCULATION TYPES **********/
+@@ -368,11 +423,13 @@
+ #define check_window(o) (o->state_type == SOFT_STATE ? retry_check_window(o) : normal_check_window(o))
+ 
+ /******************** FUNCTIONS **********************/
++extern int set_loadctl_options(char *opts, unsigned int len);
+ 
+ /* silly helpers useful pretty much all over the place */
+ extern const char *service_state_name(int state);
+ extern const char *host_state_name(int state);
+ extern const char *state_type_name(int state_type);
++extern const char *check_type_name(int check_type);
+ extern const char *check_result_source(check_result *cr);
+ 
+ /*** Nagios Event Radio Dispatcher functions ***/
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/sretention.h ndoutils-2-0/include/nagios-4x/sretention.h
+--- ndoutils-2-0.orig/include/nagios-4x/sretention.h	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/sretention.h	2012-11-29 15:46:51.000000000 +0000
+@@ -27,5 +27,6 @@
+ int cleanup_retention_data(char *);
+ int save_state_information(int);                 /* saves all host and state information */
+ int read_initial_state_information(void);        /* reads in initial host and state information */
++int sync_state_information(void);                /* syncs hosts and state information from sync file */
+ 
+ NAGIOS_END_DECL
+diff -Bbur ndoutils-2-0.orig/src/ndomod.c ndoutils-2-0/src/ndomod.c
+--- ndoutils-2-0.orig/src/ndomod.c	2012-11-29 13:24:38.000000000 +0000
++++ ndoutils-2-0/src/ndomod.c	2012-11-29 15:18:13.000000000 +0000
+@@ -1794,6 +1794,48 @@
+ 		es[4]=ndo_escape_buffer(notdata->ack_author);
+ 		es[5]=ndo_escape_buffer(notdata->ack_data);
+ 
++//printf("NDO_API_NOTIFICATIONDATA           %d\n",NDO_API_NOTIFICATIONDATA);
++//printf("NDO_DATA_TYPE                      %d\n",NDO_DATA_TYPE);
++//printf("notdata->type                      %d\n",notdata->type);
++//printf("NDO_DATA_FLAGS                     %d\n",NDO_DATA_FLAGS);
++//printf("notdata->flags                     %d\n",notdata->flags);
++//printf("NDO_DATA_ATTRIBUTES                %d\n",NDO_DATA_ATTRIBUTES);
++//printf("notdata->attr                      %d\n",notdata->attr);
++//printf("NDO_DATA_TIMESTAMP                 %d\n",NDO_DATA_TIMESTAMP);
++//printf("notdata->timestamp.tv_sec          %ld\n",notdata->timestamp.tv_sec);
++//printf("notdata->timestamp.tv_usec         %ld\n",notdata->timestamp.tv_usec);
++//printf("NDO_DATA_NOTIFICATIONTYPE          %d\n",NDO_DATA_NOTIFICATIONTYPE);
++//printf("notdata->notification_type         %d\n",notdata->notification_type);
++//printf("NDO_DATA_STARTTIME                 %d\n",NDO_DATA_STARTTIME);
++//printf("notdata->start_time.tv_sec         %ld\n",notdata->start_time.tv_sec);
++//printf("notdata->start_time.tv_usec        %ld\n",notdata->start_time.tv_usec);
++//printf("NDO_DATA_ENDTIME                   %d\n",NDO_DATA_ENDTIME);
++//printf("notdata->end_time.tv_sec           %ld\n",notdata->end_time.tv_sec);
++//printf("notdata->end_time.tv_usec          %ld\n",notdata->end_time.tv_usec);
++//printf("NDO_DATA_HOST                      %d\n",NDO_DATA_HOST);
++//printf("(es[0]==NULL)?"":es[0]             %s\n",(es[0]==NULL)?"":es[0]);
++//printf("NDO_DATA_SERVICE                   %d\n",NDO_DATA_SERVICE);
++//printf("(es[1]==NULL)?"":es[1]             %s\n",(es[1]==NULL)?"":es[1]);
++//printf("NDO_DATA_NOTIFICATIONREASON        %d\n",NDO_DATA_NOTIFICATIONREASON);
++//printf("notdata->reason_type               %d\n",notdata->reason_type);
++//printf("NDO_DATA_CURRENTNOTIFICATIONNUMBER %d\n",NDO_DATA_CURRENTNOTIFICATIONNUMBER);
++//printf("notdata->notification_number       %d\n",notdata->notification_number);
++//printf("NDO_DATA_STATE                     %d\n",NDO_DATA_STATE);
++//printf("notdata->state                     %d\n",notdata->state);
++//printf("NDO_DATA_OUTPUT                    %d\n",NDO_DATA_OUTPUT);
++//printf("(es[2]==NULL)?"":es[2]             %s\n",(es[2]==NULL)?"":es[2]);
++//printf("NDO_DATA_LONGOUTPUT                %d\n",NDO_DATA_LONGOUTPUT);
++//printf("(es[3]==NULL)?"":es[3]             %s\n",(es[3]==NULL)?"":es[3]);
++//printf("NDO_DATA_ACKAUTHOR                 %d\n",NDO_DATA_ACKAUTHOR);
++//printf("(es[4]==NULL)?"":es[4]             %s\n",(es[4]==NULL)?"":es[4]);
++//printf("NDO_DATA_ACKDATA                   %d\n",NDO_DATA_ACKDATA);
++//printf("(es[5]==NULL)?"":es[5]             %s\n",(es[5]==NULL)?"":es[5]);
++//printf("NDO_DATA_ESCALATED                 %d\n",NDO_DATA_ESCALATED);
++//printf("notdata->escalated                 %d\n",notdata->escalated);
++//printf("NDO_DATA_CONTACTSNOTIFIED          %d\n",NDO_DATA_CONTACTSNOTIFIED);
++//printf("notdata->contacts_notified         %d\n",notdata->contacts_notified);
++//printf("NDO_API_ENDDATA                    %d\n",NDO_API_ENDDATA);
++
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+ 			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d\n\n"
+ 			 ,NDO_API_NOTIFICATIONDATA

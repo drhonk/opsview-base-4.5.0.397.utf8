@@ -1,0 +1,17 @@
+diff -ur nagios-4.0.20130107.orig/base/checks.c nagios-4.0.20130107/base/checks.c
+--- nagios-4.0.20130107.orig/base/checks.c	2012-12-26 19:03:09.000000000 +0000
++++ nagios-4.0.20130107/base/checks.c	2012-12-26 19:07:16.000000000 +0000
+@@ -519,6 +519,12 @@
+ 			else
+ 				run_async_host_check(temp_host, CHECK_OPTION_NONE, 0.0, FALSE, FALSE, NULL, NULL);
+ 			}
++
++        /* Opsview patch: When a new service comes into existence, need to add to statehistory. If it starts in error state, then */
++        /* will be added in other sections */
++        if(temp_service->has_been_checked==FALSE)
++            handle_service_event(temp_service);
++
+ 		}
+ 
+ 
+Only in nagios-4.0.20130107.orig/base: .checks.c.swp

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>org.opsview.agent</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Applications/OpsviewAgent.app/bin/nrpe</string>
+		<string>-c</string>
+		<string>/Applications/OpsviewAgent.app/etc/nrpe.cfg</string>
+		<string>-d</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>UserName</key>
+	<string>nagios</string>
+	<key>ServiceDescription</key>
+	<string>Opsview NRPE Agent</string>
+	<key>Debug</key>
+	<true/>
+</dict>
+</plist>

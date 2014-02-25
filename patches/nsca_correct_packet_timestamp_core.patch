@@ -1,0 +1,36 @@
+diff -ur nsca-2.7.2/src/nsca.c nsca-2.7.2.new/src/nsca.c
+--- nsca-2.7.2/src/nsca.c	2007-07-03 19:57:28.000000000 +0000
++++ nsca-2.7.2.new/src/nsca.c	2013-08-08 14:00:22.000000000 +0000
+@@ -953,7 +953,7 @@
+         time_t packet_time;
+         time_t current_time;
+         int16_t return_code;
+-        unsigned long packet_age=0L;
++        long packet_age=0;
+         int bytes_to_recv;
+         int rc;
+         char host_name[MAX_HOSTNAME_LENGTH];
+@@ -1028,7 +1028,9 @@
+         packet_time=(time_t)ntohl(receive_packet.timestamp);
+         time(&current_time);
+         if(packet_time>current_time){
+-                syslog(LOG_ERR,"Dropping packet with future timestamp.");
++            packet_age=(long)(packet_time-current_time);
++            if(max_packet_age>0 && (packet_age>max_packet_age)){
++                syslog(LOG_ERR,"Dropping packet with future timestamp - packet was %lu seconds ahead.",packet_age);
+                 /*return;*/
+ 		close(sock);
+                 if(mode==SINGLE_PROCESS_DAEMON)
+@@ -1036,7 +1038,9 @@
+                 else
+                         do_exit(STATE_OK);
+                 }
+-	else{
++            }
++
++        if(packet_time<current_time){
+                 packet_age=(unsigned long)(current_time-packet_time);
+                 if(max_packet_age>0 && (packet_age>max_packet_age)){
+                         syslog(LOG_ERR,"Dropping packet with stale timestamp - packet was %lu seconds old.",packet_age);
+Only in nsca-2.7.2.new/src: nsca.c.orig
+Only in nsca-2.7.2.new/src: nsca.c.rej

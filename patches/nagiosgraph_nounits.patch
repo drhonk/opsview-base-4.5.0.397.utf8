@@ -1,0 +1,126 @@
+--- nagiosgraph-0.8.2.original/show.cgi	2006-04-12 10:42:16.000000000 +0100
++++ nagiosgraph-0.8.2/show.cgi	2006-07-28 17:02:34.794457625 +0100
+@@ -149,6 +149,46 @@
+   return $c;
+ }
+ 
++
++exit unless readconfig();
++
++# Expect host, service and db input
++my $host = param('host') if param('host');
++my $service = param('service') if param('service');
++my @db = param('db') if param('db');
++my $graph = param('graph') if param('graph');
++my $geom = param('geom') if param('geom');
++my $rrdopts = param('rrdopts') if param('rrdopts');
++my $fixedscale = param('fixedscale');
++if (defined $fixedscale) {
++  $fixedscale = 1;
++}
++
++# Draw a graph or a page
++if ( $graph ) {
++  $| = 1; # Make sure headers arrive before image data
++  print header(-type => "image/png");
++  # Figure out db files and line labels
++  my $G = graphinfo($host,$service,@db);
++  my @ds = rrdline($host,$service,$geom,$rrdopts,$G,$graph);
++  debug(4, "CGI RRDs::graph ". join ' ', @ds);
++  RRDs::graph(@ds);
++  debug(2, "CGI RRDs::graph ERR " . RRDs::error) if RRDs::error;
++  exit;
++} else {
++  my @style;
++  if ($Config{stylesheet}) {
++    @style = ( -style => {-src => "$Config{stylesheet}"} );
++  }
++  print header, start_html(-id=>"nagiosgraph", -title => "nagiosgraph: $host-$service",
++    -meta => { -http_equiv => "Refresh", -content => "300" },
++    @style
++    );
++  page($host,$service,$geom,$rrdopts,@db);
++  print div({-id => "footer"}, hr(), small( "Created by ". a( {-href=>"http://nagiosgraph.sf.net/"}, "nagiosgraph"). "." ));
++  print end_html();
++}
++
+ # Generate all the parameters for rrd to produce a graph
+ #
+ sub rrdline {
+@@ -165,11 +205,18 @@
+       debug(5, "CGI file=$f line=$v color=$c");
+       my $sv = "$v";
+       push @ds , "DEF:$sv=$Config{rrddir}/$f:$v:AVERAGE"
+-               , "LINE2:${sv}#$c:$sv"
+-               , "GPRINT:$sv:MAX:Max\\: %6.2lf%s"
++               , "LINE2:${sv}#$c:$sv";
++      if ($fixedscale) {
++        push @ds, "GPRINT:$sv:MAX:Max\\: %6.2lf"
++               , "GPRINT:$sv:AVERAGE:Avg\\: %6.2lf"
++               , "GPRINT:$sv:MIN:Min\\: %6.2lf"
++               , "GPRINT:$sv:LAST:Cur\\: %6.2lf\\n";
++      } else {
++        push @ds, "GPRINT:$sv:MAX:Max\\: %6.2lf%s"
+                , "GPRINT:$sv:AVERAGE:Avg\\: %6.2lf%s"
+                , "GPRINT:$sv:MIN:Min\\: %6.2lf%s"
+                , "GPRINT:$sv:LAST:Cur\\: %6.2lf%s\\n";
++      }
+     }
+   }
+ 
+@@ -182,6 +229,9 @@
+   if ( $rrdopts ) {
+     push @ds, split /\s+/, $rrdopts;
+   }
++  if ( $fixedscale ) {
++    push @ds, "-X", "0";
++  }
+   return @ds;
+ }
+ 
+@@ -212,6 +262,7 @@
+       for my $g ( @db ) {
+         my $arg = join '&', "host=$h", "service=$s", "db=$g", "graph=$t",
+                             "geom=$d", "rrdopts=$o";
++	$arg .= "&fixedscale" if ($fixedscale);
+         my @gl = split ',', $g;
+         my $ds = shift @gl;
+         print div({-class => "graphs"}, img( {-src => "?$arg", -alt => "Graph"} ) );
+@@ -225,37 +276,3 @@
+   }
+ }
+ 
+-exit unless readconfig();
+-
+-# Expect host, service and db input
+-my $host = param('host') if param('host');
+-my $service = param('service') if param('service');
+-my @db = param('db') if param('db');
+-my $graph = param('graph') if param('graph');
+-my $geom = param('geom') if param('geom');
+-my $rrdopts = param('rrdopts') if param('rrdopts');
+-
+-# Draw a graph or a page
+-if ( $graph ) {
+-  $| = 1; # Make sure headers arrive before image data
+-  print header(-type => "image/png");
+-  # Figure out db files and line labels
+-  my $G = graphinfo($host,$service,@db);
+-  my @ds = rrdline($host,$service,$geom,$rrdopts,$G,$graph);
+-  debug(4, "CGI RRDs::graph ". join ' ', @ds);
+-  RRDs::graph(@ds);
+-  debug(2, "CGI RRDs::graph ERR " . RRDs::error) if RRDs::error;
+-  exit;
+-} else {
+-  my @style;
+-  if ($Config{stylesheet}) {
+-    @style = ( -style => {-src => "$Config{stylesheet}"} );
+-  }
+-  print header, start_html(-id=>"nagiosgraph", -title => "nagiosgraph: $host-$service",
+-    -meta => { -http_equiv => "Refresh", -content => "300" },
+-    @style
+-    );
+-  page($host,$service,$geom,$rrdopts,@db);
+-  print div({-id => "footer"}, hr(), small( "Created by ". a( {-href=>"http://nagiosgraph.sf.net/"}, "nagiosgraph"). "." ));
+-  print end_html();
+-}

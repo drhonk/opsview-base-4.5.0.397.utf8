@@ -1,0 +1,31 @@
+diff -ur nagios-2.5.original/base/checks.c nagios-2.5/base/checks.c
+--- nagios-2.5.original/base/checks.c	2007-02-20 21:30:29.000000000 +0000
++++ nagios-2.5/base/checks.c	2007-02-20 21:35:07.943499982 +0000
+@@ -2101,8 +2101,14 @@
+ 			if(sigrestart==TRUE || sigshutdown==TRUE){
+ 				hst->current_attempt=1;
+ 				hst->current_state=old_state;
++				/* Altinity patch: Change two lines below to strcpy calls. Think free() causes problems.
++				If a host changes from OK to DOWN and a HUP signal is received while in this
++				host reachability logic, plugin_output gets corrupted */
++				/*
+ 				free(hst->plugin_output);
+ 				hst->plugin_output=(char *)old_plugin_output;
++				*/
++				strcpy(hst->plugin_output, old_plugin_output);
+ 				return hst->current_state;
+ 				}
+ 
+@@ -2197,8 +2203,12 @@
+ 			if(sigrestart==TRUE || sigshutdown==TRUE){
+ 				hst->current_attempt=1;
+ 				hst->current_state=old_state;
++				/* See note for Altinity patch above */
++				/*
+ 				free(hst->plugin_output);
+ 				hst->plugin_output=(char *)old_plugin_output;
++				*/
++				strcpy(hst->plugin_output, old_plugin_output);
+ 				return hst->current_state;
+ 				}
+ 

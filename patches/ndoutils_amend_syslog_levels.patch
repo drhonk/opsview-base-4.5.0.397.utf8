@@ -1,0 +1,49 @@
+diff -ur ndoutils-1.4b7.orig/src/db.c ndoutils-1.4b7.new/src/db.c
+--- ndoutils-1.4b7.orig/src/db.c	2010-07-16 09:22:47.000000000 +0000
++++ ndoutils-1.4b7.new/src/db.c	2010-07-16 09:21:16.000000000 +0000
+@@ -215,7 +215,7 @@
+ 		        }
+ 		else{
+ 			idi->dbinfo.connected=NDO_TRUE;
+-			syslog(LOG_USER|LOG_INFO,"Successfully connected to MySQL database");
++			syslog(LOG_USER|LOG_DEBUG,"Successfully connected to MySQL database");
+ 		        }
+ #endif
+ 		break;
+@@ -233,7 +233,7 @@
+ 		        }
+ 		else{
+ 			idi->dbinfo.connected=NDO_TRUE;
+-			syslog(LOG_USER|LOG_INFO,"Successfully connect to PostgreSQL database");
++			syslog(LOG_USER|LOG_DEBUG,"Successfully connected to PostgreSQL database");
+ 		        }
+ #endif
+ 		break;
+@@ -260,7 +260,12 @@
+ #ifdef USE_MYSQL
+ 		/* close the connection to the database server */		
+ 		mysql_close(&idi->dbinfo.mysql_conn);
+-		syslog(LOG_USER|LOG_INFO,"Successfully disconnected from MySQL database");
++        /* 
++         * dont show disconnected messages so that 'connected' messages get
++         * wrapper up by syslog in 'last messages repeated x times as
++         * debug messages are all logged by defualt on debian and ubuntu systems
++		syslog(LOG_USER|LOG_DEBUG,"Successfully disconnected from MySQL database");
++         */
+ #endif
+ 		break;
+ 	case NDO2DB_DBSERVER_PGSQL:
+@@ -268,7 +273,12 @@
+ 		/* close database connection and cleanup */
+ 		if(PQstatus(idi->dbinfo.pgsql_conn)!=CONNECTION_BAD)
+ 			PQfinish(idi->dbinfo.pgsql_conn);
+-		syslog(LOG_USER|LOG_INFO,"Successfully disconnected from PostgreSQL database");
++        /* 
++         * dont show disconnected messages so that 'connected' messages get
++         * wrapper up by syslog in 'last messages repeated x times as
++         * debug messages are all logged by defualt on debian and ubuntu systems
++		syslog(LOG_USER|LOG_DEBUG,"Successfully disconnected from PostgreSQL database");
++         */
+ #endif
+ 		break;
+ 	default:

@@ -1,0 +1,60 @@
+--- prototype.js.backup	2013-04-19 17:16:47.670735027 +0100
++++ prototype.js	2013-04-19 17:22:59.340735253 +0100
+@@ -4290,6 +4290,18 @@
+   var MOUSEENTER_MOUSELEAVE_EVENTS_SUPPORTED = 'onmouseenter' in docEl
+     && 'onmouseleave' in docEl;
+ 
++  var isIELegacyEvent = function(event) { return false; };
++
++  if (window.attachEvent) {
++   if (window.addEventListener) {
++      isIELegacyEvent = function(event) {
++        return !(event instanceof window.Event);
++      };
++    } else {
++      isIELegacyEvent = function(event) { return true; };
++    }
++  }
++
+   var _isButton;
+   if (Prototype.Browser.IE) {
+     var buttonMap = { 0: 1, 1: 4, 2: 2 };
+@@ -4405,14 +4417,16 @@
+       return Element.extend(element);
+     }
+ 
+-    Object.extend(methods, {
++    //Object.extend(methods, {
++    var additionalMethods = {
+       stopPropagation: function() { this.cancelBubble = true },
+       preventDefault:  function() { this.returnValue = false },
+       inspect: function() { return '[object Event]' }
+-    });
++    };
+ 
+     Event.extend = function(event, element) {
+       if (!event) return false;
++      if (!isIELegacyEvent(event)) return event;
+       if (event._extendedByPrototype) return event;
+ 
+       event._extendedByPrototype = Prototype.emptyFunction;
+@@ -4425,12 +4439,17 @@
+         pageY:  pointer.y
+       });
+ 
+-      return Object.extend(event, methods);
++      //return Object.extend(event, methods);
++      Object.extend(event, methods);
++      Object.extend(event, additionalMethods);
++      return event;
+     };
+   } else {
++    Event.extend = Prototype.K;
++  }
++  if(window.addEventListener) {
+     Event.prototype = window.Event.prototype || document.createEvent('HTMLEvents').__proto__;
+     Object.extend(Event.prototype, methods);
+-    Event.extend = Prototype.K;
+   }
+ 
+   function _createResponder(element, eventName, handler) {

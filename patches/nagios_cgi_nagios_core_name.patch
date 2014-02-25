@@ -1,0 +1,779 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/avail.c nagios-4.0.20121116/cgi/avail.c
+--- nagios-4.0.20121116.orig/cgi/avail.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/avail.c	2012-11-30 17:46:03.000000000 +0000
+@@ -1082,7 +1082,7 @@
+ 	printf("<head>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+-	printf("Nagios Availability\n");
++	printf("Nagios Core Availability\n");
+ 	printf("</title>\n");
+ 
+ 	if(use_stylesheet == TRUE) {
+@@ -4019,7 +4019,7 @@
+ 
+ 		/* indeterminate times */
+ 		printf("<tr CLASS='dataOdd'><td CLASS='dataOdd' rowspan=3>Undetermined</td>");
+-		printf("<td CLASS='dataOdd'>Nagios Not Running</td><td CLASS='dataOdd'>%s</td><td CLASS='dataOdd'>%2.3f%%</td><td CLASS='dataOdd'></td></tr>\n", time_indeterminate_notrunning_string, percent_time_indeterminate_notrunning);
++		printf("<td CLASS='dataOdd'>Nagios Core Not Running</td><td CLASS='dataOdd'>%s</td><td CLASS='dataOdd'>%2.3f%%</td><td CLASS='dataOdd'></td></tr>\n", time_indeterminate_notrunning_string, percent_time_indeterminate_notrunning);
+ 		printf("<tr CLASS='dataOdd'><td CLASS='dataOdd'>Insufficient Data</td><td CLASS='dataOdd'>%s</td><td CLASS='dataOdd'>%2.3f%%</td><td CLASS='dataOdd'></td></tr>\n", time_indeterminate_nodata_string, percent_time_indeterminate_nodata);
+ 		printf("<tr CLASS='dataOdd'><td CLASS='dataOdd'>Total</td><td CLASS='dataOdd'>%s</td><td CLASS='dataOdd'>%2.3f%%</td><td CLASS='dataOdd'></td></tr>\n", time_indeterminate_string, percent_time_indeterminate);
+ 
+@@ -4511,7 +4511,7 @@
+ 
+ 		printf("<tr CLASS='dataEven'><td CLASS='dataEven' rowspan=3>Undetermined</td>");
+ 
+-		printf("<td CLASS='dataEven'>Nagios Not Running</td><td CLASS='dataEven'>%s</td><td CLASS='dataEven'>%2.3f%%</td><td CLASS='dataEven'></td></tr>\n", time_indeterminate_notrunning_string, percent_time_indeterminate_notrunning);
++		printf("<td CLASS='dataEven'>Nagios Core Not Running</td><td CLASS='dataEven'>%s</td><td CLASS='dataEven'>%2.3f%%</td><td CLASS='dataEven'></td></tr>\n", time_indeterminate_notrunning_string, percent_time_indeterminate_notrunning);
+ 		printf("<tr CLASS='dataEven'><td CLASS='dataEven'>Insufficient Data</td><td CLASS='dataEven'>%s</td><td CLASS='dataEven'>%2.3f%%</td><td CLASS='dataEven'></td></tr>\n", time_indeterminate_nodata_string, percent_time_indeterminate_nodata);
+ 		printf("<tr CLASS='dataEven'><td CLASS='dataEven'>Total</td><td CLASS='dataEven'>%s</td><td CLASS='dataEven'>%2.3f%%</td><td CLASS='dataEven'></td></tr>\n", time_indeterminate_string, percent_time_indeterminate);
+ 
+diff -Bbur nagios-4.0.20121116.orig/cgi/cgiutils.c nagios-4.0.20121116/cgi/cgiutils.c
+--- nagios-4.0.20121116.orig/cgi/cgiutils.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/cgiutils.c	2012-11-30 17:34:47.000000000 +0000
+@@ -1567,14 +1567,14 @@
+ 	printf("<P>\n");
+ 	printf("<OL>\n");
+ 
+-	printf("<LI>Make sure you've installed a CGI config file in its proper location.  See the error message about for details on where the CGI is expecting to find the configuration file.  A sample CGI configuration file (named <b>cgi.cfg</b>) can be found in the <b>sample-config/</b> subdirectory of the Nagios source code distribution.\n");
++	printf("<LI>Make sure you've installed a CGI config file in its proper location.  See the error message about for details on where the CGI is expecting to find the configuration file.  A sample CGI configuration file (named <b>cgi.cfg</b>) can be found in the <b>sample-config/</b> subdirectory of the Nagios Core source code distribution.\n");
+ 	printf("<LI>Make sure the user your web server is running as has permission to read the CGI config file.\n");
+ 
+ 	printf("</OL>\n");
+ 	printf("</P>\n");
+ 
+ 	printf("<P>\n");
+-	printf("Make sure you read the documentation on installing and configuring Nagios thoroughly before continuing.  If all else fails, try sending a message to one of the mailing lists.  More information can be found at <a href='http://www.nagios.org'>http://www.nagios.org</a>.\n");
++	printf("Make sure you read the documentation on installing and configuring Nagios Core thoroughly before continuing.  If all else fails, try sending a message to one of the mailing lists.  More information can be found at <a href='http://www.nagios.org'>http://www.nagios.org</a>.\n");
+ 	printf("</P>\n");
+ 
+ 	return;
+@@ -1596,14 +1596,14 @@
+ 	printf("<P>\n");
+ 	printf("<OL>\n");
+ 
+-	printf("<LI>Make sure you've installed a main config file in its proper location.  See the error message about for details on where the CGI is expecting to find the configuration file.  A sample main configuration file (named <b>nagios.cfg</b>) can be found in the <b>sample-config/</b> subdirectory of the Nagios source code distribution.\n");
++	printf("<LI>Make sure you've installed a main config file in its proper location.  See the error message about for details on where the CGI is expecting to find the configuration file.  A sample main configuration file (named <b>nagios.cfg</b>) can be found in the <b>sample-config/</b> subdirectory of the Nagios Core source code distribution.\n");
+ 	printf("<LI>Make sure the user your web server is running as has permission to read the main config file.\n");
+ 
+ 	printf("</OL>\n");
+ 	printf("</P>\n");
+ 
+ 	printf("<P>\n");
+-	printf("Make sure you read the documentation on installing and configuring Nagios thoroughly before continuing.  If all else fails, try sending a message to one of the mailing lists.  More information can be found at <a href='http://www.nagios.org'>http://www.nagios.org</a>.\n");
++	printf("Make sure you read the documentation on installing and configuring Nagios Core thoroughly before continuing.  If all else fails, try sending a message to one of the mailing lists.  More information can be found at <a href='http://www.nagios.org'>http://www.nagios.org</a>.\n");
+ 	printf("</P>\n");
+ 
+ 	return;
+@@ -1625,13 +1625,13 @@
+ 	printf("<OL>\n");
+ 
+ 	printf("<LI>Verify configuration options using the <b>-v</b> command-line option to check for errors.\n");
+-	printf("<LI>Check the Nagios log file for messages relating to startup or status data errors.\n");
++	printf("<LI>Check the Nagios Core log file for messages relating to startup or status data errors.\n");
+ 
+ 	printf("</OL>\n");
+ 	printf("</P>\n");
+ 
+ 	printf("<P>\n");
+-	printf("Make sure you read the documentation on installing, configuring and running Nagios thoroughly before continuing.  If all else fails, try sending a message to one of the mailing lists.  More information can be found at <a href='http://www.nagios.org'>http://www.nagios.org</a>.\n");
++	printf("Make sure you read the documentation on installing, configuring and running Nagios Core thoroughly before continuing.  If all else fails, try sending a message to one of the mailing lists.  More information can be found at <a href='http://www.nagios.org'>http://www.nagios.org</a>.\n");
+ 	printf("</P>\n");
+ 
+ 	return;
+@@ -1646,7 +1646,7 @@
+ 	printf("<P><STRONG><FONT COLOR='RED'>Error: Could not read host and service status information!</FONT></STRONG></P>\n");
+ 
+ 	printf("<P>\n");
+-	printf("The most common cause of this error message (especially for new users), is the fact that Nagios is not actually running.  If Nagios is indeed not running, this is a normal error message.  It simply indicates that the CGIs could not obtain the current status of hosts and services that are being monitored.  If you've just installed things, make sure you read the documentation on starting Nagios.\n");
++	printf("The most common cause of this error message (especially for new users), is the fact that Nagios Core is not actually running.  If Nagios Core is indeed not running, this is a normal error message.  It simply indicates that the CGIs could not obtain the current status of hosts and services that are being monitored.  If you've just installed things, make sure you read the documentation on starting Nagios Core.\n");
+ 	printf("</P>\n");
+ 
+ 	printf("<P>\n");
+@@ -1656,14 +1656,14 @@
+ 	printf("<P>\n");
+ 	printf("<OL>\n");
+ 
+-	printf("<LI>Check the Nagios log file for messages relating to startup or status data errors.\n");
+-	printf("<LI>Always verify configuration options using the <b>-v</b> command-line option before starting or restarting Nagios!\n");
++	printf("<LI>Check the Nagios Core log file for messages relating to startup or status data errors.\n");
++	printf("<LI>Always verify configuration options using the <b>-v</b> command-line option before starting or restarting Nagios Core!\n");
+ 
+ 	printf("</OL>\n");
+ 	printf("</P>\n");
+ 
+ 	printf("<P>\n");
+-	printf("Make sure you read the documentation on installing, configuring and running Nagios thoroughly before continuing.  If all else fails, try sending a message to one of the mailing lists.  More information can be found at <a href='http://www.nagios.org'>http://www.nagios.org</a>.\n");
++	printf("Make sure you read the documentation on installing, configuring and running Nagios Core thoroughly before continuing.  If all else fails, try sending a message to one of the mailing lists.  More information can be found at <a href='http://www.nagios.org'>http://www.nagios.org</a>.\n");
+ 	printf("</P>\n");
+ 
+ 	return;
+diff -Bbur nagios-4.0.20121116.orig/cgi/cmd.c nagios-4.0.20121116/cgi/cmd.c
+--- nagios-4.0.20121116.orig/cgi/cmd.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/cmd.c	2012-11-30 17:46:04.000000000 +0000
+@@ -707,7 +707,7 @@
+ 
+ 		case CMD_SHUTDOWN_PROCESS:
+ 		case CMD_RESTART_PROCESS:
+-			printf("%s the Nagios process", (cmd == CMD_SHUTDOWN_PROCESS) ? "shutdown" : "restart");
++			printf("%s the Nagios Core process", (cmd == CMD_SHUTDOWN_PROCESS) ? "shutdown" : "restart");
+ 			break;
+ 
+ 		case CMD_ENABLE_HOST_SVC_CHECKS:
+@@ -1819,7 +1819,7 @@
+ 			printf("<DIV CLASS='errorMessage'>Sorry Dave, I can't let you do that...</DIV><br>");
+ 			printf("<DIV CLASS='errorDescription'>");
+ 			printf("It seems that you have chosen to not use the authentication functionality of the CGIs.<br><br>");
+-			printf("I don't want to be personally responsible for what may happen as a result of allowing unauthorized users to issue commands to Nagios,");
++			printf("I don't want to be personally responsible for what may happen as a result of allowing unauthorized users to issue commands to Nagios Core,");
+ 			printf("so you'll have to disable this safeguard if you are really stubborn and want to invite trouble.<br><br>");
+ 			printf("<strong>Read the section on CGI authentication in the HTML documentation to learn how you can enable authentication and why you should want to.</strong>\n");
+ 			printf("</DIV>\n");
+@@ -1853,9 +1853,9 @@
+ 	/* if Nagios isn't checking external commands, don't do anything... */
+ 	else if(check_external_commands == FALSE) {
+ 		if(content_type == WML_CONTENT)
+-			printf("<p>Error: Nagios is not checking external commands!</p>\n");
++			printf("<p>Error: Nagios Core is not checking external commands!</p>\n");
+ 		else {
+-			printf("<P><DIV CLASS='errorMessage'>Sorry, but Nagios is currently not checking for external commands, so your command will not be committed!</DIV></P>\n");
++			printf("<P><DIV CLASS='errorMessage'>Sorry, but Nagios Core is currently not checking for external commands, so your command will not be committed!</DIV></P>\n");
+ 			printf("<P><DIV CLASS='errorDescription'>Read the documentation for information on how to enable external commands...<BR><BR>\n");
+ 			printf("<A HREF='javascript:window.history.go(-2)'>Return from whence you came</A></DIV></P>\n");
+ 			}
+@@ -1871,7 +1871,7 @@
+ 			if(content_type == WML_CONTENT)
+ 				printf("<p>Your command was submitted sucessfully...</p>\n");
+ 			else {
+-				printf("<P><DIV CLASS='infoMessage'>Your command request was successfully submitted to Nagios for processing.<BR><BR>\n");
++				printf("<P><DIV CLASS='infoMessage'>Your command request was successfully submitted to Nagios Core for processing.<BR><BR>\n");
+ 				printf("Note: It may take a while before the command is actually processed.<BR><BR>\n");
+ 				printf("<A HREF='javascript:window.history.go(-2)'>Done</A></DIV></P>");
+ 				}
+@@ -2238,7 +2238,7 @@
+ 		else {
+ 			printf("<P><DIV CLASS='errorMessage'>Error: Could not stat() command file '%s'!</DIV></P>\n", command_file);
+ 			printf("<P><DIV CLASS='errorDescription'>");
+-			printf("The external command file may be missing, Nagios may not be running, and/or Nagios may not be checking external commands.\n");
++			printf("The external command file may be missing, Nagios Core may not be running, and/or Nagios Core may not be checking external commands.\n");
+ 			printf("</DIV></P>\n");
+ 			}
+ 
+@@ -2312,13 +2312,13 @@
+ 		case CMD_ADD_HOST_COMMENT:
+ 			printf("This command is used to add a comment for the specified host.  If you work with other administrators, you may find it useful to share information about a host\n");
+ 			printf("that is having problems if more than one of you may be working on it.  If you do not check the 'persistent' option, the comment will be automatically be deleted\n");
+-			printf("the next time Nagios is restarted.\n");
++			printf("the next time Nagios Core is restarted.\n");
+ 			break;
+ 
+ 		case CMD_ADD_SVC_COMMENT:
+ 			printf("This command is used to add a comment for the specified service.  If you work with other administrators, you may find it useful to share information about a host\n");
+ 			printf("or service that is having problems if more than one of you may be working on it.  If you do not check the 'persistent' option, the comment will automatically be\n");
+-			printf("deleted the next time Nagios is restarted.\n");
++			printf("deleted the next time Nagios Core is restarted.\n");
+ 			break;
+ 
+ 		case CMD_DEL_HOST_COMMENT:
+@@ -2340,8 +2340,8 @@
+ 			break;
+ 
+ 		case CMD_SCHEDULE_SVC_CHECK:
+-			printf("This command is used to schedule the next check of a particular service.  Nagios will re-queue the service to be checked at the time you specify.\n");
+-			printf("If you select the <i>force check</i> option, Nagios will force a check of the service regardless of both what time the scheduled check occurs and whether or not checks are enabled for the service.\n");
++			printf("This command is used to schedule the next check of a particular service.  Nagios Core will re-queue the service to be checked at the time you specify.\n");
++			printf("If you select the <i>force check</i> option, Nagios Core will force a check of the service regardless of both what time the scheduled check occurs and whether or not checks are enabled for the service.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_SVC_CHECK:
+@@ -2361,12 +2361,12 @@
+ 			break;
+ 
+ 		case CMD_SHUTDOWN_PROCESS:
+-			printf("This command is used to shutdown the Nagios process. Note: Once the Nagios has been shutdown, it cannot be restarted via the web interface!\n");
++			printf("This command is used to shutdown the Nagios Core process. Note: Once the Nagios Core has been shutdown, it cannot be restarted via the web interface!\n");
+ 			break;
+ 
+ 		case CMD_RESTART_PROCESS:
+-			printf("This command is used to restart the Nagios process.   Executing a restart command is equivalent to sending the process a HUP signal.\n");
+-			printf("All information will be flushed from memory, the configuration files will be re-read, and Nagios will start monitoring with the new configuration information.\n");
++			printf("This command is used to restart the Nagios Core process.   Executing a restart command is equivalent to sending the process a HUP signal.\n");
++			printf("All information will be flushed from memory, the configuration files will be re-read, and Nagios Core will start monitoring with the new configuration information.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_HOST_SVC_CHECKS:
+@@ -2374,13 +2374,13 @@
+ 			break;
+ 
+ 		case CMD_DISABLE_HOST_SVC_CHECKS:
+-			printf("This command is used to disable active checks of all services associated with the specified host.  When a service is disabled Nagios will not monitor the service.  Doing this will prevent any notifications being sent out for\n");
+-			printf("the specified service while it is disabled.  In order to have Nagios check the service in the future you will have to re-enable the service.\n");
++			printf("This command is used to disable active checks of all services associated with the specified host.  When a service is disabled Nagios Core will not monitor the service.  Doing this will prevent any notifications being sent out for\n");
++			printf("the specified service while it is disabled.  In order to have Nagios Core check the service in the future you will have to re-enable the service.\n");
+ 			printf("Note that disabling service checks may not necessarily prevent notifications from being sent out about the host which those services are associated with.  This <i>does not</i> disable checks of the host unless you check the 'Disable for host too' option.\n");
+ 			break;
+ 
+ 		case CMD_SCHEDULE_HOST_SVC_CHECKS:
+-			printf("This command is used to scheduled the next check of all services on the specified host.  If you select the <i>force check</i> option, Nagios will force a check of all services on the host regardless of both what time the scheduled checks occur and whether or not checks are enabled for those services.\n");
++			printf("This command is used to scheduled the next check of all services on the specified host.  If you select the <i>force check</i> option, Nagios Core will force a check of all services on the host regardless of both what time the scheduled checks occur and whether or not checks are enabled for those services.\n");
+ 			break;
+ 
+ 		case CMD_DEL_ALL_HOST_COMMENTS:
+@@ -2414,12 +2414,12 @@
+ 
+ 		case CMD_ENABLE_ALL_NOTIFICATIONS_BEYOND_HOST:
+ 			printf("This command is used to enable notifications for all hosts and services that lie \"beyond\" the specified host\n");
+-			printf("(from the view of Nagios).\n");
++			printf("(from the view of Nagios Core).\n");
+ 			break;
+ 
+ 		case CMD_DISABLE_ALL_NOTIFICATIONS_BEYOND_HOST:
+ 			printf("This command is used to temporarily prevent notifications from being sent out for all hosts and services that lie\n");
+-			printf("\"beyond\" the specified host (from the view of Nagios).\n");
++			printf("\"beyond\" the specified host (from the view of Nagios Core).\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_HOST_SVC_NOTIFICATIONS:
+@@ -2453,48 +2453,48 @@
+ 			break;
+ 
+ 		case CMD_STOP_EXECUTING_SVC_CHECKS:
+-			printf("This command is used to temporarily stop Nagios from actively executing any service checks.  This will have the side effect of preventing any notifications from being sent out (for any and all services and hosts).\n");
++			printf("This command is used to temporarily stop Nagios Core from actively executing any service checks.  This will have the side effect of preventing any notifications from being sent out (for any and all services and hosts).\n");
+ 			printf("Service checks will not be executed again until you issue a command to resume service check execution.\n");
+ 			break;
+ 
+ 		case CMD_START_ACCEPTING_PASSIVE_SVC_CHECKS:
+-			printf("This command is used to make Nagios start accepting passive service check results that it finds in the external command file\n");
++			printf("This command is used to make Nagios Core start accepting passive service check results that it finds in the external command file\n");
+ 			break;
+ 
+ 		case CMD_STOP_ACCEPTING_PASSIVE_SVC_CHECKS:
+-			printf("This command is use to make Nagios stop accepting passive service check results that it finds in the external command file.  All passive check results that are found will be ignored.\n");
++			printf("This command is use to make Nagios Core stop accepting passive service check results that it finds in the external command file.  All passive check results that are found will be ignored.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_PASSIVE_SVC_CHECKS:
+-			printf("This command is used to allow Nagios to accept passive service check results that it finds in the external command file for this particular service.\n");
++			printf("This command is used to allow Nagios Core to accept passive service check results that it finds in the external command file for this particular service.\n");
+ 			break;
+ 
+ 		case CMD_DISABLE_PASSIVE_SVC_CHECKS:
+-			printf("This command is used to stop Nagios accepting passive service check results that it finds in the external command file for this particular service.  All passive check results that are found for this service will be ignored.\n");
++			printf("This command is used to stop Nagios Core accepting passive service check results that it finds in the external command file for this particular service.  All passive check results that are found for this service will be ignored.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_EVENT_HANDLERS:
+-			printf("This command is used to allow Nagios to run host and service event handlers.\n");
++			printf("This command is used to allow Nagios Core to run host and service event handlers.\n");
+ 			break;
+ 
+ 		case CMD_DISABLE_EVENT_HANDLERS:
+-			printf("This command is used to temporarily prevent Nagios from running any host or service event handlers.\n");
++			printf("This command is used to temporarily prevent Nagios Core from running any host or service event handlers.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_SVC_EVENT_HANDLER:
+-			printf("This command is used to allow Nagios to run the service event handler for a particular service when necessary (if one is defined).\n");
++			printf("This command is used to allow Nagios Core to run the service event handler for a particular service when necessary (if one is defined).\n");
+ 			break;
+ 
+ 		case CMD_DISABLE_SVC_EVENT_HANDLER:
+-			printf("This command is used to temporarily prevent Nagios from running the service event handler for a particular service.\n");
++			printf("This command is used to temporarily prevent Nagios Core from running the service event handler for a particular service.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_HOST_EVENT_HANDLER:
+-			printf("This command is used to allow Nagios to run the host event handler for a particular service when necessary (if one is defined).\n");
++			printf("This command is used to allow Nagios Core to run the host event handler for a particular service when necessary (if one is defined).\n");
+ 			break;
+ 
+ 		case CMD_DISABLE_HOST_EVENT_HANDLER:
+-			printf("This command is used to temporarily prevent Nagios from running the host event handler for a particular host.\n");
++			printf("This command is used to temporarily prevent Nagios Core from running the host event handler for a particular host.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_HOST_CHECK:
+@@ -2502,15 +2502,15 @@
+ 			break;
+ 
+ 		case CMD_DISABLE_HOST_CHECK:
+-			printf("This command is used to temporarily prevent Nagios from actively checking the status of a particular host.  If Nagios needs to check the status of this host, it will assume that it is in the same state that it was in before checks were disabled.\n");
++			printf("This command is used to temporarily prevent Nagios Core from actively checking the status of a particular host.  If Nagios Core needs to check the status of this host, it will assume that it is in the same state that it was in before checks were disabled.\n");
+ 			break;
+ 
+ 		case CMD_START_OBSESSING_OVER_SVC_CHECKS:
+-			printf("This command is used to have Nagios start obsessing over service checks.  Read the documentation on distributed monitoring for more information on this.\n");
++			printf("This command is used to have Nagios Core start obsessing over service checks.  Read the documentation on distributed monitoring for more information on this.\n");
+ 			break;
+ 
+ 		case CMD_STOP_OBSESSING_OVER_SVC_CHECKS:
+-			printf("This command is used stop Nagios from obsessing over service checks.\n");
++			printf("This command is used stop Nagios Core from obsessing over service checks.\n");
+ 			break;
+ 
+ 		case CMD_REMOVE_HOST_ACKNOWLEDGEMENT:
+@@ -2532,30 +2532,30 @@
+ 			break;
+ 
+ 		case CMD_SCHEDULE_HOST_DOWNTIME:
+-			printf("This command is used to schedule downtime for a particular host.  During the specified downtime, Nagios will not send notifications out about the host.\n");
+-			printf("When the scheduled downtime expires, Nagios will send out notifications for this host as it normally would.  Scheduled downtimes are preserved\n");
++			printf("This command is used to schedule downtime for a particular host.  During the specified downtime, Nagios Core will not send notifications out about the host.\n");
++			printf("When the scheduled downtime expires, Nagios Core will send out notifications for this host as it normally would.  Scheduled downtimes are preserved\n");
+ 			printf("across program shutdowns and restarts.  Both the start and end times should be specified in the following format:  <b>mm/dd/yyyy hh:mm:ss</b>.\n");
+ 			printf("If you select the <i>fixed</i> option, the downtime will be in effect between the start and end times you specify.  If you do not select the <i>fixed</i>\n");
+-			printf("option, Nagios will treat this as \"flexible\" downtime.  Flexible downtime starts when the host goes down or becomes unreachable (sometime between the\n");
++			printf("option, Nagios Core will treat this as \"flexible\" downtime.  Flexible downtime starts when the host goes down or becomes unreachable (sometime between the\n");
+ 			printf("start and end times you specified) and lasts as long as the duration of time you enter.  The duration fields do not apply for fixed downtime.\n");
+ 			break;
+ 
+ 		case CMD_SCHEDULE_HOST_SVC_DOWNTIME:
+-			printf("This command is used to schedule downtime for all services on a particular host.  During the specified downtime, Nagios will not send notifications out about the host.\n");
++			printf("This command is used to schedule downtime for all services on a particular host.  During the specified downtime, Nagios Core will not send notifications out about the host.\n");
+ 			printf("Normally, a host in downtime will not send alerts about any services in a failed state. This option will explicitly set downtime for all services for this host.\n");
+-			printf("When the scheduled downtime expires, Nagios will send out notifications for this host as it normally would.  Scheduled downtimes are preserved\n");
++			printf("When the scheduled downtime expires, Nagios Core will send out notifications for this host as it normally would.  Scheduled downtimes are preserved\n");
+ 			printf("across program shutdowns and restarts.  Both the start and end times should be specified in the following format:  <b>mm/dd/yyyy hh:mm:ss</b>.\n");
+ 			printf("If you select the <i>fixed</i> option, the downtime will be in effect between the start and end times you specify.  If you do not select the <i>fixed</i>\n");
+-			printf("option, Nagios will treat this as \"flexible\" downtime.  Flexible downtime starts when the host goes down or becomes unreachable (sometime between the\n");
++			printf("option, Nagios Core will treat this as \"flexible\" downtime.  Flexible downtime starts when the host goes down or becomes unreachable (sometime between the\n");
+ 			printf("start and end times you specified) and lasts as long as the duration of time you enter.  The duration fields do not apply for fixed downtime.\n");
+ 			break;
+ 
+ 		case CMD_SCHEDULE_SVC_DOWNTIME:
+-			printf("This command is used to schedule downtime for a particular service.  During the specified downtime, Nagios will not send notifications out about the service.\n");
+-			printf("When the scheduled downtime expires, Nagios will send out notifications for this service as it normally would.  Scheduled downtimes are preserved\n");
++			printf("This command is used to schedule downtime for a particular service.  During the specified downtime, Nagios Core will not send notifications out about the service.\n");
++			printf("When the scheduled downtime expires, Nagios Core will send out notifications for this service as it normally would.  Scheduled downtimes are preserved\n");
+ 			printf("across program shutdowns and restarts.  Both the start and end times should be specified in the following format:  <b>mm/dd/yyyy hh:mm:ss</b>.\n");
+ 			printf("If you select the <i>fixed</i> option, the downtime will be in effect between the start and end times you specify.  If you do not select the <i>fixed</i>\n");
+-			printf("option, Nagios will treat this as \"flexible\" downtime.  Flexible downtime starts when the service enters a non-OK state (sometime between the\n");
++			printf("option, Nagios Core will treat this as \"flexible\" downtime.  Flexible downtime starts when the service enters a non-OK state (sometime between the\n");
+ 			printf("start and end times you specified) and lasts as long as the duration of time you enter.  The duration fields do not apply for fixed downtime.\n");
+ 			break;
+ 
+@@ -2628,20 +2628,20 @@
+ 			break;
+ 
+ 		case CMD_SCHEDULE_HOSTGROUP_HOST_DOWNTIME:
+-			printf("This command is used to schedule downtime for all hosts in a particular hostgroup.  During the specified downtime, Nagios will not send notifications out about the hosts.\n");
+-			printf("When the scheduled downtime expires, Nagios will send out notifications for the hosts as it normally would.  Scheduled downtimes are preserved\n");
++			printf("This command is used to schedule downtime for all hosts in a particular hostgroup.  During the specified downtime, Nagios Core will not send notifications out about the hosts.\n");
++			printf("When the scheduled downtime expires, Nagios Core will send out notifications for the hosts as it normally would.  Scheduled downtimes are preserved\n");
+ 			printf("across program shutdowns and restarts.  Both the start and end times should be specified in the following format:  <b>mm/dd/yyyy hh:mm:ss</b>.\n");
+ 			printf("If you select the <i>fixed</i> option, the downtime will be in effect between the start and end times you specify.  If you do not select the <i>fixed</i>\n");
+-			printf("option, Nagios will treat this as \"flexible\" downtime.  Flexible downtime starts when a host goes down or becomes unreachable (sometime between the\n");
++			printf("option, Nagios Core will treat this as \"flexible\" downtime.  Flexible downtime starts when a host goes down or becomes unreachable (sometime between the\n");
+ 			printf("start and end times you specified) and lasts as long as the duration of time you enter.  The duration fields do not apply for fixed dowtime.\n");
+ 			break;
+ 
+ 		case CMD_SCHEDULE_HOSTGROUP_SVC_DOWNTIME:
+-			printf("This command is used to schedule downtime for all services in a particular hostgroup.  During the specified downtime, Nagios will not send notifications out about the services.\n");
+-			printf("When the scheduled downtime expires, Nagios will send out notifications for the services as it normally would.  Scheduled downtimes are preserved\n");
++			printf("This command is used to schedule downtime for all services in a particular hostgroup.  During the specified downtime, Nagios Core will not send notifications out about the services.\n");
++			printf("When the scheduled downtime expires, Nagios Core will send out notifications for the services as it normally would.  Scheduled downtimes are preserved\n");
+ 			printf("across program shutdowns and restarts.  Both the start and end times should be specified in the following format:  <b>mm/dd/yyyy hh:mm:ss</b>.\n");
+ 			printf("If you select the <i>fixed</i> option, the downtime will be in effect between the start and end times you specify.  If you do not select the <i>fixed</i>\n");
+-			printf("option, Nagios will treat this as \"flexible\" downtime.  Flexible downtime starts when a service enters a non-OK state (sometime between the\n");
++			printf("option, Nagios Core will treat this as \"flexible\" downtime.  Flexible downtime starts when a service enters a non-OK state (sometime between the\n");
+ 			printf("start and end times you specified) and lasts as long as the duration of time you enter.  The duration fields do not apply for fixed dowtime.\n");
+ 			printf("Note that scheduling downtime for services does not automatically schedule downtime for the hosts those services are associated with.  If you want to also schedule downtime for all hosts in the hostgroup, check the 'Schedule downtime for hosts too' option.\n");
+ 			break;
+@@ -2655,48 +2655,48 @@
+ 			break;
+ 
+ 		case CMD_START_ACCEPTING_PASSIVE_HOST_CHECKS:
+-			printf("This command is used to have Nagios start obsessing over host checks.  Read the documentation on distributed monitoring for more information on this.\n");
++			printf("This command is used to have Nagios Core start obsessing over host checks.  Read the documentation on distributed monitoring for more information on this.\n");
+ 			break;
+ 
+ 		case CMD_STOP_ACCEPTING_PASSIVE_HOST_CHECKS:
+-			printf("This command is used to stop Nagios from obsessing over host checks.\n");
++			printf("This command is used to stop Nagios Core from obsessing over host checks.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_PASSIVE_HOST_CHECKS:
+-			printf("This command is used to allow Nagios to accept passive host check results that it finds in the external command file for a particular host.\n");
++			printf("This command is used to allow Nagios Core to accept passive host check results that it finds in the external command file for a particular host.\n");
+ 			break;
+ 
+ 		case CMD_DISABLE_PASSIVE_HOST_CHECKS:
+-			printf("This command is used to stop Nagios from accepting passive host check results that it finds in the external command file for a particular host.  All passive check results that are found for this host will be ignored.\n");
++			printf("This command is used to stop Nagios Core from accepting passive host check results that it finds in the external command file for a particular host.  All passive check results that are found for this host will be ignored.\n");
+ 			break;
+ 
+ 		case CMD_START_OBSESSING_OVER_HOST_CHECKS:
+-			printf("This command is used to have Nagios start obsessing over host checks.  Read the documentation on distributed monitoring for more information on this.\n");
++			printf("This command is used to have Nagios Core start obsessing over host checks.  Read the documentation on distributed monitoring for more information on this.\n");
+ 			break;
+ 
+ 		case CMD_STOP_OBSESSING_OVER_HOST_CHECKS:
+-			printf("This command is used to stop Nagios from obsessing over host checks.\n");
++			printf("This command is used to stop Nagios Core from obsessing over host checks.\n");
+ 			break;
+ 
+ 		case CMD_SCHEDULE_HOST_CHECK:
+-			printf("This command is used to schedule the next check of a particular host.  Nagios will re-queue the host to be checked at the time you specify.\n");
+-			printf("If you select the <i>force check</i> option, Nagios will force a check of the host regardless of both what time the scheduled check occurs and whether or not checks are enabled for the host.\n");
++			printf("This command is used to schedule the next check of a particular host.  Nagios Core will re-queue the host to be checked at the time you specify.\n");
++			printf("If you select the <i>force check</i> option, Nagios Core will force a check of the host regardless of both what time the scheduled check occurs and whether or not checks are enabled for the host.\n");
+ 			break;
+ 
+ 		case CMD_START_OBSESSING_OVER_SVC:
+-			printf("This command is used to have Nagios start obsessing over a particular service.\n");
++			printf("This command is used to have Nagios Core start obsessing over a particular service.\n");
+ 			break;
+ 
+ 		case CMD_STOP_OBSESSING_OVER_SVC:
+-			printf("This command is used to stop Nagios from obsessing over a particular service.\n");
++			printf("This command is used to stop Nagios Core from obsessing over a particular service.\n");
+ 			break;
+ 
+ 		case CMD_START_OBSESSING_OVER_HOST:
+-			printf("This command is used to have Nagios start obsessing over a particular host.\n");
++			printf("This command is used to have Nagios Core start obsessing over a particular host.\n");
+ 			break;
+ 
+ 		case CMD_STOP_OBSESSING_OVER_HOST:
+-			printf("This command is used to stop Nagios from obsessing over a particular host.\n");
++			printf("This command is used to stop Nagios Core from obsessing over a particular host.\n");
+ 			break;
+ 
+ 		case CMD_ENABLE_SERVICEGROUP_SVC_NOTIFICATIONS:
+@@ -2728,20 +2728,20 @@
+ 			break;
+ 
+ 		case CMD_SCHEDULE_SERVICEGROUP_HOST_DOWNTIME:
+-			printf("This command is used to schedule downtime for all hosts in a particular servicegroup.  During the specified downtime, Nagios will not send notifications out about the hosts.\n");
+-			printf("When the scheduled downtime expires, Nagios will send out notifications for the hosts as it normally would.  Scheduled downtimes are preserved\n");
++			printf("This command is used to schedule downtime for all hosts in a particular servicegroup.  During the specified downtime, Nagios Core will not send notifications out about the hosts.\n");
++			printf("When the scheduled downtime expires, Nagios Core will send out notifications for the hosts as it normally would.  Scheduled downtimes are preserved\n");
+ 			printf("across program shutdowns and restarts.  Both the start and end times should be specified in the following format:  <b>mm/dd/yyyy hh:mm:ss</b>.\n");
+ 			printf("If you select the <i>fixed</i> option, the downtime will be in effect between the start and end times you specify.  If you do not select the <i>fixed</i>\n");
+-			printf("option, Nagios will treat this as \"flexible\" downtime.  Flexible downtime starts when a host goes down or becomes unreachable (sometime between the\n");
++			printf("option, Nagios Core will treat this as \"flexible\" downtime.  Flexible downtime starts when a host goes down or becomes unreachable (sometime between the\n");
+ 			printf("start and end times you specified) and lasts as long as the duration of time you enter.  The duration fields do not apply for fixed dowtime.\n");
+ 			break;
+ 
+ 		case CMD_SCHEDULE_SERVICEGROUP_SVC_DOWNTIME:
+-			printf("This command is used to schedule downtime for all services in a particular servicegroup.  During the specified downtime, Nagios will not send notifications out about the services.\n");
+-			printf("When the scheduled downtime expires, Nagios will send out notifications for the services as it normally would.  Scheduled downtimes are preserved\n");
++			printf("This command is used to schedule downtime for all services in a particular servicegroup.  During the specified downtime, Nagios Core will not send notifications out about the services.\n");
++			printf("When the scheduled downtime expires, Nagios Core will send out notifications for the services as it normally would.  Scheduled downtimes are preserved\n");
+ 			printf("across program shutdowns and restarts.  Both the start and end times should be specified in the following format:  <b>mm/dd/yyyy hh:mm:ss</b>.\n");
+ 			printf("If you select the <i>fixed</i> option, the downtime will be in effect between the start and end times you specify.  If you do not select the <i>fixed</i>\n");
+-			printf("option, Nagios will treat this as \"flexible\" downtime.  Flexible downtime starts when a service enters a non-OK state (sometime between the\n");
++			printf("option, Nagios Core will treat this as \"flexible\" downtime.  Flexible downtime starts when a service enters a non-OK state (sometime between the\n");
+ 			printf("start and end times you specified) and lasts as long as the duration of time you enter.  The duration fields do not apply for fixed dowtime.\n");
+ 			printf("Note that scheduling downtime for services does not automatically schedule downtime for the hosts those services are associated with.  If you want to also schedule downtime for all hosts in the servicegroup, check the 'Schedule downtime for hosts too' option.\n");
+ 			break;
+@@ -2749,7 +2749,7 @@
+ 		case CMD_SEND_CUSTOM_HOST_NOTIFICATION:
+ 		case CMD_SEND_CUSTOM_SVC_NOTIFICATION:
+ 			printf("This command is used to send a custom notification about the specified %s.  Useful in emergencies when you need to notify admins of an issue regarding a monitored system or service.\n", (cmd == CMD_SEND_CUSTOM_HOST_NOTIFICATION) ? "host" : "service");
+-			printf("Custom notifications normally follow the regular notification logic in Nagios.  Selecting the <i>Forced</i> option will force the notification to be sent out, regardless of the time restrictions, whether or not notifications are enabled, etc.  Selecting the <i>Broadcast</i> option causes the notification to be sent out to all normal (non-escalated) and escalated contacts.  These options allow you to override the normal notification logic if you need to get an important message out.\n");
++			printf("Custom notifications normally follow the regular notification logic in Nagios Core.  Selecting the <i>Forced</i> option will force the notification to be sent out, regardless of the time restrictions, whether or not notifications are enabled, etc.  Selecting the <i>Broadcast</i> option causes the notification to be sent out to all normal (non-escalated) and escalated contacts.  These options allow you to override the normal notification logic if you need to get an important message out.\n");
+ 			break;
+ 
+ 		default:
+diff -Bbur nagios-4.0.20121116.orig/cgi/extinfo.c nagios-4.0.20121116/cgi/extinfo.c
+--- nagios-4.0.20121116.orig/cgi/extinfo.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/extinfo.c	2012-11-30 17:46:04.000000000 +0000
+@@ -201,7 +201,7 @@
+ 		else if(display_type == DISPLAY_SCHEDULING_QUEUE)
+ 			snprintf(temp_buffer, sizeof(temp_buffer) - 1, "Check Scheduling Queue");
+ 		else
+-			snprintf(temp_buffer, sizeof(temp_buffer) - 1, "Nagios Process Information");
++			snprintf(temp_buffer, sizeof(temp_buffer) - 1, "Nagios Core Process Information");
+ 		temp_buffer[sizeof(temp_buffer) - 1] = '\x0';
+ 		display_info_table(temp_buffer, TRUE, &current_authdata);
+ 
+@@ -817,7 +817,7 @@
+ 	printf("<TR><TD CLASS='dataVar'>Last Log File Rotation:</TD><TD CLASS='dataVal'>%s</TD></TR>\n", (last_log_rotation == (time_t)0) ? "N/A" : date_time);
+ 
+ 	/* PID */
+-	printf("<TR><TD CLASS='dataVar'>Nagios PID</TD><TD CLASS='dataVal'>%d</TD></TR>\n", nagios_pid);
++	printf("<TR><TD CLASS='dataVar'>Nagios Core PID</TD><TD CLASS='dataVal'>%d</TD></TR>\n", nagios_pid);
+ 
+ 	/* notifications enabled */
+ 	printf("<TR><TD CLASS='dataVar'>Notifications Enabled?</TD><TD CLASS='dataVal'><DIV CLASS='notifications%s'>&nbsp;&nbsp;%s&nbsp;&nbsp;</DIV></TD></TR>\n", (enable_notifications == TRUE) ? "ENABLED" : "DISABLED", (enable_notifications == TRUE) ? "YES" : "NO");
+@@ -865,8 +865,8 @@
+ 		printf("<TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 CLASS='command'>\n");
+ 
+ #ifndef DUMMY_INSTALL
+-		printf("<TR CLASS='command'><TD><img src='%s%s' border=0 ALT='Shutdown the Nagios Process' TITLE='Shutdown the Nagios Process'></td><td CLASS='command'><a href='%s?cmd_typ=%d'>Shutdown the Nagios process</a></td></tr>\n", url_images_path, STOP_ICON, COMMAND_CGI, CMD_SHUTDOWN_PROCESS);
+-		printf("<TR CLASS='command'><TD><img src='%s%s' border=0 ALT='Restart the Nagios Process' TITLE='Restart the Nagios Process'></td><td CLASS='command'><a href='%s?cmd_typ=%d'>Restart the Nagios process</a></td></tr>\n", url_images_path, RESTART_ICON, COMMAND_CGI, CMD_RESTART_PROCESS);
++		printf("<TR CLASS='command'><TD><img src='%s%s' border=0 ALT='Shutdown the Nagios Core Process' TITLE='Shutdown the Nagios Core Process'></td><td CLASS='command'><a href='%s?cmd_typ=%d'>Shutdown the Nagios Core process</a></td></tr>\n", url_images_path, STOP_ICON, COMMAND_CGI, CMD_SHUTDOWN_PROCESS);
++		printf("<TR CLASS='command'><TD><img src='%s%s' border=0 ALT='Restart the Nagios Core Process' TITLE='Restart the Nagios Core Process'></td><td CLASS='command'><a href='%s?cmd_typ=%d'>Restart the Nagios Core process</a></td></tr>\n", url_images_path, RESTART_ICON, COMMAND_CGI, CMD_RESTART_PROCESS);
+ #endif
+ 
+ 		if(enable_notifications == TRUE)
+@@ -922,11 +922,11 @@
+ 		printf("</TABLE>\n");
+ 		}
+ 	else {
+-		printf("<DIV ALIGN=CENTER CLASS='infoMessage'>It appears as though Nagios is not running, so commands are temporarily unavailable...\n");
++		printf("<DIV ALIGN=CENTER CLASS='infoMessage'>It appears as though Nagios Core is not running, so commands are temporarily unavailable...\n");
+ 		if(!strcmp(nagios_check_command, "")) {
+ 			printf("<BR><BR>\n");
+ 			printf("Hint: It looks as though you have not defined a command for checking the process state by supplying a value for the <b>nagios_check_command</b> option in the CGI configuration file.<BR>\n");
+-			printf("Read the documentation for more information on checking the status of the Nagios process in the CGIs.\n");
++			printf("Read the documentation for more information on checking the status of the Nagios Core process in the CGIs.\n");
+ 			}
+ 		printf("</DIV>\n");
+ 		}
+@@ -1220,8 +1220,8 @@
+ 		printf("<DIV ALIGN=CENTER CLASS='infoMessage'>Your account does not have permissions to execute commands.<br>\n");
+ 		}
+ 	else {
+-		printf("<DIV ALIGN=CENTER CLASS='infoMessage'>It appears as though Nagios is not running, so commands are temporarily unavailable...<br>\n");
+-		printf("Click <a href='%s?type=%d'>here</a> to view Nagios process information</DIV>\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
++		printf("<DIV ALIGN=CENTER CLASS='infoMessage'>It appears as though Nagios Core is not running, so commands are temporarily unavailable...<br>\n");
++		printf("Click <a href='%s?type=%d'>here</a> to view Nagios Core process information</DIV>\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
+ 		}
+ 	printf("</TD></TR></TABLE>\n");
+ 
+@@ -1562,8 +1562,8 @@
+ 		printf("<DIV ALIGN=CENTER CLASS='infoMessage'>Your account does not have permissions to execute commands.<br>\n");
+ 		}
+ 	else {
+-		printf("<DIV CLASS='infoMessage'>It appears as though Nagios is not running, so commands are temporarily unavailable...<br>\n");
+-		printf("Click <a href='%s?type=%d'>here</a> to view Nagios process information</DIV>\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
++		printf("<DIV CLASS='infoMessage'>It appears as though Nagios Core is not running, so commands are temporarily unavailable...<br>\n");
++		printf("Click <a href='%s?type=%d'>here</a> to view Nagios Core process information</DIV>\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
+ 		}
+ 
+ 	printf("</td></tr>\n");
+@@ -1664,8 +1664,8 @@
+ 		printf("<DIV ALIGN=CENTER CLASS='infoMessage'>Your account does not have permissions to execute commands.<br>\n");
+ 		}
+ 	else {
+-		printf("<DIV CLASS='infoMessage'>It appears as though Nagios is not running, so commands are temporarily unavailable...<br>\n");
+-		printf("Click <a href='%s?type=%d'>here</a> to view Nagios process information</DIV>\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
++		printf("<DIV CLASS='infoMessage'>It appears as though Nagios Core is not running, so commands are temporarily unavailable...<br>\n");
++		printf("Click <a href='%s?type=%d'>here</a> to view Nagios Core process information</DIV>\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
+ 		}
+ 
+ 	printf("</TD></TR>\n");
+@@ -1757,8 +1757,8 @@
+ 		printf("</TABLE>\n");
+ 		}
+ 	else {
+-		printf("<DIV CLASS='infoMessage'>It appears as though Nagios is not running, so commands are temporarily unavailable...<br>\n");
+-		printf("Click <a href='%s?type=%d'>here</a> to view Nagios process information</DIV>\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
++		printf("<DIV CLASS='infoMessage'>It appears as though Nagios Core is not running, so commands are temporarily unavailable...<br>\n");
++		printf("Click <a href='%s?type=%d'>here</a> to view Nagios Core process information</DIV>\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
+ 		}
+ 
+ 	printf("</TD></TR>\n");
+diff -Bbur nagios-4.0.20121116.orig/cgi/histogram.c nagios-4.0.20121116/cgi/histogram.c
+--- nagios-4.0.20121116.orig/cgi/histogram.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/histogram.c	2012-11-30 17:34:47.000000000 +0000
+@@ -992,7 +992,7 @@
+ 		printf("<head>\n");
+ 		printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 		printf("<title>\n");
+-		printf("Nagios Histogram\n");
++		printf("Nagios Core Histogram\n");
+ 		printf("</title>\n");
+ 
+ 		if(use_stylesheet == TRUE) {
+diff -Bbur nagios-4.0.20121116.orig/cgi/history.c nagios-4.0.20121116/cgi/history.c
+--- nagios-4.0.20121116.orig/cgi/history.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/history.c	2012-11-30 17:34:47.000000000 +0000
+@@ -320,7 +320,7 @@
+ 	printf("<head>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+-	printf("Nagios History\n");
++	printf("Nagios Core History\n");
+ 	printf("</title>\n");
+ 
+ 	if(use_stylesheet == TRUE) {
+diff -Bbur nagios-4.0.20121116.orig/cgi/showlog.c nagios-4.0.20121116/cgi/showlog.c
+--- nagios-4.0.20121116.orig/cgi/showlog.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/showlog.c	2012-11-30 17:34:47.000000000 +0000
+@@ -195,7 +195,7 @@
+ 	printf("<HEAD>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<TITLE>\n");
+-	printf("Nagios Log File\n");
++	printf("Nagios Core Log File\n");
+ 	printf("</TITLE>\n");
+ 
+ 	if(use_stylesheet == TRUE) {
+diff -Bbur nagios-4.0.20121116.orig/cgi/status.c nagios-4.0.20121116/cgi/status.c
+--- nagios-4.0.20121116.orig/cgi/status.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/status.c	2012-11-30 17:46:04.000000000 +0000
+@@ -1916,7 +1916,7 @@
+ 			}
+ 		else {
+ 			printf("<p><div class='infoMessage'>There doesn't appear to be any service status information in the status log...<br><br>\n");
+-			printf("Make sure that Nagios is running and that you have specified the location of you status log correctly in the configuration files.</div></p>\n");
++			printf("Make sure that Nagios Core is running and that you have specified the location of you status log correctly in the configuration files.</div></p>\n");
+ 			}
+ 		}
+ 	else {
+@@ -2352,7 +2352,7 @@
+ 			}
+ 		else {
+ 			printf("<P><div class='infoMessage'>There doesn't appear to be any host status information in the status log...<br><br>\n");
+-			printf("Make sure that Nagios is running and that you have specified the location of you status log correctly in the configuration files.</div></P>\n");
++			printf("Make sure that Nagios Core is running and that you have specified the location of you status log correctly in the configuration files.</div></P>\n");
+ 			}
+ 		}
+ 
+@@ -3549,7 +3549,7 @@
+ 			}
+ 		else {
+ 			printf("<div class='infoMessage'>There doesn't appear to be any host status information in the status log...<br><br>\n");
+-			printf("Make sure that Nagios is running and that you have specified the location of you status log correctly in the configuration files.</div>\n");
++			printf("Make sure that Nagios Core is running and that you have specified the location of you status log correctly in the configuration files.</div>\n");
+ 			}
+ 
+ 		printf("</div>\n");
+@@ -3901,7 +3901,7 @@
+ 			}
+ 		else {
+ 			printf("<div class='infoMessage'>There doesn't appear to be any host status information in the status log...<br><br>\n");
+-			printf("Make sure that Nagios is running and that you have specified the location of you status log correctly in the configuration files.</div>\n");
++			printf("Make sure that Nagios Core is running and that you have specified the location of you status log correctly in the configuration files.</div>\n");
+ 			}
+ 
+ 		printf("</div></P>\n");
+@@ -4458,7 +4458,7 @@
+ 			}
+ 		else {
+ 			printf("<div class='infoMessage'>There doesn't appear to be any host status information in the status log...<br><br>\n");
+-			printf("Make sure that Nagios is running and that you have specified the location of you status log correctly in the configuration files.</div>\n");
++			printf("Make sure that Nagios Core is running and that you have specified the location of you status log correctly in the configuration files.</div>\n");
+ 			}
+ 
+ 		printf("</div></P>\n");
+diff -Bbur nagios-4.0.20121116.orig/cgi/statusmap.c nagios-4.0.20121116/cgi/statusmap.c
+--- nagios-4.0.20121116.orig/cgi/statusmap.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/statusmap.c	2012-11-30 17:46:04.000000000 +0000
+@@ -1638,7 +1638,7 @@
+ 			}
+ 
+ 		if(create_type == CREATE_IMAGE)
+-			draw_text("Nagios Process", x1 + (DEFAULT_NODE_WIDTH / 2), y1 + DEFAULT_NODE_HEIGHT, color_black);
++			draw_text("Nagios Core Process", x1 + (DEFAULT_NODE_WIDTH / 2), y1 + DEFAULT_NODE_HEIGHT, color_black);
+ 		}
+ 
+ 	/* calculate average services per host */
+diff -Bbur nagios-4.0.20121116.orig/cgi/statuswml.c nagios-4.0.20121116/cgi/statuswml.c
+--- nagios-4.0.20121116.orig/cgi/statuswml.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/statuswml.c	2012-11-30 17:46:04.000000000 +0000
+@@ -363,10 +363,10 @@
+ 
+ 
+ 	/**** MAIN MENU SCREEN (CARD 1) ****/
+-	printf("<card id='card1' title='Nagios WAP Interface'>\n");
++	printf("<card id='card1' title='Nagios Core WAP Interface'>\n");
+ 	printf("<p align='center' mode='nowrap'>\n");
+ 
+-	printf("<b>Nagios</b><br/><b>WAP Interface</b><br/>\n");
++	printf("<b>Nagios Core</b><br/><b>WAP Interface</b><br/>\n");
+ 
+ 	printf("<b><anchor title='Quick Stats'>Quick Stats<go href='%s'><postfield name='style' value='quickstats'/></go></anchor></b><br/>\n", STATUSWML_CGI);
+ 
+@@ -410,7 +410,7 @@
+ 	printf("</p>\n");
+ 
+ 	printf("<p align='center' mode='wrap'>\n");
+-	printf("<b>Nagios %s</b><br/><b>WAP Interface</b><br/>\n", PROGRAM_VERSION);
++	printf("<b>Nagios Core %s</b><br/><b>WAP Interface</b><br/>\n", PROGRAM_VERSION);
+ 	printf("Copyright (C) 2001 Ethan Galstad<br/>\n");
+ 	printf("egalstad@nagios.org<br/><br/>\n");
+ 	printf("License: <b>GPL</b><br/><br/>\n");
+@@ -480,9 +480,9 @@
+ 		}
+ 
+ 	if(nagios_process_state == STATE_OK)
+-		printf("Nagios process is running<br/>\n");
++		printf("Nagios Core process is running<br/>\n");
+ 	else
+-		printf("<b>Nagios process may not be running</b><br/>\n");
++		printf("<b>Nagios Core process may not be running</b><br/>\n");
+ 
+ 	if(enable_notifications == TRUE)
+ 		printf("Notifications are enabled<br/>\n");
+diff -Bbur nagios-4.0.20121116.orig/cgi/statuswrl.c nagios-4.0.20121116/cgi/statuswrl.c
+--- nagios-4.0.20121116.orig/cgi/statuswrl.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/statuswrl.c	2012-11-30 17:46:04.000000000 +0000
+@@ -785,7 +785,7 @@
+ 	/* write world information */
+ 	printf("\n");
+ 	printf("WorldInfo{\n");
+-	printf("title \"Nagios 3-D Network Status View\"\n");
++	printf("title \"Nagios Core 3-D Network Status View\"\n");
+ 	printf("info [\"Copyright (c) 1999-2002 Ethan Galstad\"\n");
+ 	printf("\"egalstad@nagios.org\"]\n");
+ 	printf("}\n");
+@@ -1131,7 +1131,7 @@
+ 	printf("}\n");
+ 
+ 	printf("]\n");
+-	printf("description \"View Nagios Process Information\"\n");
++	printf("description \"View Nagios Core Process Information\"\n");
+ 	printf("url \"%s?type=%d\"\n", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
+ 	printf("}\n");
+ 
+diff -Bbur nagios-4.0.20121116.orig/cgi/summary.c nagios-4.0.20121116/cgi/summary.c
+--- nagios-4.0.20121116.orig/cgi/summary.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/summary.c	2012-11-30 17:34:52.000000000 +0000
+@@ -703,7 +703,7 @@
+ 	printf("<head>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<title>\n");
+-	printf("Nagios Event Summary\n");
++	printf("Nagios Core Event Summary\n");
+ 	printf("</title>\n");
+ 
+ 	if(use_stylesheet == TRUE) {
+diff -Bbur nagios-4.0.20121116.orig/cgi/tac.c nagios-4.0.20121116/cgi/tac.c
+--- nagios-4.0.20121116.orig/cgi/tac.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/tac.c	2012-11-30 17:34:52.000000000 +0000
+@@ -380,7 +380,7 @@
+ 	printf("<HEAD>\n");
+ 	printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 	printf("<TITLE>\n");
+-	printf("Nagios Tactical Monitoring Overview\n");
++	printf("Nagios Core Tactical Monitoring Overview\n");
+ 	printf("</TITLE>\n");
+ 
+ 	if(use_stylesheet == TRUE) {
+diff -Bbur nagios-4.0.20121116.orig/cgi/trends.c nagios-4.0.20121116/cgi/trends.c
+--- nagios-4.0.20121116.orig/cgi/trends.c	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/cgi/trends.c	2012-11-30 17:34:52.000000000 +0000
+@@ -1191,7 +1191,7 @@
+ 		printf("<head>\n");
+ 		printf("<link rel=\"shortcut icon\" href=\"%sfavicon.ico\" type=\"image/ico\">\n", url_images_path);
+ 		printf("<title>\n");
+-		printf("Nagios Trends\n");
++		printf("Nagios Core Trends\n");
+ 		printf("</title>\n");
+ 
+ 		if(use_stylesheet == TRUE) {
+diff -Bbur nagios-4.0.20121116.orig/t/623cmd-local.t nagios-4.0.20121116/t/623cmd-local.t
+--- nagios-4.0.20121116.orig/t/623cmd-local.t	2012-11-30 17:34:33.000000000 +0000
++++ nagios-4.0.20121116/t/623cmd-local.t	2012-11-30 17:46:04.000000000 +0000
+@@ -132,14 +132,14 @@
+ # Tests against command type '13'
+ $cmd_typ=13;
+ $output = `NAGIOS_CGI_CONFIG=etc/cgi.cfg $remote_user REQUEST_METHOD=GET QUERY_STRING='cmd_typ=$cmd_typ' $local_cgi`;
+-like( $output, "/You are requesting to restart the Nagios process/", "$local_cgi with cmd_typ=$cmd_typ shows request to restart Nagios" );
++like( $output, "/You are requesting to restart the Nagios Core process/", "$local_cgi with cmd_typ=$cmd_typ shows request to restart Nagios Core" );
+ unlike( $output, "/Sorry, but no information is available for this command./", "$local_cgi with cmd_typ=$cmd_typ has a command description" );
+ 
+ 
+ # Tests against command type '14'
+ $cmd_typ=14;
+ $output = `NAGIOS_CGI_CONFIG=etc/cgi.cfg $remote_user REQUEST_METHOD=GET QUERY_STRING='cmd_typ=$cmd_typ' $local_cgi`;
+-like( $output, "/You are requesting to shutdown the Nagios process/", "$local_cgi with cmd_typ=$cmd_typ shows request to shutdown Nagios" );
++like( $output, "/You are requesting to shutdown the Nagios Core process/", "$local_cgi with cmd_typ=$cmd_typ shows request to shutdown Nagios Core" );
+ unlike( $output, "/Sorry, but no information is available for this command./", "$local_cgi with cmd_typ=$cmd_typ has a command description" );
+ 
+ 

@@ -1,0 +1,12 @@
+diff -Bbur nagvis-1.4.4.orig/nagvis/includes/js/overlib.js nagvis-1.4.4/nagvis/includes/js/overlib.js
+--- nagvis-1.4.4.orig/nagvis/includes/js/overlib.js	2013-01-28 15:55:17.000000000 +0000
++++ nagvis-1.4.4/nagvis/includes/js/overlib.js	2013-01-28 15:55:40.000000000 +0000
+@@ -213,7 +213,7 @@
+ if (olIe4) {
+ 	var agent = navigator.userAgent;
+ 	if (/MSIE/.test(agent)) {
+-		var versNum = parseFloat(agent.match(/MSIE[ ](\d\.\d+)\.*/i)[1]);
++		var versNum = parseFloat(agent.match(/MSIE[ ](\d+\.\d+)\.*/i)[1]);
+ 		if (versNum >= 5){
+ 			olIe5=true;
+ 			olIe55=(versNum>=5.5&&!olOp) ? true : false;

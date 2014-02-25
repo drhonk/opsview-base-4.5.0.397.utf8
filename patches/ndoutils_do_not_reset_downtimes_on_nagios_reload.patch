@@ -1,0 +1,174 @@
+diff -ur ndoutils-1.4b7.original/src/dbhandlers.c ndoutils-1.4b7/src/dbhandlers.c
+--- ndoutils-1.4b7.original/src/dbhandlers.c	2010-07-15 17:38:18.000000000 +0100
++++ ndoutils-1.4b7/src/dbhandlers.c	2010-07-19 14:31:19.000000000 +0100
+@@ -36,6 +36,8 @@
+ extern char *ndo2db_db_tablenames[NDO2DB_MAX_DBTABLES];
+ 
+ 
++/* Use this flag to change some SQL based on whether we are currently loading retention data or not */
++extern int ndo2db_loading_retention_data_flag;
+ 
+ /****************************************************************************/
+ /* OBJECT ROUTINES                                                          */
+@@ -2262,6 +2264,7 @@
+ 	char *es[4];
+ 	char *buf=NULL;
+ 	char *buf1=NULL;
++	char *buf2=NULL;
+ 	unsigned long object_id=0L;
+ 	unsigned long check_timeperiod_object_id=0L;
+ 	int x=0;
+@@ -2342,7 +2345,7 @@
+ 	result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_TIMEPERIOD,idi->buffered_input[NDO_DATA_HOSTCHECKPERIOD],NULL,&check_timeperiod_object_id);
+ 
+ 	/* generate query string */
+-	if(asprintf(&buf1,"instance_id='%lu', host_object_id='%lu', status_update_time=%s, output='%s', perfdata='%s', current_state='%d', has_been_checked='%d', should_be_scheduled='%d', current_check_attempt='%d', max_check_attempts='%d', last_check=%s, next_check=%s, check_type='%d', last_state_change=%s, last_hard_state_change=%s, last_hard_state='%d', last_time_up=%s, last_time_down=%s, last_time_unreachable=%s, state_type='%d', last_notification=%s, next_notification=%s, no_more_notifications='%d', notifications_enabled='%d', problem_has_been_acknowledged='%d', acknowledgement_type='%d', current_notification_number='%d', passive_checks_enabled='%d', active_checks_enabled='%d', event_handler_enabled='%d', flap_detection_enabled='%d', is_flapping='%d', percent_state_change='%lf', latency='%lf', execution_time='%lf', scheduled_downtime_depth='%d', failure_prediction_enabled='%d', process_performance_data='%d', obsess_over_host='%d', modified_host_attributes='%lu', event_handler='%s', check_command='%s', normal_check_interval='%lf', retry_check_interval='%lf', check_timeperiod_object_id='%lu'"
++	if(asprintf(&buf1,"instance_id='%lu', host_object_id='%lu', status_update_time=%s, output='%s', perfdata='%s', current_state='%d', has_been_checked='%d', should_be_scheduled='%d', current_check_attempt='%d', max_check_attempts='%d', last_check=%s, next_check=%s, check_type='%d', last_state_change=%s, last_hard_state_change=%s, last_hard_state='%d', last_time_up=%s, last_time_down=%s, last_time_unreachable=%s, state_type='%d', last_notification=%s, next_notification=%s, no_more_notifications='%d', notifications_enabled='%d', problem_has_been_acknowledged='%d', acknowledgement_type='%d', current_notification_number='%d', passive_checks_enabled='%d', active_checks_enabled='%d', event_handler_enabled='%d', flap_detection_enabled='%d', is_flapping='%d', percent_state_change='%lf', latency='%lf', execution_time='%lf', failure_prediction_enabled='%d', process_performance_data='%d', obsess_over_host='%d', modified_host_attributes='%lu', event_handler='%s', check_command='%s', normal_check_interval='%lf', retry_check_interval='%lf', check_timeperiod_object_id='%lu'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,object_id
+ 		    ,ts[0]
+@@ -2378,7 +2381,6 @@
+ 		    ,percent_state_change
+ 		    ,latency
+ 		    ,execution_time
+-		    ,scheduled_downtime_depth
+ 		    ,failure_prediction_enabled
+ 		    ,process_performance_data
+ 		    ,obsess_over_host
+@@ -2391,10 +2393,25 @@
+ 		   )==-1)
+ 		buf1=NULL;
+ 
+-	if(asprintf(&buf,"INSERT INTO %s SET %s ON DUPLICATE KEY UPDATE %s"
++	/* Opsview patch: Only set the downtime flag if we are not in a retention data dump. This is because when retention data is
++	read, the scheduled_downtime_depth is reset to 0 and not changed until downtime is set later on. By missing
++	this bit of data out from the SQL, if the downtime is already set, then it will not get reset */
++	if (ndo2db_loading_retention_data_flag==NDO_TRUE) {
++		buf2=strdup("");
++	}
++	else {
++		if(asprintf(&buf2,", scheduled_downtime_depth='%d'"
++		  ,scheduled_downtime_depth
++		  )==-1)
++			buf2=NULL;
++	}
++
++	if(asprintf(&buf,"INSERT INTO %s SET %s%s ON DUPLICATE KEY UPDATE %s%s"
+ 		    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_HOSTSTATUS]
+ 		    ,buf1
++		    ,buf2
+ 		    ,buf1
++		    ,buf2
+ 		   )==-1)
+ 		buf=NULL;
+ 
+@@ -2402,6 +2419,7 @@
+ 	result=ndo2db_db_query(idi,buf);
+ 	free(buf);
+ 	free(buf1);
++	free(buf2);
+ 
+ 	/* free memory */
+ 	for(x=0;x<4;x++)
+@@ -2501,6 +2519,7 @@
+ 	char *es[4];
+ 	char *buf=NULL;
+ 	char *buf1=NULL;
++	char *buf2=NULL;
+ 	unsigned long object_id=0L;
+ 	unsigned long check_timeperiod_object_id=0L;
+ 	int x=0;
+@@ -2583,7 +2602,7 @@
+ 	result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_TIMEPERIOD,idi->buffered_input[NDO_DATA_SERVICECHECKPERIOD],NULL,&check_timeperiod_object_id);
+ 
+ 	/* generate query string */
+-	if(asprintf(&buf1,"instance_id='%lu', service_object_id='%lu', status_update_time=%s, output='%s', perfdata='%s', current_state='%d', has_been_checked='%d', should_be_scheduled='%d', current_check_attempt='%d', max_check_attempts='%d', last_check=%s, next_check=%s, check_type='%d', last_state_change=%s, last_hard_state_change=%s, last_hard_state='%d', last_time_ok=%s, last_time_warning=%s, last_time_unknown=%s, last_time_critical=%s, state_type='%d', last_notification=%s, next_notification=%s, no_more_notifications='%d', notifications_enabled='%d', problem_has_been_acknowledged='%d', acknowledgement_type='%d', current_notification_number='%d', passive_checks_enabled='%d', active_checks_enabled='%d', event_handler_enabled='%d', flap_detection_enabled='%d', is_flapping='%d', percent_state_change='%lf', latency='%lf', execution_time='%lf', scheduled_downtime_depth='%d', failure_prediction_enabled='%d', process_performance_data='%d', obsess_over_service='%d', modified_service_attributes='%lu', event_handler='%s', check_command='%s', normal_check_interval='%lf', retry_check_interval='%lf', check_timeperiod_object_id='%lu'"
++	if(asprintf(&buf1,"instance_id='%lu', service_object_id='%lu', status_update_time=%s, output='%s', perfdata='%s', current_state='%d', has_been_checked='%d', should_be_scheduled='%d', current_check_attempt='%d', max_check_attempts='%d', last_check=%s, next_check=%s, check_type='%d', last_state_change=%s, last_hard_state_change=%s, last_hard_state='%d', last_time_ok=%s, last_time_warning=%s, last_time_unknown=%s, last_time_critical=%s, state_type='%d', last_notification=%s, next_notification=%s, no_more_notifications='%d', notifications_enabled='%d', problem_has_been_acknowledged='%d', acknowledgement_type='%d', current_notification_number='%d', passive_checks_enabled='%d', active_checks_enabled='%d', event_handler_enabled='%d', flap_detection_enabled='%d', is_flapping='%d', percent_state_change='%lf', latency='%lf', execution_time='%lf', failure_prediction_enabled='%d', process_performance_data='%d', obsess_over_service='%d', modified_service_attributes='%lu', event_handler='%s', check_command='%s', normal_check_interval='%lf', retry_check_interval='%lf', check_timeperiod_object_id='%lu'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,object_id
+ 		    ,ts[0]
+@@ -2620,7 +2639,6 @@
+ 		    ,percent_state_change
+ 		    ,latency
+ 		    ,execution_time
+-		    ,scheduled_downtime_depth
+ 		    ,failure_prediction_enabled
+ 		    ,process_performance_data
+ 		    ,obsess_over_service
+@@ -2633,10 +2651,23 @@
+ 		   )==-1)
+ 		buf1=NULL;
+ 
+-	if(asprintf(&buf,"INSERT INTO %s SET %s ON DUPLICATE KEY UPDATE %s"
++	/* See host comment */
++	if (ndo2db_loading_retention_data_flag==NDO_TRUE) {
++		buf2=strdup("");
++	}
++	else {
++		if(asprintf(&buf2,", scheduled_downtime_depth='%d'"
++		  ,scheduled_downtime_depth
++		  )==-1)
++			buf2=NULL;
++	}
++
++	if(asprintf(&buf,"INSERT INTO %s SET %s%s ON DUPLICATE KEY UPDATE %s%s"
+ 		    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_SERVICESTATUS]
+ 		    ,buf1
++		    ,buf2
+ 		    ,buf1
++		    ,buf2
+ 		   )==-1)
+ 		buf=NULL;
+ 
+@@ -2644,6 +2675,7 @@
+ 	result=ndo2db_db_query(idi,buf);
+ 	free(buf);
+ 	free(buf1);
++	free(buf2);
+ 
+ 	/* free memory */
+ 	for(x=0;x<4;x++)
+@@ -2930,11 +2962,21 @@
+ 
+ 
+ int ndo2db_handle_retentiondata(ndo2db_idi *idi){
++	int type,flags,attr;
++	struct timeval tstamp;
++	int result=NDO_OK;
+ 
+ 	if(idi==NULL)
+ 		return NDO_ERROR;
+ 
+-	/* IGNORED */
++	result=ndo2db_convert_standard_data_elements(idi,&type,&flags,&attr,&tstamp);
++
++	if (type==NEBTYPE_RETENTIONDATA_STARTLOAD) {
++		ndo2db_loading_retention_data_flag=NDO_TRUE;
++	}
++	else if (type==NEBTYPE_RETENTIONDATA_ENDLOAD) {
++		ndo2db_loading_retention_data_flag=NDO_FALSE;
++	}
+ 
+ 	return NDO_OK;
+         }
+diff -ur ndoutils-1.4b7.original/src/ndo2db.c ndoutils-1.4b7/src/ndo2db.c
+--- ndoutils-1.4b7.original/src/ndo2db.c	2010-07-15 17:38:18.000000000 +0100
++++ ndoutils-1.4b7/src/ndo2db.c	2010-07-19 14:28:15.000000000 +0100
+@@ -54,6 +54,7 @@
+ 
+ extern char *ndo2db_db_tablenames[NDO2DB_MAX_DBTABLES];
+ 
++int ndo2db_loading_retention_data_flag=NDO_FALSE;
+ 
+ 
+ /*#define DEBUG_NDO2DB 1*/                        /* don't daemonize */
+@@ -1034,6 +1035,9 @@
+ 
+ 			/* free old connection memory (necessary in some cases) */
+ 			ndo2db_free_connection_memory(idi);
++
++			/* Reset the loading_retention_data flag, in case a RETENTION END not received */
++			ndo2db_loading_retention_data_flag=0;
+ 		        }
+ 
+ 		break;

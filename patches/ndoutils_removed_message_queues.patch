@@ -1,0 +1,104 @@
+diff -ur ndoutils-2-0/src/ndo2db.c ndoutils-2-0.removed_message_queue//src/ndo2db.c
+--- ndoutils-2-0/src/ndo2db.c	2012-11-30 06:09:13.000000000 +0000
++++ ndoutils-2-0.removed_message_queue//src/ndo2db.c	2012-11-30 06:05:04.000000000 +0000
+@@ -1013,10 +1013,13 @@
+ 	signal(SIGSEGV,ndo2db_child_sighandler);
+ 	signal(SIGFPE,ndo2db_child_sighandler);
+ 
++    // Opsview: Removing queuing system
++    /*
+ 	pid_t chpid;
+ 	if ((chpid = fork()) == 0) {
+ 		ndo2db_async_client_handle();
+ 	}
++    */
+ 
+ 	/* initialize input data information */
+ 	ndo2db_idi_init(&idi);
+@@ -1093,7 +1096,8 @@
+ 
+ 			/* gracefully back out of current operation... */
+ 			ndo2db_db_goodbye(&idi);
+-			kill (chpid, SIGTERM);
++            //Opsview: Removed
++			//kill (chpid, SIGTERM);
+ 
+ 			break;
+ 		        }
+@@ -1109,15 +1113,17 @@
+ 		/* check for completed lines of input */
+ 		ndo2db_check_for_client_input(&idi,&dbuf);
+ 		/* reinitialize buffer */
+-		ndo_dbuf_free(&dbuf);
+-		ndo_dbuf_init(&dbuf,dbuf_chunk);
++        //Opsview: Removed
++		//ndo_dbuf_free(&dbuf);
++		//ndo_dbuf_init(&dbuf,dbuf_chunk);
+ 
+ 		/* should we disconnect the client? */
+ 		if(idi.disconnect_client==NDO_TRUE){
+ 
+ 			/* gracefully back out of current operation... */
+ 			ndo2db_db_goodbye(&idi);
+-			kill (chpid, SIGTERM);
++            //Opsview: Removed
++			//kill (chpid, SIGTERM);
+ 
+ 			break;
+ 		        }
+@@ -1139,10 +1145,10 @@
+ 	ndo2db_free_connection_memory(&idi);
+ 
+ 	/* clean queue */
+-	del_queue();
++	//del_queue();
+ 
+ 	/* wait for child to end work */
+-	waitpid(chpid, NULL, 0);
++	//waitpid(chpid, NULL, 0);
+ 
+ 	/* close syslog facility */
+ 	/*closelog();*/
+@@ -1207,8 +1213,40 @@
+ 	printf("  USED1: %lu, BYTES: %lu, LINES: %lu\n",dbuf->used_size,idi->bytes_processed,idi->lines_processed);
+ #endif
+ 
+-	get_queue_id(getpid());
+-	push_into_queue(dbuf->buf);
++    // Opsview: Removing queuing system. Reverting back to 1.4b7 code
++	//get_queue_id(getpid());
++	//push_into_queue(dbuf->buf);
++
++    /* search for complete lines of input */
++    for(x=0;dbuf->buf[x]!='\x0';x++){
++
++        /* we found the end of a line */
++        if(dbuf->buf[x]=='\n'){
++
++#ifdef DEBUG_NDO2DB2
++            printf("BUF[%d]='\\n'\n",x);
++#endif
++
++            /* handle this line of input */
++            dbuf->buf[x]='\x0';
++            if((buf=strdup(dbuf->buf))){
++                ndo2db_handle_client_input(idi,buf);
++                free(buf);
++                buf=NULL;
++                idi->lines_processed++;
++                idi->bytes_processed+=(x+1);
++                    }
++
++            /* shift data back to front of buffer and adjust counters */
++            memmove((void *)&dbuf->buf[0],(void *)&dbuf->buf[x+1],(size_t)((int)dbuf->used_size-x-1));
++            dbuf->used_size-=(x+1);
++            dbuf->buf[dbuf->used_size]='\x0';
++            x=-1;
++#ifdef DEBUG_NDO2DB2
++            printf("  USED2: %lu, BYTES: %lu, LINES: %lu\n",dbuf->used_size,idi->bytes_processed,idi->lines_processed);
++#endif
++                }
++            }
+ 
+ 	return NDO_OK;
+         }

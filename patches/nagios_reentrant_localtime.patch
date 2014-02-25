@@ -1,0 +1,14 @@
+diff -ur nagios-4.0.20130107.original//base/utils.c nagios-4.0.20130107/base/utils.c
+--- nagios-4.0.20130107.original//base/utils.c	2013-01-21 13:44:50.000000000 +0000
++++ nagios-4.0.20130107/base/utils.c	2013-02-26 16:29:29.000000000 +0000
+@@ -734,7 +734,9 @@
+ 
+ /* Checks if the given time is in daylight time saving period */
+ static int is_dst_time(time_t *time) {
+-	struct tm *bt = localtime(time);
++	struct tm tm_s;
++	//struct tm *bt = localtime(time);
++	struct tm *bt = localtime_r(time, &tm_s);
+ 	return bt->tm_isdst;
+ 	}
+ 

@@ -1,0 +1,24 @@
+diff -ur validation-1.5.4.1.original/validation.js validation-1.5.4.1/validation.js
+--- validation-1.5.4.1.original/validation.js	2008-10-02 14:22:27.179213000 +0100
++++ validation-1.5.4.1/validation.js	2008-10-02 14:25:20.308893560 +0100
+@@ -103,7 +103,12 @@
+ 			result = Form.getElements(this.form).collect(function(elm) { return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback}); }).all();
+ 		}
+ 		if(!result && this.options.focusOnError) {
+-			Form.getElements(this.form).findAll(function(elm){return $(elm).hasClassName('validation-failed')}).first().focus()
++			try {
++				Form.getElements(this.form).findAll(function(elm){return $(elm).hasClassName('validation-failed')}).first().focus()
++			} catch(e) {
++				/* This is required to catch an IE6 exception when a field has not passed validation, but is in a different tab to the current one */
++				alert("There is a validation error in one of the other tabs");
++			}
+ 		}
+ 		return this.options.onFormValidate(result, this.form);
+ 	},
+@@ -276,4 +281,4 @@
+ 					return $F(elm);
+ 				});
+ 			}]
+-]);
+\ No newline at end of file
++]);

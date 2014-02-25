@@ -1,0 +1,48 @@
+diff -ur scriptaculous-js-1.8.3/lib/prototype.js scriptaculous-js-1.8.3.with_domchanged_event/lib/prototype.js
+--- scriptaculous-js-1.8.3/lib/prototype.js	2009-11-19 10:18:20.000000000 +0000
++++ scriptaculous-js-1.8.3.with_domchanged_event/lib/prototype.js	2009-11-19 10:17:41.000000000 +0000
+@@ -4700,6 +4700,44 @@
+ 
+ Element.addMethods();
+ 
++/*--------------------------------------------------------------------------*/
++// Opsview patch
++// Implements "dom:changed" event which fires when an element's DOM subtree
++// is structurally modified.
++
++var domchangedCount = 0; // number of events raised
++
++document.observe("DOMSubtreeModified", function(event) {
++  Event.fire(event.target, "dom:changed");
++  domchangedCount++;
++});
++ 
++// hook Element.[update,replace,insert] methods
++var elupdate = Element.Methods.update;
++Element.Methods.update = function(el, con) {
++  var c = domchangedCount;
++  var ret = elupdate(el, con);
++  if (domchangedCount == c) { Event.fire(el, "dom:changed"); domchangedCount++; }
++  return ret;
++};
++var elreplace = Element.Methods.replace;
++Element.Methods.replace = function(el, con) {
++  var c = domchangedCount;
++  var ret = elreplace(el, con);
++  if (domchangedCount == c) { Event.fire(el, "dom:changed"); domchangedCount++; }
++  return ret;
++};
++var elinsert = Element.Methods.insert;
++Element.Methods.insert = function(el, ins) {
++  var c = domchangedCount;
++  var ret = elinsert(el, ins);
++  if (domchangedCount == c) { Event.fire(el, "dom:changed"); domchangedCount++; }
++  return ret;
++};
++Object.extend(Element, Element.Methods);
++
++/*--------------------------------------------------------------------------*/
++
+ /*------------------------------- DEPRECATED -------------------------------*/
+ 
+ Hash.toQueryString = Object.toQueryString;

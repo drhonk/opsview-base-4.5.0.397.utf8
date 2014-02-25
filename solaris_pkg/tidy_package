@@ -1,0 +1,23 @@
+#!/bin/bash -x
+
+PKGDIR=$1
+
+if [[ -z "$PKGDIR" ]]; then
+        echo "package directory not specified"
+        exit 1;
+fi
+
+if [[ ! -d $PKGDIR ]]; then
+        echo "package directory doesnt exist"
+        exit 1;
+fi
+
+perl -n -i -e 'print unless(m!htdocs/NMIS 3.2.6 on Windows!)' $PKGDIR/Prototype
+
+perl -p -i -e 's!(libexec/check_icmp) (\d+) (\w+) (\w+)!$1 4550 root nagios!' $PKGDIR/Prototype
+perl -p -i -e 's!(libexec/check_dhcp) (\d+) (\w+) (\w+)!$1 4550 root nagios!' $PKGDIR/Prototype
+perl -p -i -e 's!(libexec/pst3) (\d+) (\w+) (\w+)!$1 4550 root nagios!' $PKGDIR/Prototype
+
+# remove perl directory from base to prevent conflicts from different versions
+# of Nagios::Plugins being provided
+perl -n -i -e 'print unless (m!usr/local/nagios/perl!)' $PKGDIR/Prototype

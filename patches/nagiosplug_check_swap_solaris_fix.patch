@@ -1,0 +1,33 @@
+diff -ur nagios-plugins-1.4.14.orig/plugins/common.h nagios-plugins-1.4.14/plugins/common.h
+--- nagios-plugins-1.4.14.orig/plugins/common.h	Tue Dec  8 17:57:35 2009
++++ nagios-plugins-1.4.14/plugins/common.h	Tue Dec  8 18:00:19 2009
+@@ -32,6 +32,14 @@
+ #define _COMMON_H_
+ 
+ #include "config.h"
++/* This needs to be removed for Solaris servers, where 64 bit files, but 32 bi
++t architecture
++   This needs to be done early on because subsequent system includes use _FILE
++_OFFSET_BITS
++   Cannot remove from config.h because is included by regex.c from lib/ */
++#if __sun__ && !defined(_LP64) && _FILE_OFFSET_BITS == 64
++#undef _FILE_OFFSET_BITS
++#endif
+ 
+ #ifdef HAVE_FEATURES_H
+ #include <features.h>
+diff -ur nagios-plugins-1.4.14.orig//configure nagios-plugins-1.4.14/configure
+--- nagios-plugins-1.4.14.orig//configure	Wed Sep 16 09:38:03 2009
++++ nagios-plugins-1.4.14/configure	Wed Dec  9 11:22:43 2009
+@@ -20596,7 +20596,11 @@
+   no | unknown) ;;
+   *)
+ cat >>confdefs.h <<_ACEOF
++#if __sun__ && !defined(_LP64) && $ac_cv_sys_file_offset_bits == 64
++#undef _FILE_OFFSET_BITS
++#else
+ #define _FILE_OFFSET_BITS $ac_cv_sys_file_offset_bits
++#endif
+ _ACEOF
+ ;;
+ esac

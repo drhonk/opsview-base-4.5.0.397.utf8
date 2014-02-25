@@ -1,0 +1,73 @@
+Index: nagvis-1.4rc1/nagvis/includes/classes/objects/NagiosHostgroup.php
+===================================================================
+--- nagvis-1.4rc1/nagvis/includes/classes/objects/NagiosHostgroup.php	(revision 2)
++++ nagvis-1.4rc1/nagvis/includes/classes/objects/NagiosHostgroup.php	(working copy)
+@@ -27,7 +27,9 @@
+  * @author	Lars Michelsen <lars@vertical-visions.de>
+  */
+ class NagiosHostgroup extends NagVisStatefulObject {
+-	protected $hostgroup_name;
++	/* Make these two public so that the Backend classes can access */
++	public $hostgroup_name;
++	public $hostgroup_id;
+ 	protected $alias;
+ 	protected $display_name;
+ 	protected $address;
+@@ -48,13 +50,24 @@
+ 	 */
+ 	public function __construct($CORE, $BACKEND, $backend_id, $hostgroupName) {
+ 		$this->backend_id = $backend_id;
++		$this->members = Array();
+ 		$this->hostgroup_name = $hostgroupName;
+-		
+-		$this->members = Array();
+-		
++		$this->hostgroup_id = 0;
++		$this->postConfiguration();
+ 		parent::__construct($CORE, $BACKEND);
+ 	}
+ 	
++	public function postConfiguration() {
++		/* Split off the hostgroup_id number */
++		$hostgroupName = $this->hostgroup_name;
++		if(strpos($hostgroupName, ";") > 0) {
++			$array = preg_split('/\;/', $hostgroupName);
++			$this->hostgroup_name = $array[0];
++			$this->hostgroup_id = $array[1];
++		}
++		parent::postConfiguration();
++	}
++
+ 	/**
+ 	 * PUBLIC fetchMembers()
+ 	 *
+Index: nagvis-1.4rc1/nagvis/includes/classes/objects/NagVisObject.php
+===================================================================
+--- nagvis-1.4rc1/nagvis/includes/classes/objects/NagVisObject.php    (revision 2)
++++ nagvis-1.4rc1/nagvis/includes/classes/objects/NagVisObject.php    (working copy)
+@@ -161,8 +161,16 @@
+ 			$this->conf[$key] = $val;
+ 			$this->{$key} = $val;
+ 		}
++		$this->postConfiguration();
+ 	}
+ 	
++	/* Created to allow post configuration tasks to occur. Override at specific object level
++	 * This wouldn't be required except ajax_handler.php does a "Apply default configuration to object" which means that
++	 * a hostgroup name is re-entered again and needs to be split off once more 
++	*/
++	public function postConfiguration() {
++	}
++
+ 	/**
+ 	 * PUBLIC setObjectInformation()
+ 	 *
+@@ -367,7 +375,7 @@
+ 		$ret = '';
+ 		
+ 		if($this->hover_menu) {
+-			$sRequest = $this->CORE->MAINCFG->getValue('paths','htmlbase').'/nagvis/ajax_handler.php?action=getObjectStates&ty=complete&m[]=&t[]='.$this->getType().'&n1[]='.$this->getName().'&i[]=a'.md5(time()).'&n2[]=';
++			$sRequest = $this->CORE->MAINCFG->getValue('paths','htmlbase').'/nagvis/ajax_handler.php?action=getObjectStates&ty=complete&m[]=&t[]='.$this->getType().'&n1[]='.urlencode($this->getName()).'&i[]=a'.md5(time()).'&n2[]=';
+ 			
+ 			if($this->getType() == 'service') {
+ 				$ret .= 'onmouseover="displayHoverMenu(replaceHoverTemplateMacros(\'0\', new NagVisHost(getSyncRequest(\''.$sRequest.$this->service_description.'\')[0]), getHoverTemplate(\''.$this->getHoverTemplate().'\')),'.($this->hover_delay*1000).',\'\');" onmouseout=" return hideHoverMenu();"';

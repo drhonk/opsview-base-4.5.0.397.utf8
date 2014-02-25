@@ -1,0 +1,84 @@
+diff -ur nmis-4.2.13.original/bin/nmis.pl nmis-4.2.13/bin/nmis.pl
+--- nmis-4.2.13.original/bin/nmis.pl	2008-01-07 21:25:31.000000000 +0000
++++ nmis-4.2.13/bin/nmis.pl	2008-01-10 15:23:58.000000000 +0000
+@@ -3326,7 +3326,7 @@
+ 	# Threshold interface utilisation!  Easy to do, just take an hour or so.
+ 	# hmmmm I was wrong, about 20mins plus some testing. (I love reusable code)
+ 	### KS 2 Jan 03 - Changing check for Win2000 to Windows
+-	if ( 	$NMIS::systemTable{nodeModel} =~ /Catalyst6000|Catalyst5000Sup3|Catalyst5005|Catalyst5000|CiscoRouter|CatalystIOS|CiscoATM|generic|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|Redback|FoundrySwitch|Riverstone|MIB2/i
++	if ( 	$NMIS::systemTable{nodeModel} =~ /Catalyst6000|Catalyst5000Sup3|Catalyst5005|Catalyst5000|CiscoRouter|CatalystIOS|CiscoATM|generic|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|Redback|FoundrySwitch|Riverstone|MIB2|Juniper/i
+ 		and $NMIS::nodeTable{$node}{collect} eq "true"
+ 	) {
+ 		%interfaceTable = &loadCSV("$NMIS::config{'<nmis_var>'}/$node-interface.dat","ifIndex","\t");
+@@ -5667,7 +5667,7 @@
+ 	# An SNMP session exists already and we know the node type
+ 	# Depending on the node type get different information
+ 	# CiscoRouter/ATM
+-	if ( $NMIS::systemTable{nodeModel} =~ /CiscoRouter|CiscoATM/ ) {
++	if ( $NMIS::systemTable{nodeModel} =~ /CiscoRouter|CiscoATM|Juniper/ ) {
+ 		if ($debug) { print "\t Collecting $NMIS::systemTable{ifNumber} Interfaces \n"; }
+ 		$validModel = "true";
+ 		# Loop to get interface information for Cisco router
+@@ -6681,7 +6681,14 @@
+ 						$interfaces->{$index}{collect} = "false";
+   						$interfaces->{$index}{nocollect} = "ifType eq loopback"; # reason
+ 						print "\t collect=false: ifType eq 'loopback'\n" if $debug; }
+- 				} 
++ 				}
++				### Juniper 
++				elsif ( $NMIS::systemTable{nodeModel} =~ /Juniper/ ) {
++					if ( $interfaces->{$index}{ifType}  =~ /tunnel|softwareLoopback|other|pppMultilinkBundle/i
++					) { $interfaces->{$index}{collect} = "false"; 
++ 						$interfaces->{$index}{nocollect} = "ifType eq tunnel|softwareLoopback|other|pppMultilinkBundle"; # reason
++                       print "\t collect=false: ifType eq 'tunnel|softwareLoopback|other|pppMultilinkBundle'\n" if $debug; }
++				} 
+ 				
+ 				# drop server interfaces that dont have an ip address configured.
+ 				#if (  $NMIS::systemTable{nodeType} eq 'server' and ! $interfaces->{$index}{ipAdEntAddr}  ) {
+diff -ur nmis-4.2.13.original/cgi-bin/nmiscgi.pl nmis-4.2.13/cgi-bin/nmiscgi.pl
+--- nmis-4.2.13.original/cgi-bin/nmiscgi.pl	2008-01-07 21:25:31.000000000 +0000
++++ nmis-4.2.13/cgi-bin/nmiscgi.pl	2008-01-10 14:53:50.000000000 +0000
+@@ -1655,7 +1655,7 @@
+     print "<table class=\"white\" summary=\"Display\">";
+ 
+ 	if ( $NMIS::nodeTable{$node}{collect} eq "true" and $NMIS::nodeTable{$node}{active} ne "false" ) {
+-		if ( $NMIS::systemTable{nodeModel} =~ /router|atm|catalyst|PIX|FreeBSD|SunSolaris|generic|MIB2|Windows|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone/i ) {
++		if ( $NMIS::systemTable{nodeModel} =~ /router|atm|catalyst|PIX|FreeBSD|SunSolaris|generic|MIB2|Windows|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone|Juniper/i ) {
+ 			# Extract the interface statics and summaries for display in a second.
+ 			foreach $intf (keys %interfaceTable ) {
+ 				#if ( $interfaceTable{$intf}{ifDescr} ne "" ) {
+@@ -1787,7 +1787,7 @@
+ 				#}
+ 			} # FOR LOOP
+ 
+-			if ( $NMIS::systemTable{nodeModel} =~ /router|atm|generic|MIB2|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|SSII 3Com|Redback/i ) {
++			if ( $NMIS::systemTable{nodeModel} =~ /router|atm|generic|MIB2|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|SSII 3Com|Redback|Juniper/i ) {
+ 				cssPrintHeadRow("Interface Table","menubar",11);
+ 				$tmpurl = "file=&amp;node=&amp;type=graph&amp;graphtype=$NMIS::config{portstats}&amp;glamount=$glamount&amp;glunits=$glunits&amp;intf=$intf";
+ 				print "			<tr>";
+@@ -2697,7 +2697,7 @@
+ 	print "	<form name=\"graph\" action=\"$this_script\">";
+ #EO_HTML
+ 
+-	if ( $NMIS::systemTable{nodeModel} =~ /router|atm|Catalyst|PIX|FreeBSD|SunSolaris|generic|MIB2|Windows|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone/i ) {
++	if ( $NMIS::systemTable{nodeModel} =~ /router|atm|Catalyst|PIX|FreeBSD|SunSolaris|generic|MIB2|Windows|Accelar|BayStack|SSII 3Com|Redback|FoundrySwitch|Riverstone|Juniper/i ) {
+ 		# Extract the interface statics and summaries for display in a second.
+ 		foreach $intf (keys %interfaceTable ) {
+ 			if ( $interfaceTable{$intf}{collect} eq "true" ) {
+@@ -2789,7 +2789,7 @@
+ 		} # FOR LOOP
+ 
+ 		# only show collected interface here...as only have rrd for collected interfaces.
+-		if ( $NMIS::systemTable{nodeModel} =~ /router|catalystios|atm|generic|MIB2|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|SSII 3Com|Redback/i ) {
++		if ( $NMIS::systemTable{nodeModel} =~ /router|catalystios|atm|generic|MIB2|PIX|FreeBSD|SunSolaris|Windows|Accelar|BayStack|SSII 3Com|Redback|Juniper/i ) {
+ 			cssPrintHeadRow("Interface Table","menubar",11);
+ 			print "			<tr>";
+ 			print "<td class=\"menubar\"><a href=\"$this_script?file=$conf&amp;node=$node&amp;type=port&amp;sort1=ifDescr&amp;sort2=$sort1\">Name</a></td>";
+--- nmis-4.2.13.original/conf/models.csv	2006-08-17 18:10:17.000000000 +0100
++++ nmis-4.2.13/conf/models.csv	2008-01-21 15:21:12.000000000 +0000
+@@ -33,4 +33,5 @@
+ 31	lan	FoundrySwitch	switch	Foundry Networks, Inc.	BIS	true	IronWare|ServerIron	switch_syslog
+ 32	lan	Riverstone	switch	Riverstone Networks	ROS	true	Riverstone Networks	switch_syslog
+ 33	lan	MIB2	switch	Dell Computer Corporation	IOS	true	PowerConnect 5224 	switch_syslog
++34	wan	Juniper	router	Juniper Networks, Inc.	JunOS	true	Juniper Networks	unclassified_syslog
+ default	unknown	generic	unknown	unknown	unknown	true	unknown	unclassified_syslog

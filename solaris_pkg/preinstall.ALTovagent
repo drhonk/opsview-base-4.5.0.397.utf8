@@ -1,0 +1,36 @@
+
+die() { echo $1; exit 1; }
+
+if [ "x$GID_NAGIOS" != "x" ]; then
+	GID_NAGIOS="-g $GID_NAGIOS"
+fi
+
+if [ "x$GID_NAGCMD" != "x" ]; then
+	GID_NAGCMD="-g $GID_NAGCMD"
+fi
+
+if [ "x$UID_NAGIOS" != "x" ]; then
+	UID_NAGIOS="-u $UID_NAGIOS"
+fi
+
+/usr/sbin/chroot $BASEDIR /usr/bin/getent group nagios 1>/dev/null
+if [ $? != 0 ]; then
+	/usr/sbin/chroot $BASEDIR /usr/sbin/groupadd $GID_NAGIOS nagios || die "Unable to add group 'nagios'"
+fi
+
+/usr/sbin/chroot $BASEDIR /usr/bin/getent group nagcmd 1>/dev/null
+if [ $? != 0 ]; then
+	/usr/sbin/chroot $BASEDIR /usr/sbin/groupadd $GID_NAGCMD nagcmd || die "Unable to add group 'nagcmd'"
+fi
+
+/usr/sbin/chroot $BASEDIR /usr/bin/getent passwd nagios 1>/dev/null
+if [ $? != 0 ]; then
+	/usr/sbin/chroot $BASEDIR /usr/sbin/useradd $UID_NAGIOS -g nagios -d /var/log/nagios -c "Nagios user" -s /usr/bin/bash -m nagios || die "
+Unable to add user 'nagios'"
+	/usr/sbin/chroot $BASEDIR /usr/bin/passwd -N nagios
+fi
+
+/usr/sbin/chroot $BASEDIR /usr/bin/groups nagios | grep nagcmd 1>/dev/null
+if [ $? != 0 ]; then
+    /usr/sbin/chroot $BASEDIR /usr/sbin/usermod -G nagcmd nagios  || die "Unable to add group 'nagcmd' to 'nagios' user"
+fi

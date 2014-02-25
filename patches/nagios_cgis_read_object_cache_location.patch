@@ -1,0 +1,17 @@
+diff -ur nagios-4.0.20130107/cgi/cgiutils.c nagios-4.0.20130107.cgis/cgi/cgiutils.c
+--- nagios-4.0.20130107/cgi/cgiutils.c	2013-01-08 04:57:06.000000000 +0000
++++ nagios-4.0.20130107.cgis/cgi/cgiutils.c	2013-01-08 04:54:59.000000000 +0000
+@@ -461,6 +464,13 @@
+ 			strip(log_file);
+ 			}
+ 
++        else if(strstr(input, "object_cache_file=") == input) {
++			temp_buffer = strtok(input, "=");
++			temp_buffer = strtok(NULL, "\x0");
++            //printf("Reading object_cache_file=%s\n",temp_buffer);
++            object_cache_file = nspath_absolute(temp_buffer, config_file_dir);
++            }
++
+ 		else if(strstr(input, "log_archive_path=") == input) {
+ 			temp_buffer = strtok(input, "=");
+ 			temp_buffer = strtok(NULL, "\n");

@@ -1,0 +1,38 @@
+diff -ur nagios-4.0.20121205.original//base/checks.c nagios-4.0.20121205/base/checks.c
+--- nagios-4.0.20121205.original//base/checks.c	2012-12-19 17:02:11.000000000 +0000
++++ nagios-4.0.20121205/base/checks.c	2012-12-19 17:06:53.000000000 +0000
+@@ -1213,6 +1213,7 @@
+ 	time_t current_time = 0L;
+ 	time_t preferred_time = 0L;
+ 	int check_interval = 0;
++	char *dependency_output = NULL;
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "check_service_check_viability()\n");
+ 
+@@ -1264,6 +1265,26 @@
+ 			preferred_time = current_time + check_interval;
+ 			perform_check = FALSE;
+ 
++			/*
++			 * Opsview patch
++			 * Mark the service into UNKNOWN because of dependency
++			 * failure. We need this otherwise the service could
++			 * remain in an OK state even though the dependency has
++			 * failed. UNKNOWN makes sense for agents (NRPE, SNMP),
++			 * though CRITICAL makes sense for other situations (a
++			 * GET /page with a dependency on port 80). Should be
++			 * configurable in future You would need to always have
++			 * a new result, otherwise a distributed environment
++			 * might mark a freshness error There is probably a
++			 * better way of setting the result, but we just use
++			 * passive results for now
++			 */
++			// We have to take a copy of the dependency output message, because there is a routine to escape newlines
++			// which means the location must be writeable. Otherwise a SEGFAULT occurs
++			dependency_output = strdup("Dependency failure");
++			process_passive_service_check(current_time, svc->host_name, svc->description, STATE_UNKNOWN, dependency_output);
++			free(dependency_output);
++
+ 			log_debug_info(DEBUGL_CHECKS, 2, "Execution dependencies for this service failed, so it will not be actively checked.\n");
+ 			}
+ 		}

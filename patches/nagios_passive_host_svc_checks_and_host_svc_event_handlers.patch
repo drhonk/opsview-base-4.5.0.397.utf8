@@ -1,0 +1,100 @@
+diff -ur nagios-4.0.20130107.original//base/commands.c nagios-4.0.20130107/base/commands.c
+--- nagios-4.0.20130107.original//base/commands.c	2013-06-11 12:13:33.000000000 +0000
++++ nagios-4.0.20130107/base/commands.c	2013-06-11 12:56:42.000000000 +0000
+@@ -522,6 +522,11 @@
+ 	else if(!strcmp(command_id, "DISABLE_PASSIVE_HOST_CHECKS"))
+ 		command_type = CMD_DISABLE_PASSIVE_HOST_CHECKS;
+ 
++	else if(!strcmp(command_id, "ENABLE_PASSIVE_HOST_SVC_CHECKS"))
++		command_type = CMD_ENABLE_PASSIVE_HOST_SVC_CHECKS;
++	else if(!strcmp(command_id, "DISABLE_PASSIVE_HOST_SVC_CHECKS"))
++		command_type = CMD_DISABLE_PASSIVE_HOST_SVC_CHECKS;
++
+ 	else if(!strcmp(command_id, "SCHEDULE_HOST_SVC_CHECKS"))
+ 		command_type = CMD_SCHEDULE_HOST_SVC_CHECKS;
+ 	else if(!strcmp(command_id, "SCHEDULE_FORCED_HOST_SVC_CHECKS"))
+@@ -537,6 +542,11 @@
+ 	else if(!strcmp(command_id, "DISABLE_HOST_EVENT_HANDLER"))
+ 		command_type = CMD_DISABLE_HOST_EVENT_HANDLER;
+ 
++	else if(!strcmp(command_id, "ENABLE_HOST_SVC_EVENT_HANDLER"))
++		command_type = CMD_ENABLE_HOST_SVC_EVENT_HANDLER;
++	else if(!strcmp(command_id, "DISABLE_HOST_SVC_EVENT_HANDLER"))
++		command_type = CMD_DISABLE_HOST_SVC_EVENT_HANDLER;
++
+ 	else if(!strcmp(command_id, "ENABLE_HOST_CHECK"))
+ 		command_type = CMD_ENABLE_HOST_CHECK;
+ 	else if(!strcmp(command_id, "DISABLE_HOST_CHECK"))
+@@ -1034,6 +1044,8 @@
+ 		case CMD_DISABLE_HOST_CHECK:
+ 		case CMD_ENABLE_PASSIVE_HOST_CHECKS:
+ 		case CMD_DISABLE_PASSIVE_HOST_CHECKS:
++		case CMD_ENABLE_PASSIVE_HOST_SVC_CHECKS:
++		case CMD_DISABLE_PASSIVE_HOST_SVC_CHECKS:
+ 		case CMD_ENABLE_HOST_SVC_CHECKS:
+ 		case CMD_DISABLE_HOST_SVC_CHECKS:
+ 		case CMD_ENABLE_HOST_NOTIFICATIONS:
+@@ -1048,6 +1060,8 @@
+ 		case CMD_DISABLE_HOST_FLAP_DETECTION:
+ 		case CMD_ENABLE_HOST_EVENT_HANDLER:
+ 		case CMD_DISABLE_HOST_EVENT_HANDLER:
++		case CMD_ENABLE_HOST_SVC_EVENT_HANDLER:
++		case CMD_DISABLE_HOST_SVC_EVENT_HANDLER:
+ 		case CMD_START_OBSESSING_OVER_HOST:
+ 		case CMD_STOP_OBSESSING_OVER_HOST:
+ 		case CMD_SET_HOST_NOTIFICATION_NUMBER:
+@@ -1383,6 +1397,18 @@
+ 			disable_host_event_handler(temp_host);
+ 			break;
+ 
++		case CMD_ENABLE_HOST_SVC_EVENT_HANDLER:
++		case CMD_DISABLE_HOST_SVC_EVENT_HANDLER:
++			for(temp_servicesmember = temp_host->services; temp_servicesmember != NULL; temp_servicesmember = temp_servicesmember->next) {
++				if((temp_service = temp_servicesmember->service_ptr) == NULL)
++					continue;
++				if(cmd == CMD_ENABLE_HOST_SVC_EVENT_HANDLER)
++					enable_service_event_handler(temp_service);
++				else
++					disable_service_event_handler(temp_service);
++				}
++			break;
++
+ 		case CMD_ENABLE_HOST_FLAP_DETECTION:
+ 			enable_host_flap_detection(temp_host);
+ 			break;
+@@ -1399,6 +1425,18 @@
+ 			disable_passive_host_checks(temp_host);
+ 			break;
+ 
++		case CMD_ENABLE_PASSIVE_HOST_SVC_CHECKS:
++		case CMD_DISABLE_PASSIVE_HOST_SVC_CHECKS:
++			for(temp_servicesmember = temp_host->services; temp_servicesmember != NULL; temp_servicesmember = temp_servicesmember->next) {
++				if((temp_service = temp_servicesmember->service_ptr) == NULL)
++					continue;
++				if(cmd == CMD_ENABLE_PASSIVE_HOST_SVC_CHECKS)
++					enable_passive_service_checks(temp_service);
++				else
++					disable_passive_service_checks(temp_service);
++				}
++			break;
++
+ 		case CMD_START_OBSESSING_OVER_HOST:
+ 			start_obsessing_over_host(temp_host);
+ 			break;
+diff -ur nagios-4.0.20130107.original//include/common.h nagios-4.0.20130107/include/common.h
+--- nagios-4.0.20130107.original//include/common.h	2013-06-11 12:13:32.000000000 +0000
++++ nagios-4.0.20130107/include/common.h	2013-06-11 12:42:20.000000000 +0000
+@@ -344,6 +344,13 @@
+ #define CMD_DEL_DOWNTIME_BY_HOSTGROUP_NAME              171
+ #define CMD_DEL_DOWNTIME_BY_START_TIME_COMMENT          172
+ 
++#define CMD_ENABLE_PASSIVE_HOST_SVC_CHECKS              180
++#define CMD_DISABLE_PASSIVE_HOST_SVC_CHECKS             181
++
++#define CMD_ENABLE_HOST_SVC_EVENT_HANDLER               182
++#define CMD_DISABLE_HOST_SVC_EVENT_HANDLER              183
++
++
+ /* custom command introduced in Nagios 3.x */
+ #define CMD_CUSTOM_COMMAND                              999
+ 

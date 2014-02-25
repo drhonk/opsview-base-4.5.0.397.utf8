@@ -1,0 +1,129 @@
+diff -Bbur ndoutils-2-0.orig/include/io.h ndoutils-2-0/include/io.h
+--- ndoutils-2-0.orig/include/io.h	2012-11-23 16:52:02.000000000 +0000
++++ ndoutils-2-0/include/io.h	2012-11-23 16:59:50.000000000 +0000
+@@ -46,5 +46,6 @@
+ void ndo_strip_buffer(char *);
+ char *ndo_escape_buffer(char *);
+ char *ndo_unescape_buffer(char *);
++char *ndo_escape_plugin_output(char *, char *);
+ 
+ #endif
+diff -Bbur ndoutils-2-0.orig/src/io.c ndoutils-2-0/src/io.c
+--- ndoutils-2-0.orig/src/io.c	2012-11-23 16:52:02.000000000 +0000
++++ ndoutils-2-0/src/io.c	2012-11-23 16:59:50.000000000 +0000
+@@ -540,3 +540,51 @@
+         }
+ 
+ 
++/* Function from nagios/cgi/cgiutils.c - unescapes long_plugin_output */
++char *ndo_unescape_newlines(char *rawbuf){
++	register int x,y;
++
++	for(x=0,y=0;rawbuf[x]!=(char)'\x0';x++){
++
++		if(rawbuf[x]=='\\'){
++
++			/* unescape newlines */
++			if(rawbuf[x+1]=='n'){
++				rawbuf[y++]='\n';
++				x++;
++				}
++
++			/* unescape backslashes and other stuff */
++			if(rawbuf[x+1]!='\x0'){
++				rawbuf[y++]=rawbuf[x+1];
++				x++;
++				}
++
++			}
++		else
++			rawbuf[y++]=rawbuf[x];
++		}
++	rawbuf[y]='\x0';
++
++	return rawbuf;
++	}
++
++/* Wrapper function to simplify logic of escaping and concatenating long_plugin_output to plugin_output */
++/* There's probably a good amount of tuning that can be done here */
++char *ndo_escape_plugin_output(char *plugin_output, char *long_plugin_output) {
++	char *temp_long_plugin_output, *temp_output_string;
++	if (long_plugin_output==NULL || long_plugin_output[0]=='\0') {
++		return ndo_escape_buffer(plugin_output);
++	}
++	temp_long_plugin_output=(char *)strdup(long_plugin_output);
++	ndo_unescape_newlines(temp_long_plugin_output);
++	asprintf(&temp_output_string, "%s\n%s",
++		(plugin_output!=NULL?plugin_output:""),
++		temp_long_plugin_output
++	);
++	ndo_strip_buffer(temp_output_string);
++	free(temp_long_plugin_output);
++	temp_long_plugin_output = ndo_escape_buffer(temp_output_string);
++	free(temp_output_string);
++	return temp_long_plugin_output;
++}
+diff -Bbur ndoutils-2-0.orig/src/Makefile.in ndoutils-2-0/src/Makefile.in
+--- ndoutils-2-0.orig/src/Makefile.in	2012-11-23 16:52:02.000000000 +0000
++++ ndoutils-2-0/src/Makefile.in	2012-11-23 16:59:50.000000000 +0000
+@@ -60,8 +60,8 @@
+ 	$(CC) $(CFLAGS) -o $@ log2ndo.c $(COMMON_OBJS) $(LDFLAGS) $(LIBS) $(MATHLIBS) $(SOCKETLIBS) $(OTHERLIBS)
+ 
+ ndo2db:
+-	$(MAKE) ndo2db-2x
+-	$(MAKE) ndo2db-3x
++	# $(MAKE) ndo2db-2x
++	# $(MAKE) ndo2db-3x
+ 	$(MAKE) ndo2db-4x
+ 
+ ndo2db-2x: queue.c ndo2db.c $(NDO_INC) $(NDO_OBJS) $(COMMON_INC) $(COMMON_OBJS) dbhandlers-2x.o
+@@ -74,8 +74,8 @@
+ 	$(CC) $(CFLAGS) $(DBCFLAGS) -D BUILD_NAGIOS_4X -o ndo2db-4x queue.c ndo2db.c dbhandlers-4x.o $(COMMON_OBJS) $(NDO_OBJS) $(LDFLAGS) $(DBLDFLAGS) $(LIBS) $(SOCKETLIBS) $(DBLIBS) $(MATHLIBS) $(OTHERLIBS)
+ 
+ ndomod: 
+-	$(MAKE) ndomod-2x.o
+-	$(MAKE) ndomod-3x.o
++	# $(MAKE) ndomod-2x.o
++	# $(MAKE) ndomod-3x.o
+ 	$(MAKE) ndomod-4x.o
+ 
+ ndomod-2x.o: ndomod.c $(COMMON_INC) $(COMMON_OBJS)
+diff -Bbur ndoutils-2-0.orig/src/ndomod.c ndoutils-2-0/src/ndomod.c
+--- ndoutils-2-0.orig/src/ndomod.c	2012-11-23 16:52:02.000000000 +0000
++++ ndoutils-2-0/src/ndomod.c	2012-11-23 16:59:47.000000000 +0000
+@@ -1856,7 +1856,7 @@
+ 		es[2]=ndo_escape_buffer(scdata->command_name);
+ 		es[3]=ndo_escape_buffer(scdata->command_args);
+ 		es[4]=ndo_escape_buffer(scdata->command_line);
+-		es[5]=ndo_escape_buffer(scdata->output);
++		es[5]=ndo_escape_plugin_output(scdata->output, scdata->long_output);
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+ 		es[6]=ndo_escape_buffer(scdata->long_output);
+ #endif
+@@ -1937,7 +1937,7 @@
+ 		es[1]=ndo_escape_buffer(hcdata->command_name);
+ 		es[2]=ndo_escape_buffer(hcdata->command_args);
+ 		es[3]=ndo_escape_buffer(hcdata->command_line);
+-		es[4]=ndo_escape_buffer(hcdata->output);
++		es[4]=ndo_escape_plugin_output(hcdata->output, hcdata->long_output);
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+ 		es[5]=ndo_escape_buffer(hcdata->long_output);
+ #endif
+@@ -2243,7 +2243,7 @@
+ 			}
+ 
+ 		es[0]=ndo_escape_buffer(temp_host->name);
+-		es[1]=ndo_escape_buffer(temp_host->plugin_output);
++		es[1]=ndo_escape_plugin_output(temp_host->plugin_output, temp_host->long_plugin_output);
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+ 		es[2]=ndo_escape_buffer(temp_host->long_plugin_output);
+ #endif
+@@ -2435,7 +2435,7 @@
+ 
+ 		es[0]=ndo_escape_buffer(temp_service->host_name);
+ 		es[1]=ndo_escape_buffer(temp_service->description);
+-		es[2]=ndo_escape_buffer(temp_service->plugin_output);
++		es[2]=ndo_escape_plugin_output(temp_service->plugin_output, temp_service->long_plugin_output);
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+ 		es[3]=ndo_escape_buffer(temp_service->long_plugin_output);
+ #endif

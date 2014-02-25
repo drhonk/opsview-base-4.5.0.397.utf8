@@ -1,0 +1,25 @@
+diff -Nur nagios-4.0.20130107/base/utils.c nagios-4.0.20130107.limit/base/utils.c
+--- nagios-4.0.20130107/base/utils.c	2013-05-28 14:33:41.000000000 +0000
++++ nagios-4.0.20130107.limit/base/utils.c	2013-05-28 14:28:11.000000000 +0000
+@@ -2117,11 +2117,21 @@
+ int process_check_result(check_result *cr)
+ {
+ 	const char *source_name;
++	unsigned long output_len = 0L;
+ 	if (!cr)
+ 		return ERROR;
+ 
+ 	source_name = check_result_source(cr);
+ 
++    if ( cr->output ) {
++        output_len = strlen(cr->output);
++    }
++
++    if ( output_len > 0 && output_len > MAX_PLUGIN_OUTPUT_LENGTH ) {
++        logit(NSLOG_RUNTIME_ERROR, TRUE, "Service '%s' on host '%s' has output too long: %lu", cr->service_description, cr->host_name, output_len);
++        cr->output[MAX_PLUGIN_OUTPUT_LENGTH] = '\0';
++    }
++
+ 	if (cr->object_check_type == SERVICE_CHECK) {
+ 		service *svc;
+ 		svc = find_service(cr->host_name, cr->service_description);

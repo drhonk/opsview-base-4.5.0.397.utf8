@@ -1,0 +1,22 @@
+--- nmis-4.2.13.original/bin/nmis.pl	2007-10-30 08:32:09.000000000 +0000
++++ nmis-4.2.13/bin/nmis.pl	2008-01-21 20:01:30.278695984 +0000
+@@ -274,12 +274,13 @@
+ 	}
+ }
+ # and if we are a slave, we want rsync --daemon to be running - edit /etc/rsyncd.conf
+-if ( $NMIS::config{slave} eq 'true' ) {
+-	if ( ! `$ps | grep rsync`) {
+-		`rsync --daemon`;
+-		logMessage("\t nmis.pl,slave=true, launched rsync as daemon") if $debug;
+-	}
+-}
++# Altinity patch: Removed rsync daemon on slave
++#if ( $NMIS::config{slave} eq 'true' ) {
++#	if ( ! `$ps | grep rsync`) {
++#		`rsync --daemon`;
++#		logMessage("\t nmis.pl,slave=true, launched rsync as daemon") if $debug;
++#	}
++#}
+ if ( -r "$NMIS::config{'<nmis_bin>'}/nbarpdd.pl" and $NMIS::config{daemon_nbarpd} eq "true" ) {
+ 	if ( ! `$ps | grep nbarpdd`) {
+ 		`$NMIS::config{'<nmis_bin>'}/nbarpdd.pl`;

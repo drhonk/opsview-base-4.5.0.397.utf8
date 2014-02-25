@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+
+my $opts = {};
+getopts("d:", $opts) or die "Invalid opts";
+my $confdir = $opts->{d};
+
+foreach my $file (@ARGV) {
+	my $new_file;
+	($new_file = $file) =~ s/-sample|-example//;
+	my $first=0;
+	open SAMPLE, "$confdir/$file" or die "Can't open $file";
+	open F, ">", "$confdir/$new_file" or die "Cannot open $new_file for writing";
+	while(<SAMPLE>) {
+		unless (/^#/) {
+			$first++;
+			last if $first==2;
+		}
+		print F $_;
+	}
+	close SAMPLE;
+	close F;
+	unlink "$confdir/$file";
+}
+

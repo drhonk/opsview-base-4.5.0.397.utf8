@@ -1,0 +1,16 @@
+--- nagios-4.0.20130107.original/base/nagios.c	Mon Jan  7 16:50:38 2013
++++ nagios-4.0.20130107/base/nagios.c	Mon Jan  7 17:25:01 2013
+@@ -63,10 +64,13 @@
+ 	rlim.rlim_cur = rlim.rlim_max;
+ 	setrlimit(RLIMIT_NOFILE, &rlim);
+ 	loadctl.nofile_limit = rlim.rlim_max;
++#if defined RLIMIT_NPROC
++/* Solaris lacks RLIMIT_NPROC */
+ 	getrlimit(RLIMIT_NPROC, &rlim);
+ 	rlim.rlim_cur = rlim.rlim_max;
+ 	setrlimit(RLIMIT_NPROC, &rlim);
+ 	loadctl.nproc_limit = rlim.rlim_max;
++#endif
+ 
+ 	/*
+ 	 * things may have been configured already. Otherwise we

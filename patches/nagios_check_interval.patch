@@ -1,0 +1,43 @@
+diff -urb nagios-4.0.20130912.orig/common/objects.c nagios-4.0.20130912/common/objects.c
+--- nagios-4.0.20130912.orig/common/objects.c	2013-10-03 16:16:09.000000000 +0000
++++ nagios-4.0.20130912/common/objects.c	2013-10-03 16:18:03.000000000 +0000
+@@ -259,11 +259,17 @@
+ /******* TOP-LEVEL HOST CONFIGURATION DATA INPUT FUNCTION *********/
+ /******************************************************************/
+ 
++double opsview_on_demand_check_interval = 0.0;
+ 
+ /* read all host configuration data from external source */
+ int read_object_config_data(const char *main_config_file, int options) {
+ 	int result = OK;
+ 
++    char *opsview_on_demand_check_interval_env;
++    opsview_on_demand_check_interval_env = getenv("OPSVIEW_ON_DEMAND_CHECK_INTERVAL");
++    if (opsview_on_demand_check_interval_env)
++        opsview_on_demand_check_interval = atof(opsview_on_demand_check_interval_env);
++
+ 	/* reset object counts */
+ 	memset(&num_objects, 0, sizeof(num_objects));
+ 
+@@ -666,8 +672,8 @@
+ 	/* duplicate non-string vars */
+ 	new_host->hourly_value = hourly_value;
+ 	new_host->max_attempts = max_attempts;
+-	new_host->check_interval = check_interval == 0.0 ? 1.0 : check_interval;
+-	new_host->retry_interval = retry_interval == 0.0 ? 1.0 : retry_interval;
++    new_host->check_interval = ( check_interval <= 0.0 && opsview_on_demand_check_interval != 0.0 ) ? opsview_on_demand_check_interval : check_interval;
++    new_host->retry_interval = ( retry_interval <= 0.0 && opsview_on_demand_check_interval != 0.0 ) ? opsview_on_demand_check_interval : retry_interval;
+ 	new_host->notification_interval = notification_interval;
+ 	new_host->first_notification_delay = first_notification_delay;
+ 	new_host->notification_options = notification_options;
+@@ -1486,8 +1492,8 @@
+ 		}
+ 
+ 	new_service->hourly_value = hourly_value;
+-	new_service->check_interval = check_interval == 0.0 ? 1.0 : check_interval;
+-	new_service->retry_interval = retry_interval == 0.0 ? 1.0 : retry_interval;
++    new_service->check_interval = ( check_interval <= 0.0 && opsview_on_demand_check_interval != 0.0 ) ? opsview_on_demand_check_interval : check_interval;
++    new_service->retry_interval = ( retry_interval <= 0.0 && opsview_on_demand_check_interval != 0.0 ) ? opsview_on_demand_check_interval : retry_interval;
+ 	new_service->max_attempts = max_attempts;
+ 	new_service->parallelize = (parallelize > 0) ? TRUE : FALSE;
+ 	new_service->notification_interval = notification_interval;

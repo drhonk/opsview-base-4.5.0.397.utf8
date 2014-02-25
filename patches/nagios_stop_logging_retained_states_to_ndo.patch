@@ -1,0 +1,29 @@
+diff -ur nagios-2.9.original/xdata/xrddefault.c nagios-2.9/xdata/xrddefault.c
+--- nagios-2.9.original/xdata/xrddefault.c	2007-08-17 12:06:09.000000000 +0000
++++ nagios-2.9/xdata/xrddefault.c	2007-08-20 09:54:21.000000000 +0000
+@@ -458,7 +458,13 @@
+ 						temp_host->next_host_notification=get_next_host_notification_time(temp_host,temp_host->last_host_notification);
+ 
+ 					/* update host status */
+-					update_host_status(temp_host,FALSE);
++					/* update_host_status(temp_host,FALSE); */
++					/* Altinity patch: on startup, Nagios writes a lot of data to NDO re: the last states of
++					 * all hosts and services. However, DB already knows this. Causes problems on large scale systems.
++					 * We stop this happening by setting to TRUE. Impact is that if Nagios has been running for a long time
++					 * and then NDO is switched on, a check cycle needs to complete before NDO has all the status information
++					 * but this is probably to be expected */
++					update_host_status(temp_host,TRUE);
+ 
+ 					/* check for flapping */
+ 					check_for_host_flapping(temp_host,FALSE);
+@@ -490,7 +496,9 @@
+ 						temp_service->state_type=HARD_STATE;
+ 
+ 					/* update service status */
+-					update_service_status(temp_service,FALSE);
++					/* update_service_status(temp_service,FALSE); */
++					/* See update_host_status above */
++					update_service_status(temp_service,TRUE);
+ 
+ 					/* check for flapping */
+ 					check_for_service_flapping(temp_service,FALSE);

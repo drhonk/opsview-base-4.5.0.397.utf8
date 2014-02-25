@@ -1,0 +1,31 @@
+diff -ur nagios-2.3.1.original/cgi/status.c nagios-2.3.1/cgi/status.c
+--- nagios-2.3.1.original/cgi/status.c	2006-04-26 16:33:59.000000000 +0100
++++ nagios-2.3.1/cgi/status.c	2006-05-18 14:40:29.839753248 +0100
+@@ -1659,15 +1659,6 @@
+ 			        }
+ 			temp_serviceextinfo=find_serviceextinfo(temp_service->host_name,temp_service->description);
+ 			if(temp_serviceextinfo!=NULL){
+-				if(temp_serviceextinfo->notes_url!=NULL){
+-					printf("<TD align=center valign=center>");
+-					printf("<A HREF='");
+-					print_extra_service_url(temp_service->host_name,temp_service->description,temp_serviceextinfo->notes_url);
+-					printf("' TARGET='_blank'>");
+-					printf("<IMG SRC='%s%s' BORDER=0 WIDTH=%d HEIGHT=%d ALT='%s' TITLE='%s'>",url_images_path,NOTES_ICON,STATUS_ICON_WIDTH,STATUS_ICON_HEIGHT,"View Extra Service Notes","View Extra Service Notes");
+-					printf("</A>");
+-					printf("</TD>\n");
+-					}
+ 				if(temp_serviceextinfo->action_url!=NULL){
+ 					printf("<TD align=center valign=center>");
+ 					printf("<A HREF='");
+@@ -1686,8 +1686,9 @@
+ 					}
+ 				if(temp_serviceextinfo->icon_image!=NULL){
+ 					printf("<TD ALIGN=center valign=center>");
+-					printf("<A HREF='%s?type=%d&host=%s",EXTINFO_CGI,DISPLAY_SERVICE_INFO,url_encode(temp_service->host_name));
+-					printf("&service=%s'>",url_encode(temp_service->description));
++					printf("<A HREF='");
++					print_extra_service_url(temp_serviceextinfo->host_name, temp_serviceextinfo->description, temp_serviceextinfo->notes_url);
++					printf("'>");
+ 					printf("<IMG SRC='%s",url_logo_images_path);
+ 					print_extra_service_url(temp_service->host_name,temp_service->description,temp_serviceextinfo->icon_image);
+ 					printf("' BORDER=0 WIDTH=%d HEIGHT=%d ALT='%s' TITLE='%s'>",STATUS_ICON_WIDTH,STATUS_ICON_HEIGHT,(temp_serviceextinfo->icon_image_alt==NULL)?"":temp_serviceextinfo->icon_image_alt,(temp_serviceextinfo->icon_image_alt==NULL)?"":temp_serviceextinfo->icon_image_alt);

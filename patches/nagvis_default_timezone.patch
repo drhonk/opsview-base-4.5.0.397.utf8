@@ -1,0 +1,13 @@
+diff '--exclude=.*.sw?' -urN nagvis-1.4.4/nagvis/includes/defines/global.php nagvis-1.4.4-patched/nagvis/includes/defines/global.php
+--- nagvis-1.4.4/nagvis/includes/defines/global.php	2012-05-14 13:43:17.000000000 +0100
++++ nagvis-1.4.4-patched/nagvis/includes/defines/global.php	2012-05-14 13:48:38.000000000 +0100
+@@ -33,6 +33,9 @@
+ error_reporting(E_ALL ^ E_STRICT ^ ( defined("E_DEPRECATED") ? E_DEPRECATED : 0 ));
+ ini_set('display_errors', 0);
+ 
++// Opsview patch: set default timezone
++date_default_timezone_set('UTC');
++
+ /**
+  * Sets the path where we will look for files when they
+  * are requested.

@@ -1,0 +1,13 @@
+diff -ur nagios-4.0.20130107.original//lib/Makefile.in nagios-4.0.20130107/lib/Makefile.in
+--- nagios-4.0.20130107.original//lib/Makefile.in	2012-12-24 15:29:25.000000000 +0000
++++ nagios-4.0.20130107/lib/Makefile.in	2013-02-07 16:55:21.000000000 +0000
+@@ -1,7 +1,8 @@
+ CC = @CC@
+ COV_CFLAGS = -ggdb3 -O0 -ftest-coverage -fprofile-arcs -pg
+ LDFLAGS =
+-CFLAGS ?= @CFLAGS@
++# Need to set IOBROKER_USES_SELECT as Solaris does not have EPOLL. Not sure why CFLAGS ?=, so we change to =
++CFLAGS = -DIOBROKER_USES_SELECT @CFLAGS@
+ ALL_CFLAGS = $(CFLAGS) @DEFS@
+ LIBNAME = libnagios.a
+ 

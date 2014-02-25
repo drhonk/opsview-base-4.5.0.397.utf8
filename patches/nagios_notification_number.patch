@@ -1,0 +1,30 @@
+diff -ur nagios-2.9.orig/base/broker.c nagios-2.9/base/broker.c
+--- nagios-2.9.orig/base/broker.c	2005-12-23 19:31:35.000000000 +0000
++++ nagios-2.9/base/broker.c	2008-01-16 12:25:40.000000000 +0000
+@@ -572,6 +572,7 @@
+ 		ds.service_description=temp_service->description;
+ 		ds.state=temp_service->current_state;
+ 		ds.output=temp_service->plugin_output;
++		ds.number=temp_service->current_notification_number;
+ 	        }
+ 	else{
+ 		temp_host=(host *)data;
+@@ -579,6 +580,7 @@
+ 		ds.service_description=NULL;
+ 		ds.state=temp_host->current_state;
+ 		ds.output=temp_host->plugin_output;
++		ds.number=temp_host->current_notification_number;
+ 	        }
+ 	ds.ack_author=ack_author;
+ 	ds.ack_data=ack_data;
+diff -ur nagios-2.9.orig/include/nebstructs.h nagios-2.9/include/nebstructs.h
+--- nagios-2.9.orig/include/nebstructs.h	2005-12-23 19:31:36.000000000 +0000
++++ nagios-2.9/include/nebstructs.h	2008-01-16 12:23:29.000000000 +0000
+@@ -303,6 +303,7 @@
+ 	char            *ack_data;
+ 	int             escalated;
+ 	int             contacts_notified;
++	int             number;
+         }nebstruct_notification_data;
+ 
+ 

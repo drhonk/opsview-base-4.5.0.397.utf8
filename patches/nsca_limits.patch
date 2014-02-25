@@ -1,0 +1,54 @@
+diff -ur nsca-2.7.2/nsca_tests/basic.t nsca-2.7.2.with_512_bytes/nsca_tests/basic.t
+--- nsca-2.7.2/nsca_tests/basic.t	2007-01-30 05:53:05.000000000 +0000
++++ nsca-2.7.2.with_512_bytes/nsca_tests/basic.t	2009-01-21 18:27:39.360732526 +0000
+@@ -16,6 +16,10 @@
+ 
+ plan tests => 2;
+ 
++my $hostname64 = "h" x 64;
++my $servicename128 = "s" x 128;
++my $output512 = "o" x 512;
++
+ my $data = [ 
+ 	["hostname", "0", "Plugin output"],
+ 	["hostname-with-other-bits", "1", "More data to be read"],
+@@ -24,6 +28,7 @@
+ 	["host54", "service with spaces", 1, "Warning! My flies are undone!"],
+ 	["host-robin", "service with a :)", 2, "Critical? Alert! Alert!"],
+ 	["host-batman", "another service", 3, "Unknown - the only way to travel"],
++	[ $hostname64, $servicename128, 0, $output512 ],
+ 	];
+ 
+ foreach my $type qw(--single --daemon) {
+diff -ur nsca-2.7.2/src/nsca.c nsca-2.7.2.with_512_bytes/src/nsca.c
+--- nsca-2.7.2/src/nsca.c	2009-01-21 18:21:33.561871526 +0000
++++ nsca-2.7.2.with_512_bytes/src/nsca.c	2009-01-21 18:17:04.717069776 +0000
+@@ -957,9 +957,9 @@
+         unsigned long packet_age=0L;
+         int bytes_to_recv;
+         int rc;
+-        char host_name[MAX_HOSTNAME_LENGTH];
+-        char svc_description[MAX_DESCRIPTION_LENGTH];
+-        char plugin_output[MAX_PLUGINOUTPUT_LENGTH];
++        char host_name[MAX_HOSTNAME_LENGTH+1];			/* Opsview patch: ensures that the limits are fully used in the packet */
++        char svc_description[MAX_DESCRIPTION_LENGTH+1];
++        char plugin_output[MAX_PLUGINOUTPUT_LENGTH+1];
+ 
+         CI=data;
+ 
+diff -ur nsca-2.7.2/src/send_nsca.c nsca-2.7.2.with_512_bytes/src/send_nsca.c
+--- nsca-2.7.2/src/send_nsca.c	2007-07-03 19:57:29.000000000 +0000
++++ nsca-2.7.2.with_512_bytes/src/send_nsca.c	2009-01-21 18:19:25.169847526 +0000
+@@ -63,9 +63,9 @@
+ 	int bytes_to_send;
+ 	char input_buffer[MAX_INPUT_BUFFER];
+ 	char *temp_ptr;
+-	char host_name[MAX_HOSTNAME_LENGTH];
+-	char svc_description[MAX_DESCRIPTION_LENGTH];
+-	char plugin_output[MAX_PLUGINOUTPUT_LENGTH];
++	char host_name[MAX_HOSTNAME_LENGTH+1];
++	char svc_description[MAX_DESCRIPTION_LENGTH+1];
++	char plugin_output[MAX_PLUGINOUTPUT_LENGTH+1];
+ 	int total_packets=0;
+ 	int16_t return_code;
+ 	u_int32_t calculated_crc32;

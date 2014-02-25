@@ -1,0 +1,12 @@
+diff -ur nagiosgraph-0.8.2.original/show.cgi nagiosgraph-0.8.2/show.cgi
+--- nagiosgraph-0.8.2.original/show.cgi	2008-04-30 13:46:34.194212000 +0200
++++ nagiosgraph-0.8.2/show.cgi	2008-04-30 13:47:14.024157544 +0200
+@@ -216,7 +216,7 @@
+       debug(5, "CGI file=$f line=$v color=$c");
+       my $sv = "$v";
+       push @ds , "DEF:$sv=$Config{rrddir}/$f:$v:AVERAGE"
+-               , "LINE2:${sv}#$c:$sv";
++               , "LINE1:${sv}#$c:$sv";		# Use LINE1 because some older RRDs don't understand LINE
+       if ($fixedscale) {
+         push @ds, "GPRINT:$sv:MAX:Max\\: %6.2lf"
+                , "GPRINT:$sv:AVERAGE:Avg\\: %6.2lf"

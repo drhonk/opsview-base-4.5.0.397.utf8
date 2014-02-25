@@ -1,0 +1,33 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/trends.c nagios-4.0.20121116/cgi/trends.c
+--- nagios-4.0.20121116.orig/cgi/trends.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/cgi/trends.c	2012-11-27 11:30:16.000000000 +0000
+@@ -2522,16 +2522,21 @@
+ 		time_stamp = (temp_buffer == NULL) ? (time_t)0 : (time_t)strtoul(temp_buffer + 1, NULL, 10);
+ 
+ 		/* program starts/restarts */
+-		if(strstr(input, " starting..."))
+-			add_archived_state(AS_PROGRAM_START, AS_NO_DATA, time_stamp, "Program start");
+-		if(strstr(input, " restarting..."))
+-			add_archived_state(AS_PROGRAM_START, AS_NO_DATA, time_stamp, "Program restart");
++		/* Opsview patch: We ignore all these so that there are fewer lines
++		 * drawn in the trends.
++		 * if(strstr(input, " starting..."))
++		 * 	add_archived_state(AS_PROGRAM_START, AS_NO_DATA, time_stamp, "Program start");
++		 * if(strstr(input, " restarting..."))
++		 * 	add_archived_state(AS_PROGRAM_START, AS_NO_DATA, time_stamp, "Program restart");
++		 */
+ 
+ 		/* program stops */
+-		if(strstr(input, " shutting down..."))
+-			add_archived_state(AS_PROGRAM_END, AS_NO_DATA, time_stamp, "Normal program termination");
+-		if(strstr(input, "Bailing out"))
+-			add_archived_state(AS_PROGRAM_END, AS_NO_DATA, time_stamp, "Abnormal program termination");
++		/*
++		 * if(strstr(input, " shutting down..."))
++		 * 	add_archived_state(AS_PROGRAM_END, AS_NO_DATA, time_stamp, "Normal program termination");
++		 * if(strstr(input, "Bailing out"))
++		 * 	add_archived_state(AS_PROGRAM_END, AS_NO_DATA, time_stamp, "Abnormal program termination");
++		 */
+ 
+ 		if(display_type == DISPLAY_HOST_TRENDS) {
+ 			if(strstr(input, "HOST ALERT:") || strstr(input, "INITIAL HOST STATE:") || strstr(input, "CURRENT HOST STATE:")) {

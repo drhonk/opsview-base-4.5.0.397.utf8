@@ -1,0 +1,13 @@
+diff -ur ndoutils-1.4b7/src/ndomod.c ndoutils-1.4b7.without_config_files/src/ndomod.c
+--- ndoutils-1.4b7/src/ndomod.c	2009-01-14 21:32:16.000000000 +0800
++++ ndoutils-1.4b7.without_config_files/src/ndomod.c	2009-01-15 01:08:36.000000000 +0800
+@@ -3006,7 +3006,8 @@
+ 
+ 		/* process has passed pre-launch config verification, so dump original config */
+ 		if(procdata->type==NEBTYPE_PROCESS_START){
+-			ndomod_write_config_files();
++			/* Opsview patch: Remove this config file dump as not used */
++			//ndomod_write_config_files();
+ 			ndomod_write_config(NDOMOD_CONFIG_DUMP_ORIGINAL);
+ 		        }
+ 

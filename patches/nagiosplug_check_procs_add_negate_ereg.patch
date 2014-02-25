@@ -1,0 +1,62 @@
+diff -ur nagios-plugins-1.4.17-dev/plugins/check_procs.c nagios-plugins-1.4.17-dev.new/plugins/check_procs.c
+--- nagios-plugins-1.4.17-dev/plugins/check_procs.c	2013-09-06 07:59:17.000000000 +0000
++++ nagios-plugins-1.4.17-dev.new/plugins/check_procs.c	2013-09-06 07:59:49.000000000 +0000
+@@ -67,6 +67,7 @@
+ #define PCPU 256
+ #define ELAPSED 512
+ #define EREG_ARGS 1024
++#define NEG_EREG_ARGS 2048
+ /* Different metrics */
+ char *metric_name;
+ enum metric {
+@@ -210,6 +211,8 @@
+ 				resultsum |= ARGS;
+ 			if ((options & EREG_ARGS) && procargs && (regexec(&re_args, procargs, (size_t) 0, NULL, 0) == 0))
+ 				resultsum |= EREG_ARGS;
++			if ((options & NEG_EREG_ARGS) && procargs && (regexec(&re_args, procargs, (size_t) 0, NULL, 0) != 0))
++				resultsum |= NEG_EREG_ARGS;
+ 			if ((options & PROG) && procprog && (strcmp (prog, procprog) == 0))
+ 				resultsum |= PROG;
+ 			if ((options & PPID) && (procppid == ppid))
+@@ -337,6 +340,7 @@
+ 		{"version", no_argument, 0, 'V'},
+ 		{"verbose", no_argument, 0, 'v'},
+ 		{"ereg-argument-array", required_argument, 0, CHAR_MAX+1},
++		{"negate-ereg-argument-array", required_argument, 0, CHAR_MAX+3},
+ 		{"input-file", required_argument, 0, CHAR_MAX+2},
+ 		{0, 0, 0, 0}
+ 	};
+@@ -447,6 +451,7 @@
+ 			options |= ARGS;
+ 			break;
+ 		case CHAR_MAX+1:
++		case CHAR_MAX+3:
+ 			err = regcomp(&re_args, optarg, cflags);
+ 			if (err != 0) {
+ 				regerror (err, &re_args, errbuf, MAX_INPUT_BUFFER);
+@@ -459,8 +464,13 @@
+ 					temp_string[i]=',';
+ 				i++;
+ 			}
+-			xasprintf (&fmt, "%s%sregex args '%s'", (fmt ? fmt : ""), (options ? ", " : ""), temp_string);
+-			options |= EREG_ARGS;
++			if(c==CHAR_MAX+3) {
++				xasprintf (&fmt, "%s%snegated regex args '%s'", (fmt ? fmt : ""), (options ? ", " : ""), temp_string);
++				options |= NEG_EREG_ARGS;
++			} else {
++				xasprintf (&fmt, "%s%sregex args '%s'", (fmt ? fmt : ""), (options ? ", " : ""), temp_string);
++				options |= EREG_ARGS;
++			}
+ 			break;
+ 		case 'r': 					/* RSS */
+ 			if (sscanf (optarg, "%d%[^0-9]", &rss, tmp) == 1) {
+@@ -733,6 +743,8 @@
+   printf ("   %s\n", _("Only scan for processes with args that contain STRING."));
+   printf (" %s\n", "--ereg-argument-array=STRING");
+   printf ("   %s\n", _("Only scan for processes with args that contain the regex STRING."));
++  printf (" %s\n", "--negate-ereg-argument-array=STRING");
++  printf ("   %s\n", _("Only scan for processes without args that contain the regex STRING."));
+   printf (" %s\n", "-C, --command=COMMAND");
+   printf ("   %s\n", _("Only scan for exact matches of COMMAND (without path)."));
+ 
+Only in nagios-plugins-1.4.17-dev.new/plugins: .check_procs.c.swp

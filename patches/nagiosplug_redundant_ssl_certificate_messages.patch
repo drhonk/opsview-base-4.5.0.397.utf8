@@ -1,0 +1,32 @@
+diff --git a/plugins/check_smtp.c b/plugins/check_smtp.c
+index 6c5994c..494bc2c 100644
+--- a/plugins/check_smtp.c
++++ b/plugins/check_smtp.c
+@@ -276,9 +276,6 @@ main (int argc, char **argv)
+ #  ifdef USE_OPENSSL
+ 		  if ( check_cert ) {
+ 		    result = np_net_ssl_check_cert(days_till_exp);
+-		    if(result != STATE_OK){
+-		      printf ("%s\n", _("CRITICAL - Cannot retrieve server certificate."));
+-		    }
+ 		    my_close();
+ 		    return result;
+ 		  }
+diff --git a/plugins/check_tcp.c b/plugins/check_tcp.c
+index 178bd56..d3c92a4 100644
+--- a/plugins/check_tcp.c
++++ b/plugins/check_tcp.c
+@@ -236,12 +236,9 @@ main (int argc, char **argv)
+ 		result = np_net_ssl_init(sd);
+ 		if (result == STATE_OK && check_cert == TRUE) {
+ 			result = np_net_ssl_check_cert(days_till_exp);
+-			if(result != STATE_OK) {
+-				printf(_("CRITICAL - Cannot retrieve server certificate.\n"));
+-			}
+ 		}
+ 	}
+-	if(result != STATE_OK){
++	if(result != STATE_OK || check_cert == TRUE){
+ 		np_net_ssl_cleanup();
+ 		if(sd) close(sd);
+ 		return result;

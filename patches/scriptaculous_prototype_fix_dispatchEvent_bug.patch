@@ -1,0 +1,25 @@
+diff -ur scriptaculous-js-1.8.3.original/lib/prototype.js scriptaculous-js-1.8.3/lib/prototype.js
+--- scriptaculous-js-1.8.3.original/lib/prototype.js	2009-11-19 10:19:08.000000000 +0000
++++ scriptaculous-js-1.8.3/lib/prototype.js	2009-11-19 10:25:47.000000000 +0000
+@@ -4599,6 +4599,7 @@
+   }
+ 
+   function fire(element, eventName, memo, bubble) {
++    var el = element;
+     element = $(element);
+ 
+     if (Object.isUndefined(bubble))
+@@ -4619,9 +4620,10 @@
+     event.eventName = eventName;
+     event.memo = memo || { };
+ 
+-    if (document.createEvent)
+-      element.dispatchEvent(event);
+-    else
++    if (document.createEvent) {
++      if (element.dispatchEvent) element.dispatchEvent(event);
++      else if (el.dispatchEvent) el.dispatchEvent(event);
++    } else
+       element.fireEvent(event.eventType, event);
+ 
+     return Event.extend(event);

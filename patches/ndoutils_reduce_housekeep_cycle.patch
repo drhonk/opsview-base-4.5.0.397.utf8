@@ -1,0 +1,25 @@
+diff -ur ndoutils-1.4b3.original/include/ndo2db.h ndoutils-1.4b3/include/ndo2db.h
+--- ndoutils-1.4b3.original/include/ndo2db.h	2007-08-17 14:23:32.000000000 +0000
++++ ndoutils-1.4b3/include/ndo2db.h	2007-08-17 16:22:12.000000000 +0000
+@@ -121,7 +121,7 @@
+ 
+ /*************** misc definitions **************/
+ #define NDO2DB_INPUT_BUFFER                             1024
+-#define NDO2DB_OBJECT_HASHSLOTS                         1024
++#define NDO2DB_OBJECT_HASHSLOTS                         50240	/* Altinity patch: Spread the list of linked lists thinner */
+ 
+ 
+ /*********** types of input sections ***********/
+diff -ur ndoutils-1.4b3.original/src/db.c ndoutils-1.4b3/src/db.c
+--- ndoutils-1.4b3.original/src/db.c	2007-08-17 14:23:32.000000000 +0000
++++ ndoutils-1.4b3/src/db.c	2007-08-17 15:22:49.000000000 +0000
+@@ -739,7 +739,8 @@
+ 	time(&current_time);
+ 
+ 	/* trim tables */
+-	if(((unsigned long)current_time-60)>(unsigned long)idi->dbinfo.last_table_trim_time){
++	/* Altinity patch: change to every hour to do deletes */
++	if(((unsigned long)current_time-3600)>(unsigned long)idi->dbinfo.last_table_trim_time){
+ 		if(idi->dbinfo.max_timedevents_age>0L)
+ 			ndo2db_db_trim_data_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_TIMEDEVENTS],"scheduled_time",(time_t)((unsigned long)current_time-idi->dbinfo.max_timedevents_age));
+ 		if(idi->dbinfo.max_systemcommands_age>0L)

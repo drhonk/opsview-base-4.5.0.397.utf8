@@ -1,0 +1,17 @@
+diff -urb nagvis-1.4.4.orig/nagvis/includes/classes/GlobalPage.php nagvis-1.4.4/nagvis/includes/classes/GlobalPage.php
+--- nagvis-1.4.4.orig/nagvis/includes/classes/GlobalPage.php	2012-06-15 15:19:37.000000000 +0000
++++ nagvis-1.4.4/nagvis/includes/classes/GlobalPage.php	2012-06-15 15:20:12.000000000 +0000
+@@ -246,10 +246,13 @@
+ 	 */
+ 	private function buildPage() {
+ 		$ret = '';
++
++		$opsviewbase = $this->CORE->MAINCFG->getValue('paths','opsviewbase');
+ 		
+ 		$ret .= '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">'."\n";
+ 		$ret .= '<html><head>'."\n";
+ 		$ret .= $this->getHeader();
++		$ret .= '<link rel="stylesheet" type="text/css" href="' . $opsviewbase . '/stylesheets/custom.css" />'. "\n";
+ 		$ret .= '</head><body class="main">'."\n";
+ 		$ret .= $this->getBody();
+ 		$ret .= '</body></html>';

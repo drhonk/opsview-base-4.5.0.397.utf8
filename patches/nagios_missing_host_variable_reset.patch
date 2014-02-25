@@ -1,0 +1,11 @@
+diff -ur nagios-4.0.20130107.original//base/utils.c nagios-4.0.20130107/base/utils.c
+--- nagios-4.0.20130107.original//base/utils.c	2013-06-10 10:20:21.000000000 +0000
++++ nagios-4.0.20130107/base/utils.c	2013-06-10 22:05:35.000000000 +0000
+@@ -3399,6 +3403,7 @@
+ 
+ 	max_parallel_service_checks = DEFAULT_MAX_PARALLEL_SERVICE_CHECKS;
+ 	currently_running_service_checks = 0;
++	currently_running_host_checks = 0;
+ 
+ 	enable_notifications = TRUE;
+ 	execute_service_checks = TRUE;

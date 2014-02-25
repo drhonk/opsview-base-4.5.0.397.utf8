@@ -1,0 +1,25 @@
+diff -ur nagios-4.0.20130107.original//base/logging.c nagios-4.0.20130107/base/logging.c
+--- nagios-4.0.20130107.original//base/logging.c	2013-01-21 13:44:50.000000000 +0000
++++ nagios-4.0.20130107/base/logging.c	2013-02-26 16:52:34.000000000 +0000
+@@ -339,6 +339,7 @@
+ 	int rename_result = 0;
+ 	int stat_result = -1;
+ 	struct stat log_file_stat;
++	time_t current_time;
+ 
+ 	if(log_rotation_method == LOG_ROTATION_NONE) {
+ 		return OK;
+@@ -354,6 +355,13 @@
+ 	else
+ 		return ERROR;
+ 
++	/* Opsview: There's a strange bug in Nagios 3.4.4 and Nagios 4 where the log rotation sometimes happens twice. We try to overcome it here */
++	current_time = time(NULL);
++	if (current_time - last_log_rotation < 10) {
++		logit(NSLOG_RUNTIME_WARNING, TRUE, "Warning: Another log rotation was requested for %lu. Last rotation at %lu, current time is %lu", rotation_time, last_log_rotation, current_time);
++		return ERROR;
++	}
++
+ 	/* update the last log rotation time and status log */
+ 	last_log_rotation = time(NULL);
+ 	update_program_status(FALSE);

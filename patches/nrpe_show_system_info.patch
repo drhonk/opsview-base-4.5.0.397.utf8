@@ -1,0 +1,12 @@
+diff -bur nrpe-2.12.orig//src/nrpe.c nrpe-2.12/src/nrpe.c
+--- nrpe-2.12.orig//src/nrpe.c	2012-09-07 11:40:31.000000000 +0000
++++ nrpe-2.12/src/nrpe.c	2012-09-07 15:41:42.000000000 +0000
+@@ -1170,7 +1170,7 @@
+ 	/* if this is the version check command, just spew it out */
+ 	if(!strcmp(command_name,NRPE_HELLO_COMMAND)){
+ 
+-		snprintf(buffer,sizeof(buffer),"NRPE v%s",PROGRAM_VERSION);
++		snprintf(buffer,sizeof(buffer),"NRPE v%s %s",PROGRAM_VERSION, OPSVIEW_VERSION_INFO);
+ 		buffer[sizeof(buffer)-1]='\x0';
+ 
+ 		/* log info to syslog facility */

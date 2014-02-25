@@ -1,0 +1,159 @@
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/etc/maps/demo2.cfg nagvis-1.4.4-patched/etc/maps/demo2.cfg
+--- nagvis-1.4.4/etc/maps/demo2.cfg	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/etc/maps/demo2.cfg	2012-04-10 19:42:04.000000000 +0100
+@@ -1,7 +1,7 @@
+ define global {
+ allowed_user=EVERYONE
+ allowed_for_config=EVERYONE
+-iconset=std_medium
++iconset=opsview_medium
+ map_image=nagvis-demo.png
+ }
+ 
+@@ -10,7 +10,7 @@
+ x=260
+ y=158
+ recognize_services=1
+-iconset=std_small
++iconset=opsview_small
+ }
+ 
+ define hostgroup {
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/etc/maps/demo.cfg nagvis-1.4.4-patched/etc/maps/demo.cfg
+--- nagvis-1.4.4/etc/maps/demo.cfg	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/etc/maps/demo.cfg	2012-04-10 19:42:14.000000000 +0100
+@@ -1,7 +1,7 @@
+ define global {
+ allowed_user=EVERYONE
+ allowed_for_config=EVERYONE
+-iconset=std_medium
++iconset=opsview_medium
+ map_image=nagvis-demo.png
+ }
+ 
+@@ -22,7 +22,7 @@
+ map_name=demo2
+ x=400
+ y=321
+-iconset=std_small
++iconset=opsview_small
+ }
+ 
+ define hostgroup {
+@@ -36,7 +36,7 @@
+ service_description=Current Load
+ x=578
+ y=153
+-iconset=std_small
++iconset=opsview_small
+ }
+ 
+ define textbox {
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/etc/maps/demo-map.cfg nagvis-1.4.4-patched/etc/maps/demo-map.cfg
+--- nagvis-1.4.4/etc/maps/demo-map.cfg	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/etc/maps/demo-map.cfg	2012-04-10 19:42:22.000000000 +0100
+@@ -2,7 +2,7 @@
+ define global {
+ allowed_user=EVERYONE
+ allowed_for_config=EVERYONE
+-iconset=std_medium
++iconset=opsview_medium
+ map_image=demo_background.png
+ }
+ 
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/etc/maps/demo-server.cfg nagvis-1.4.4-patched/etc/maps/demo-server.cfg
+--- nagvis-1.4.4/etc/maps/demo-server.cfg	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/etc/maps/demo-server.cfg	2012-04-10 19:41:51.000000000 +0100
+@@ -2,7 +2,7 @@
+ define global {
+ allowed_user=EVERYONE
+ allowed_for_config=EVERYONE
+-iconset=std_medium
++iconset=opsview_medium
+ map_image=demo_background.png
+ }
+ 
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/etc/nagvis.ini.php-sample nagvis-1.4.4-patched/etc/nagvis.ini.php-sample
+--- nagvis-1.4.4/etc/nagvis.ini.php-sample	2012-04-10 19:45:39.000000000 +0100
++++ nagvis-1.4.4-patched/etc/nagvis.ini.php-sample	2012-04-10 19:44:43.000000000 +0100
+@@ -94,7 +94,7 @@
+ ; sort method of children (s: state, a: alphabetical)
+ ;hoverchildssort="s"
+ ; default icons
+-;icons="std_medium"
++;icons="opsview_medium"
+ ; recognize only hard states (not soft)
+ ;onlyhardstates=0
+ ; recognize service states in host/hostgroup objects
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/nagvis/includes/classes/GlobalMainCfg.php nagvis-1.4.4-patched/nagvis/includes/classes/GlobalMainCfg.php
+--- nagvis-1.4.4/nagvis/includes/classes/GlobalMainCfg.php	2012-04-10 19:45:39.000000000 +0100
++++ nagvis-1.4.4-patched/nagvis/includes/classes/GlobalMainCfg.php	2012-04-10 19:39:28.000000000 +0100
+@@ -164,7 +164,7 @@
+ 					'match' => MATCH_STRING_NO_SPACE),
+ 				'icons' => Array('must' => 1,
+ 					'editable' => 1,
+-					'default' => 'std_medium',
++					'default' => 'opsview_medium',
+ 					'match' => MATCH_STRING_NO_SPACE),
+ 				'onlyhardstates' => Array('must' => 0,
+ 					'editable' => 1,
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/nagvis/includes/classes/objects/NagVisHostgroup.php nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisHostgroup.php
+--- nagvis-1.4.4/nagvis/includes/classes/objects/NagVisHostgroup.php	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisHostgroup.php	2012-04-10 19:40:34.000000000 +0100
+@@ -40,7 +40,7 @@
+ 	 */
+ 	public function __construct($CORE, $BACKEND, $backend_id, $hostgroupName) {
+ 		$this->type = 'hostgroup';
+-		$this->iconset = 'std_medium';
++		$this->iconset = 'opsview_medium';
+ 		parent::__construct($CORE, $BACKEND, $backend_id, $hostgroupName);
+ 	}
+ 	
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/nagvis/includes/classes/objects/NagVisHost.php nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisHost.php
+--- nagvis-1.4.4/nagvis/includes/classes/objects/NagVisHost.php	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisHost.php	2012-04-10 19:40:43.000000000 +0100
+@@ -40,7 +40,7 @@
+ 	 */
+ 	public function __construct($CORE, $BACKEND, $backend_id, $hostName) {
+ 		$this->type = 'host';
+-		$this->iconset = 'std_medium';
++		$this->iconset = 'opsview_medium';
+ 		parent::__construct($CORE, $BACKEND, $backend_id, $hostName);
+ 	}
+ 	
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/nagvis/includes/classes/objects/NagVisMapObj.php nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisMapObj.php
+--- nagvis-1.4.4/nagvis/includes/classes/objects/NagVisMapObj.php	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisMapObj.php	2012-04-10 19:40:12.000000000 +0100
+@@ -56,7 +56,7 @@
+ 		$this->map_name = $this->MAPCFG->getName();
+ 		$this->alias = $this->MAPCFG->getAlias();
+ 		$this->type = 'map';
+-		$this->iconset = 'std_medium';
++		$this->iconset = 'opsview_medium';
+ 		$this->members = Array();
+ 		$this->linkedMaps = Array();
+ 		$this->is_summary_object = false;
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/nagvis/includes/classes/objects/NagVisServicegroup.php nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisServicegroup.php
+--- nagvis-1.4.4/nagvis/includes/classes/objects/NagVisServicegroup.php	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisServicegroup.php	2012-04-10 19:40:03.000000000 +0100
+@@ -39,7 +39,7 @@
+ 	 */
+ 	public function __construct($CORE, $BACKEND, $backend_id, $servicegroupName) {
+ 		$this->type = 'servicegroup';
+-		$this->iconset = 'std_medium';
++		$this->iconset = 'opsview_medium';
+ 		parent::__construct($CORE, $BACKEND, $backend_id, $servicegroupName);
+ 	}
+ 	
+diff -ur --exclude='.*.sw?' nagvis-1.4.4/nagvis/includes/classes/objects/NagVisService.php nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisService.php
+--- nagvis-1.4.4/nagvis/includes/classes/objects/NagVisService.php	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/nagvis/includes/classes/objects/NagVisService.php	2012-04-10 19:39:42.000000000 +0100
+@@ -42,7 +42,7 @@
+ 	 */
+ 	public function __construct($CORE, $BACKEND, $backend_id, $hostName, $serviceDescription) {
+ 		$this->type = 'service';
+-		$this->iconset = 'std_medium';
++		$this->iconset = 'opsview_medium';
+ 		
+ 		parent::__construct($CORE, $BACKEND, $backend_id, $hostName, $serviceDescription);
+ 	}

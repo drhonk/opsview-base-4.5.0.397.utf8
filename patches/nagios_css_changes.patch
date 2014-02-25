@@ -1,0 +1,198 @@
+diff -ur nagios-3.2.0.original/html/stylesheets/avail.css nagios-3.2.0/html/stylesheets/avail.css
+--- nagios-3.2.0.original/html/stylesheets/avail.css	2009-11-23 21:46:14.000000000 +0000
++++ nagios-3.2.0/html/stylesheets/avail.css	2009-11-23 21:46:40.000000000 +0000
+@@ -18,23 +18,9 @@
+ 
+ .dataTitle { text-align: center;  font-weight: bold;  font-size: 12pt; }
+ 
+-TABLE.data { font-size: 10pt;  background-color: white;  padding: 2px; }
+-TH.data { font-size: 10pt;  background-color: white;  text-align: left;  background-color: #999797;  color: #DCE5C1; }
+-.dataOdd { font-size: 10pt;  background-color: #DBDBDB; }
+-.dataEven { font-size: 10pt;  background-color: #C4C2C2; }
+-
+ .optionBoxTitle { text-align: center;  font-weight: bold;  font-size: 10pt; }
+ .optionBox { font-size: 10pt;  background-color: #EEEEF4;  padding: 2px; }
+ 
+-.hostUP { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.hostDOWN { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-.hostUNREACHABLE { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-
+-.serviceOK { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.serviceWARNING { font-size: 10pt;  text-align: left;  background-color: #FFFF00;  font-weight: bold; }
+-.serviceUNKNOWN { font-size: 10pt;  text-align: left;  background-color: #FF9900;  font-weight: bold; }
+-.serviceCRITICAL { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-
+ .optBox { font-size: 10pt;  font-weight: bold; }
+ .optBoxItem { font-size: 8pt;  font-weight: bold;  color: red; }
+ 
+diff -ur nagios-3.2.0.original/html/stylesheets/common.css nagios-3.2.0/html/stylesheets/common.css
+--- nagios-3.2.0.original/html/stylesheets/common.css	2009-11-23 21:46:14.000000000 +0000
++++ nagios-3.2.0/html/stylesheets/common.css	2009-11-23 22:00:22.000000000 +0000
+@@ -184,3 +184,55 @@
+ 	border: none;
+ 	}
+ 
++.infoBox { font-size: 8pt; border: 2px solid #e1e1e1; background: url(../images/menubox_bg.gif); padding: 5px;}
++.infoBoxTitle { font-size: 10pt;  font-weight: bold; color: #3f3f3f;}
++.infoBoxBadProcStatus { color: red; }
++
++TH.comment, TH.data, TH.downtime, TH.status { 
++font-size: 10pt;
++background-color: white;
++text-align: left;
++background: url(../images/th_bg.gif);
++color: #3f3f3f;
++padding: 10px;
++}
++.dataOdd, .commentOdd, .downtimeOdd { 
++background: url(../images/odd_bg.gif);
++font-size: 10pt;
++padding: 3px;
++}
++.dataEven, .commentEven, .downtimeEven {
++background: url(../images/even_bg.gif);
++font-size: 10pt;
++padding: 3px;
++}
++
++.checksENABLED,  .notificationsENABLED,  .eventhandlersENABLED,  .flapdetectionENABLED,  .notflapping, .downtimeINACTIVE, .hostUP,
++.checksDISABLED, .notificationsDISABLED, .eventhandlersDISABLED, .flapdetectionDISABLED, .flapping, .downtimeACTIVE, .hostDOWN, .hostUNREACHABLE,
++.serviceOK, .serviceCRITICAL, .serviceWARNING, .serviceUNKNOWN
++{  
++font-size: 10pt;  
++text-align: left;  
++font-weight: bold; 
++}
++
++.checksENABLED,  .notificationsENABLED,  .eventhandlersENABLED,  .flapdetectionENABLED,  .notflapping, .downtimeINACTIVE, .hostUP, .serviceOK { 
++background: url(../images/ok_bg.gif); 
++background-color: #33FF00;  
++}
++.checksDISABLED, .notificationsDISABLED, .eventhandlersDISABLED, .flapdetectionDISABLED, .flapping, .downtimeACTIVE, .hostDOWN, .hostUNREACHABLE, .serviceCRITICAL {  
++background: url(../images/critical_bg.gif); 
++background-color: #F83838;  
++}
++.serviceWARNING { 
++background: url(../images/warning_bg.gif); 
++background-color: #FFFF00;
++}
++.serviceUNKNOWN { 
++background: url(../images/unknown_bg.gif);
++background-color: #FF9900;
++}
++
++.dataVar { background: url(../images/odd_bg.gif); font-size: 10pt; padding: 3px; }
++.dataVal { background: url(../images/odd_bg.gif); font-size: 10pt; padding: 3px; }
++
+diff -ur nagios-3.2.0.original/html/stylesheets/extinfo.css nagios-3.2.0/html/stylesheets/extinfo.css
+--- nagios-3.2.0.original/html/stylesheets/extinfo.css	2009-11-23 21:46:14.000000000 +0000
++++ nagios-3.2.0/html/stylesheets/extinfo.css	2009-11-23 21:46:40.000000000 +0000
+@@ -18,9 +18,6 @@
+ DIV.perfTypeTitle { text-align: right;  font-weight: bold;  font-size: 10pt; }
+ 
+ TABLE.data { font-size: 10pt;  background-color: white;  padding: 2px; }
+-TH.data { font-size: 10pt;  background-color: white;  text-align: left;  background-color: #999797;  color: #DCE5C1; }
+-.dataOdd { font-size: 10pt;  background-color: #DBDBDB; }
+-.dataEven { font-size: 10pt;  background-color: #C4C2C2; }
+ 
+ .optionBoxTitle { text-align: center;  font-weight: bold;  font-size: 10pt; }
+ .optionBox { font-size: 10pt;  background-color: #DBDBDB;  padding: 2px; }
+@@ -35,9 +32,6 @@
+ A.commentNav { font-size: 10pt; }
+ 
+ TABLE.comment { font-size: 10pt;  background-color: white;  padding: 2px; }
+-TH.comment { font-size: 10pt;  background-color: white;  text-align: left;  background-color: #999797;  color: #DCE5C1; }
+-.commentOdd { font-size: 9pt;  background-color: #DBDBDB; }
+-.commentEven { font-size: 9pt;  background-color: #C4C2C2; }
+ DIV.comment,A.comment { font-size: 10pt;  background-color: white;  text-align: center; }
+ 
+ .downtimeTitle { text-align: center;  font-weight: bold;  font-size: 12pt; }
+@@ -45,27 +39,6 @@
+ A.downtimeNav { font-size: 10pt; }
+ 
+ TABLE.downtime { font-size: 10pt;  background-color: white;  padding: 2px; }
+-TH.downtime { font-size: 10pt;  background-color: white;  text-align: left;  background-color: #999797;  color: #DCE5C1; }
+-.downtimeOdd { font-size: 9pt;  background-color: #DBDBDB; }
+-.downtimeEven { font-size: 9pt;  background-color: #C4C2C2; }
+-
+-.notificationsENABLED { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.notificationsDISABLED { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-
+-.checksENABLED { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.checksDISABLED { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-
+-.eventhandlersENABLED { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.eventhandlersDISABLED { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-
+-.flapdetectionENABLED { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.flapdetectionDISABLED { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-
+-.notflapping { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; float: left; }
+-.flapping { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
+-
+-.downtimeACTIVE { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
+-.downtimeINACTIVE { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; float: left; }
+ 
+ .processOK { font-size: 10pt;  background-color: #33FF00;  font-weight: bold; }
+ .processUNKNOWN { font-size: 10pt;  background-color: #FF9900;  font-weight: bold; }
+@@ -75,15 +48,6 @@
+ .modeACTIVE { font-size: 10pt;  background-color: #33FF00;  font-weight: bold; }
+ .modeSTANDBY { font-size: 10pt;  background-color: #FFFF00;  font-weight: bold; }
+ 
+-.hostUP { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; float: left; }
+-.hostDOWN { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
+-.hostUNREACHABLE { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
+-
+-.serviceOK { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; float: left; }
+-.serviceWARNING { font-size: 10pt;  text-align: left;  background-color: #FFFF00;  font-weight: bold; float: left; }
+-.serviceUNKNOWN { font-size: 10pt;  text-align: left;  background-color: #FF9900;  font-weight: bold; float: left; }
+-.serviceCRITICAL { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
+-
+ .commandPanel { background-color: white; }
+ .commentPanel { background-color: white; }
+ 
+@@ -92,8 +56,6 @@
+ .stateInfoTable1 { font-size: 10pt;  background-color: #DBDBDB; }
+ .stateInfoTable2 { font-size: 10pt;  background-color: #C4C2C2; }
+ 
+-.dataVar { font-size: 10pt; }
+-.dataVal { font-size: 10pt; }
+ 
+ .queueTitle { text-align: center;  font-weight: bold;  font-size: 12pt; }
+ 
+@@ -104,4 +66,8 @@
+ .queueENABLED { font-size: 9pt;  background-color: #33FF00; }
+ .queueDISABLED { font-size: 9pt;  background-color: #F83838; }
+ 
+-
++.notflapping, .flapping, .downtimeACTIVE, .downtimeINACTIVE,
++.hostUP, .hostDOWN, .hostUNREACHABLE,
++.serviceOK, .serviceWARNING, .serviceUNKNOWN, .serviceCRITICAL {
++ float: left;
++}
+diff -ur nagios-3.2.0.original/html/stylesheets/outages.css nagios-3.2.0/html/stylesheets/outages.css
+--- nagios-3.2.0.original/html/stylesheets/outages.css	2009-11-23 21:46:14.000000000 +0000
++++ nagios-3.2.0/html/stylesheets/outages.css	2009-11-23 21:46:40.000000000 +0000
+@@ -15,11 +15,4 @@
+ 
+ .dataTitle { text-align: center;  font-weight: bold;  font-size: 12pt; }
+ TABLE.data { font-size: 10pt;  background-color: white;  padding: 2px; }
+-TH.data { font-size: 10pt;  background-color: white;  text-align: left;  background-color: #999797;  color: #DCE5C1; }
+-.dataOdd { font-size: 10pt;  background-color: #DBDBDB; }
+-.dataEven { font-size: 10pt;  background-color: #C4C2C2; }
+-
+-.hostUP { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.hostDOWN { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-.hostUNREACHABLE { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+ 
+diff -ur nagios-3.2.0.original/html/stylesheets/status.css nagios-3.2.0/html/stylesheets/status.css
+--- nagios-3.2.0.original/html/stylesheets/status.css	2009-11-23 21:46:14.000000000 +0000
++++ nagios-3.2.0/html/stylesheets/status.css	2009-11-23 21:58:13.000000000 +0000
+@@ -24,7 +24,6 @@
+ .statusSort { font-size: 8pt; }
+ 
+ TABLE.status { font-size: 8pt;  background-color: white;  padding: 2px; }
+-TH.status { font-size: 10pt;  text-align: left;  background-color: #999797;  color: #DCE5C1; }
+ DIV.status { font-size: 10pt;  text-align: center; }
+ .statusOdd { font-size: 8pt;  background-color: #DBDBDB; }
+ .statusEven { font-size: 8pt;  background-color: #C4C2C2; }

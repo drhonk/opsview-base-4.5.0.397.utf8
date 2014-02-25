@@ -1,0 +1,36 @@
+--- nagiosgraph-0.8.2.original/show.cgi	2008-08-06 16:52:10.000000000 +0100
++++ nagiosgraph-0.8.2/show.cgi	2008-08-06 22:44:36.739984332 +0100
+@@ -174,6 +174,7 @@
+ if (defined $fixedscale) {
+   $fixedscale = 1;
+ }
++my $patchpingunknowns = param('patchpingunknowns');
+ 
+ # Draw a graph or a page
+ if ( $graph ) {
+@@ -215,8 +216,15 @@
+       $c = hashcolor($v);
+       debug(5, "CGI file=$f line=$v color=$c");
+       my $sv = "$v";
+-      push @ds , "DEF:$sv=$Config{rrddir}/$f:$v:AVERAGE"
+-               , "LINE1:${sv}#$c:$sv";		# Use LINE1 because some older RRDs don't understand LINE
++      push @ds , "DEF:$sv=$Config{rrddir}/$f:$v:AVERAGE";
++      # This forces all unknowns to be marked as 100%, because the map file
++      # didn't always capture ping failures correctly
++      if ($patchpingunknowns && ($sv eq "losspct")) {
++	       push @ds, "CDEF:pl=$sv,UN,100,$sv,IF"
++               , "LINE1:pl#$c:losspct";
++      } else {
++	      push @ds, "LINE1:${sv}#$c:$sv";	# Use LINE1 because some older RRDs don't understand LINE
++      }
+       if ($fixedscale) {
+         push @ds, "GPRINT:$sv:MAX:Max\\: %6.2lf"
+                , "GPRINT:$sv:AVERAGE:Avg\\: %6.2lf"
+@@ -274,6 +282,7 @@
+         my $arg = join '&', "host=$h", "service=$s", "db=$g", "graph=$t",
+                             "geom=$d", "rrdopts=$o", "time=".time;	# Time is to force ajax reload
+ 	$arg .= "&fixedscale" if ($fixedscale);
++	$arg .= "&patchpingunknowns=1" if ($patchpingunknowns);
+         my @gl = split ',', $g;
+         my $ds = shift @gl;
+         print div({-class => "graphs"}, img( {-src => "?$arg", -alt => "Graph"} ) );

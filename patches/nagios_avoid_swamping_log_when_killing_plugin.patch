@@ -1,0 +1,28 @@
+--- nagios-4.0.20130912.original/lib/worker.c	2013-10-14 21:44:21.000000000 +0000
++++ nagios-4.0.20130912/lib/worker.c	2013-10-16 15:36:50.000000000 +0000
+@@ -737,6 +738,7 @@
+ 		while (running_jobs) {
+ 			child_process *cp;
+ 			struct timeval now, tmo;
++			const struct timeval *event_runtime;
+ 
+ 			/* stop when scheduling queue is empty */
+ 			cp = (child_process *)squeue_peek(sq);
+@@ -756,6 +758,17 @@
+ 			if (poll_time > 0)
+ 				break;
+ 
++			/* Ignore this child process if it is not meant to be checked yet. There is a scenario where if a 
++			   plugin takes too long to execute, the child gets killed and then is continually checked,
++			   swamping the nagios.log file with:
++			   [1381918845] wproc: Core Worker 17643: Failed to reap child with pid 26923. Next attempt @ 1381918850.240734
++			   There is code in kill_job to set a next_attempt time, so we check that and break out if it is set above now
++			   thus not getting into this loop. The process will then be swept up by the signhandler.
++			   It feels like there must be a better way of fixing this though */
++			event_runtime = squeue_event_runtime(cp->ei->sq_event);
++			if (event_runtime->tv_sec > now.tv_sec)
++				break;
++
+ 			if (cp->ei->state == ESTALE) {
+ 				kill_job(cp, ESTALE);
+ 			} else {

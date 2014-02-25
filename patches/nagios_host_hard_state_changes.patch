@@ -1,0 +1,23 @@
+--- nagios-4.0.20130912.original/base/checks.c	2013-10-11 12:42:22.000000000 +0000
++++ nagios-4.0.20130912/base/checks.c	2013-10-14 17:20:47.000000000 +0000
+@@ -2920,17 +2920,11 @@
+ 			delete_host_acknowledgement_comments(hst);
+ 			}
+ 
+-		}
+-
+-	/* Not sure about this, but is old behaviour */
+-	if(hst->last_hard_state != hst->current_state)
+-		hard_state_change = TRUE;
+-
+-	if(state_change == TRUE || hard_state_change == TRUE) {
+ 
+ 		/* update last state change times */
+-		hst->last_state_change = current_time;
+-		if(hst->state_type == HARD_STATE)
++		if(state_change == TRUE)
++			hst->last_state_change = current_time;
++		if(hard_state_change == TRUE)
+ 			hst->last_hard_state_change = current_time;
+ 
+ 		/* update the event id */

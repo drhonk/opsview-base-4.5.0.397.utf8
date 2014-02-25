@@ -1,0 +1,785 @@
+diff -ur nagios-2.10/cgi/cmd.c nagios-2.10.with_linefeed_block/cgi/cmd.c
+--- nagios-2.10/cgi/cmd.c	2008-11-11 15:28:15.641546048 +0000
++++ nagios-2.10.with_linefeed_block/cgi/cmd.c	2008-11-11 15:27:08.610736280 +0000
+@@ -1395,11 +1395,18 @@
+ 	comment *temp_comment;
+ 	scheduled_downtime *temp_downtime;
+ 	servicegroup *temp_servicegroup=NULL;
++	contact *temp_contact=NULL;
+ 
+ 
+ 	/* get authentication information */
+ 	get_authentication_information(&current_authdata);
+ 
++	temp_contact=find_contact(current_authdata.username);
++	if(temp_contact!=NULL && temp_contact->alias!=NULL)
++		comment_author=temp_contact->alias;
++	else
++		comment_author=current_authdata.username;
++
+ 	switch(cmd){
+ 	case CMD_ADD_HOST_COMMENT:
+ 	case CMD_ACKNOWLEDGE_HOST_PROBLEM:
+@@ -1867,240 +1874,468 @@
+ 	/* get the notification time */
+ 	notification_time=current_time+(notification_delay*60);
+ 
++	/* From Nagios 3.0.5
++         * these are supposed to be implanted inside the
++         * completed commands shipped off to nagios and
++         * must therefore never contain ';'
++         */
++       if (host_name && strchr(host_name, ';'))
++               return ERROR;
++       if (service_desc && strchr(service_desc, ';'))
++               return ERROR;
++       if (comment_author && strchr(comment_author, ';'))
++               return ERROR;
++       if (hostgroup_name && strchr(hostgroup_name, ';'))
++               return ERROR;
++       if (servicegroup_name && strchr(servicegroup_name, ';'))
++               return ERROR;
++
+ 	/* decide how to form the command line... */
+ 	switch(cmd){
+ 
+ 	case CMD_ADD_HOST_COMMENT:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ADD_HOST_COMMENT;%s;%d;%s;%s\n",current_time,host_name,(persistent_comment==TRUE)?1:0,comment_author,comment_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ADD_HOST_COMMENT;%s;%d;%s;%s",current_time,host_name,(persistent_comment==TRUE)?1:0,comment_author,comment_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ADD_SVC_COMMENT:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ADD_SVC_COMMENT;%s;%s;%d;%s;%s\n",current_time,host_name,service_desc,(persistent_comment==TRUE)?1:0,comment_author,comment_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ADD_SVC_COMMENT;%s;%s;%d;%s;%s",current_time,host_name,service_desc,(persistent_comment==TRUE)?1:0,comment_author,comment_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_DEL_HOST_COMMENT:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_HOST_COMMENT;%lu\n",current_time,comment_id);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_HOST_COMMENT;%lu",current_time,comment_id);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_DEL_SVC_COMMENT:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_SVC_COMMENT;%lu\n",current_time,comment_id);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_SVC_COMMENT;%lu",current_time,comment_id);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_DELAY_HOST_NOTIFICATION:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DELAY_HOST_NOTIFICATION;%s;%lu\n",current_time,host_name,notification_time);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DELAY_HOST_NOTIFICATION;%s;%lu",current_time,host_name,notification_time);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_DELAY_SVC_NOTIFICATION:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DELAY_SVC_NOTIFICATION;%s;%s;%lu\n",current_time,host_name,service_desc,notification_time);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DELAY_SVC_NOTIFICATION;%s;%s;%lu",current_time,host_name,service_desc,notification_time);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_SCHEDULE_SVC_CHECK:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_%sSVC_CHECK;%s;%s;%lu\n",current_time,(force_check==TRUE)?"FORCED_":"",host_name,service_desc,start_time);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_%sSVC_CHECK;%s;%s;%lu",current_time,(force_check==TRUE)?"FORCED_":"",host_name,service_desc,start_time);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_SVC_CHECK:
+ 	case CMD_DISABLE_SVC_CHECK:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SVC_CHECK;%s;%s\n",current_time,(cmd==CMD_ENABLE_SVC_CHECK)?"ENABLE":"DISABLE",host_name,service_desc);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SVC_CHECK;%s;%s",current_time,(cmd==CMD_ENABLE_SVC_CHECK)?"ENABLE":"DISABLE",host_name,service_desc);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_DISABLE_NOTIFICATIONS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DISABLE_NOTIFICATIONS;%lu\n",current_time,scheduled_time);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DISABLE_NOTIFICATIONS;%lu",current_time,scheduled_time);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_NOTIFICATIONS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ENABLE_NOTIFICATIONS;%lu\n",current_time,scheduled_time);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ENABLE_NOTIFICATIONS;%lu",current_time,scheduled_time);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_SHUTDOWN_PROCESS:
+ 	case CMD_RESTART_PROCESS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_PROGRAM;%lu\n",current_time,(cmd==CMD_SHUTDOWN_PROCESS)?"SHUTDOWN":"RESTART",scheduled_time);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_PROGRAM;%lu",current_time,(cmd==CMD_SHUTDOWN_PROCESS)?"SHUTDOWN":"RESTART",scheduled_time);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_HOST_SVC_CHECKS:
+ 	case CMD_DISABLE_HOST_SVC_CHECKS:
+-		if(affect_host_and_services==FALSE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_SVC_CHECKS;%s\n",current_time,(cmd==CMD_ENABLE_HOST_SVC_CHECKS)?"ENABLE":"DISABLE",host_name);
+-		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_SVC_CHECKS;%s\n[%lu] %s_HOST_CHECK;%s\n",current_time,(cmd==CMD_ENABLE_HOST_SVC_CHECKS)?"ENABLE":"DISABLE",host_name,current_time,(cmd==CMD_ENABLE_HOST_SVC_CHECKS)?"ENABLE":"DISABLE",host_name);
++		if(affect_host_and_services==FALSE) {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_SVC_CHECKS;%s",current_time,(cmd==CMD_ENABLE_HOST_SVC_CHECKS)?"ENABLE":"DISABLE",host_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++		} else {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_SVC_CHECKS;%s",current_time,(cmd==CMD_ENABLE_HOST_SVC_CHECKS)?"ENABLE":"DISABLE",host_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_CHECK;%s",current_time,(cmd==CMD_ENABLE_HOST_SVC_CHECKS)?"ENABLE":"DISABLE",host_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result|=write_command_to_file(command_buffer);
++		}
+ 		break;
+ 		
+ 	case CMD_SCHEDULE_HOST_SVC_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_%sHOST_SVC_CHECKS;%s;%lu\n",current_time,(force_check==TRUE)?"FORCED_":"",host_name,scheduled_time);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_%sHOST_SVC_CHECKS;%s;%lu",current_time,(force_check==TRUE)?"FORCED_":"",host_name,scheduled_time);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_DEL_ALL_HOST_COMMENTS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_ALL_HOST_COMMENTS;%s\n",current_time,host_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_ALL_HOST_COMMENTS;%s",current_time,host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_DEL_ALL_SVC_COMMENTS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_ALL_SVC_COMMENTS;%s;%s\n",current_time,host_name,service_desc);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_ALL_SVC_COMMENTS;%s;%s",current_time,host_name,service_desc);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_SVC_NOTIFICATIONS:
+ 	case CMD_DISABLE_SVC_NOTIFICATIONS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SVC_NOTIFICATIONS;%s;%s\n",current_time,(cmd==CMD_ENABLE_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name,service_desc);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SVC_NOTIFICATIONS;%s;%s",current_time,(cmd==CMD_ENABLE_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name,service_desc);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_HOST_NOTIFICATIONS:
+ 	case CMD_DISABLE_HOST_NOTIFICATIONS:
+ 		if(propagate_to_children==TRUE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_AND_CHILD_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_HOST_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_AND_CHILD_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOST_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
+ 		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_HOST_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOST_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_ALL_NOTIFICATIONS_BEYOND_HOST:
+ 	case CMD_DISABLE_ALL_NOTIFICATIONS_BEYOND_HOST:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_ALL_NOTIFICATIONS_BEYOND_HOST;%s\n",current_time,(cmd==CMD_ENABLE_ALL_NOTIFICATIONS_BEYOND_HOST)?"ENABLE":"DISABLE",host_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_ALL_NOTIFICATIONS_BEYOND_HOST;%s",current_time,(cmd==CMD_ENABLE_ALL_NOTIFICATIONS_BEYOND_HOST)?"ENABLE":"DISABLE",host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_HOST_SVC_NOTIFICATIONS:
+ 	case CMD_DISABLE_HOST_SVC_NOTIFICATIONS:
+-		if(affect_host_and_services==FALSE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_SVC_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_HOST_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
+-		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_SVC_NOTIFICATIONS;%s\n[%lu] %s_HOST_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_HOST_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name,current_time,(cmd==CMD_ENABLE_HOST_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
++		if(affect_host_and_services==FALSE) {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_SVC_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOST_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++		} else {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_SVC_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOST_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOST_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",host_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result|=write_command_to_file(command_buffer);
++		}
+ 		break;
+ 		
+ 	case CMD_ACKNOWLEDGE_HOST_PROBLEM:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;%d;%d;%d;%s;%s\n",current_time,host_name,(sticky_ack==TRUE)?ACKNOWLEDGEMENT_STICKY:ACKNOWLEDGEMENT_NORMAL,(send_notification==TRUE)?1:0,(persistent_comment==TRUE)?1:0,comment_author,comment_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;%d;%d;%d;%s;%s",current_time,host_name,(sticky_ack==TRUE)?ACKNOWLEDGEMENT_STICKY:ACKNOWLEDGEMENT_NORMAL,(send_notification==TRUE)?1:0,(persistent_comment==TRUE)?1:0,comment_author,comment_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ACKNOWLEDGE_SVC_PROBLEM:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;%d;%d;%d;%s;%s\n",current_time,host_name,service_desc,(sticky_ack==TRUE)?ACKNOWLEDGEMENT_STICKY:ACKNOWLEDGEMENT_NORMAL,(send_notification==TRUE)?1:0,(persistent_comment==TRUE)?1:0,comment_author,comment_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;%d;%d;%d;%s;%s",current_time,host_name,service_desc,(sticky_ack==TRUE)?ACKNOWLEDGEMENT_STICKY:ACKNOWLEDGEMENT_NORMAL,(send_notification==TRUE)?1:0,(persistent_comment==TRUE)?1:0,comment_author,comment_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_START_EXECUTING_SVC_CHECKS:
+ 	case CMD_STOP_EXECUTING_SVC_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_EXECUTING_SVC_CHECKS;\n",current_time,(cmd==CMD_START_EXECUTING_SVC_CHECKS)?"START":"STOP");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_EXECUTING_SVC_CHECKS;",current_time,(cmd==CMD_START_EXECUTING_SVC_CHECKS)?"START":"STOP");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_START_ACCEPTING_PASSIVE_SVC_CHECKS:
+ 	case CMD_STOP_ACCEPTING_PASSIVE_SVC_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_ACCEPTING_PASSIVE_SVC_CHECKS;\n",current_time,(cmd==CMD_START_ACCEPTING_PASSIVE_SVC_CHECKS)?"START":"STOP");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_ACCEPTING_PASSIVE_SVC_CHECKS;",current_time,(cmd==CMD_START_ACCEPTING_PASSIVE_SVC_CHECKS)?"START":"STOP");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_PASSIVE_SVC_CHECKS:
+ 	case CMD_DISABLE_PASSIVE_SVC_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_PASSIVE_SVC_CHECKS;%s;%s\n",current_time,(cmd==CMD_ENABLE_PASSIVE_SVC_CHECKS)?"ENABLE":"DISABLE",host_name,service_desc);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_PASSIVE_SVC_CHECKS;%s;%s",current_time,(cmd==CMD_ENABLE_PASSIVE_SVC_CHECKS)?"ENABLE":"DISABLE",host_name,service_desc);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_EVENT_HANDLERS:
+ 	case CMD_DISABLE_EVENT_HANDLERS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_EVENT_HANDLERS;\n",current_time,(cmd==CMD_ENABLE_EVENT_HANDLERS)?"ENABLE":"DISABLE");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_EVENT_HANDLERS;",current_time,(cmd==CMD_ENABLE_EVENT_HANDLERS)?"ENABLE":"DISABLE");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_SVC_EVENT_HANDLER:
+ 	case CMD_DISABLE_SVC_EVENT_HANDLER:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SVC_EVENT_HANDLER;%s;%s\n",current_time,(cmd==CMD_ENABLE_SVC_EVENT_HANDLER)?"ENABLE":"DISABLE",host_name,service_desc);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SVC_EVENT_HANDLER;%s;%s",current_time,(cmd==CMD_ENABLE_SVC_EVENT_HANDLER)?"ENABLE":"DISABLE",host_name,service_desc);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_HOST_EVENT_HANDLER:
+ 	case CMD_DISABLE_HOST_EVENT_HANDLER:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_EVENT_HANDLER;%s\n",current_time,(cmd==CMD_ENABLE_HOST_EVENT_HANDLER)?"ENABLE":"DISABLE",host_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_EVENT_HANDLER;%s",current_time,(cmd==CMD_ENABLE_HOST_EVENT_HANDLER)?"ENABLE":"DISABLE",host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_HOST_CHECK:
+ 	case CMD_DISABLE_HOST_CHECK:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_CHECK;%s\n",current_time,(cmd==CMD_ENABLE_HOST_CHECK)?"ENABLE":"DISABLE",host_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_CHECK;%s",current_time,(cmd==CMD_ENABLE_HOST_CHECK)?"ENABLE":"DISABLE",host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_START_OBSESSING_OVER_SVC_CHECKS:
+ 	case CMD_STOP_OBSESSING_OVER_SVC_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_OBSESSING_OVER_SVC_CHECKS;\n",current_time,(cmd==CMD_START_OBSESSING_OVER_SVC_CHECKS)?"START":"STOP");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_OBSESSING_OVER_SVC_CHECKS;",current_time,(cmd==CMD_START_OBSESSING_OVER_SVC_CHECKS)?"START":"STOP");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_REMOVE_HOST_ACKNOWLEDGEMENT:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s\n",current_time,host_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s",current_time,host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_REMOVE_SVC_ACKNOWLEDGEMENT:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s\n",current_time,host_name,service_desc);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s",current_time,host_name,service_desc);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_PROCESS_SERVICE_CHECK_RESULT:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] PROCESS_SERVICE_CHECK_RESULT;%s;%s;%d;%s|%s\n",current_time,host_name,service_desc,plugin_state,plugin_output,performance_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] PROCESS_SERVICE_CHECK_RESULT;%s;%s;%d;%s|%s",current_time,host_name,service_desc,plugin_state,plugin_output,performance_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_PROCESS_HOST_CHECK_RESULT:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] PROCESS_HOST_CHECK_RESULT;%s;%d;%s|%s\n",current_time,host_name,plugin_state,plugin_output,performance_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] PROCESS_HOST_CHECK_RESULT;%s;%d;%s|%s",current_time,host_name,plugin_state,plugin_output,performance_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_SCHEDULE_HOST_DOWNTIME:
+ 		if(child_options==1)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_AND_PROPAGATE_TRIGGERED_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%lu;%s;%s\n",current_time,host_name,start_time,end_time,(fixed==TRUE)?1:0,triggered_by,duration,comment_author,comment_data);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_AND_PROPAGATE_TRIGGERED_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%lu;%s;%s",current_time,host_name,start_time,end_time,(fixed==TRUE)?1:0,triggered_by,duration,comment_author,comment_data);
+ 		else if(child_options==2)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_AND_PROPAGATE_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%lu;%s;%s\n",current_time,host_name,start_time,end_time,(fixed==TRUE)?1:0,triggered_by,duration,comment_author,comment_data);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_AND_PROPAGATE_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%lu;%s;%s",current_time,host_name,start_time,end_time,(fixed==TRUE)?1:0,triggered_by,duration,comment_author,comment_data);
+ 		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%lu;%s;%s\n",current_time,host_name,start_time,end_time,(fixed==TRUE)?1:0,triggered_by,duration,comment_author,comment_data);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%lu;%s;%s",current_time,host_name,start_time,end_time,(fixed==TRUE)?1:0,triggered_by,duration,comment_author,comment_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_SCHEDULE_SVC_DOWNTIME:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%lu;%lu;%d;%lu;%lu;%s;%s\n",current_time,host_name,service_desc,start_time,end_time,(fixed==TRUE)?1:0,triggered_by,duration,comment_author,comment_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%lu;%lu;%d;%lu;%lu;%s;%s",current_time,host_name,service_desc,start_time,end_time,(fixed==TRUE)?1:0,triggered_by,duration,comment_author,comment_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_HOST_FLAP_DETECTION:
+ 	case CMD_DISABLE_HOST_FLAP_DETECTION:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_FLAP_DETECTION;%s\n",current_time,(cmd==CMD_ENABLE_HOST_FLAP_DETECTION)?"ENABLE":"DISABLE",host_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOST_FLAP_DETECTION;%s",current_time,(cmd==CMD_ENABLE_HOST_FLAP_DETECTION)?"ENABLE":"DISABLE",host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_SVC_FLAP_DETECTION:
+ 	case CMD_DISABLE_SVC_FLAP_DETECTION:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SVC_FLAP_DETECTION;%s;%s\n",current_time,(cmd==CMD_ENABLE_SVC_FLAP_DETECTION)?"ENABLE":"DISABLE",host_name,service_desc);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SVC_FLAP_DETECTION;%s;%s",current_time,(cmd==CMD_ENABLE_SVC_FLAP_DETECTION)?"ENABLE":"DISABLE",host_name,service_desc);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_FLAP_DETECTION:
+ 	case CMD_DISABLE_FLAP_DETECTION:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_FLAP_DETECTION\n",current_time,(cmd==CMD_ENABLE_FLAP_DETECTION)?"ENABLE":"DISABLE");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_FLAP_DETECTION",current_time,(cmd==CMD_ENABLE_FLAP_DETECTION)?"ENABLE":"DISABLE");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_DEL_HOST_DOWNTIME:
+ 	case CMD_DEL_SVC_DOWNTIME:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_%s_DOWNTIME;%lu\n",current_time,(cmd==CMD_DEL_HOST_DOWNTIME)?"HOST":"SVC",downtime_id);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] DEL_%s_DOWNTIME;%lu",current_time,(cmd==CMD_DEL_HOST_DOWNTIME)?"HOST":"SVC",downtime_id);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_FAILURE_PREDICTION:
+ 	case CMD_DISABLE_FAILURE_PREDICTION:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_FAILURE_PREDICTION\n",current_time,(cmd==CMD_ENABLE_FAILURE_PREDICTION)?"ENABLE":"DISABLE");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_FAILURE_PREDICTION",current_time,(cmd==CMD_ENABLE_FAILURE_PREDICTION)?"ENABLE":"DISABLE");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_ENABLE_PERFORMANCE_DATA:
+ 	case CMD_DISABLE_PERFORMANCE_DATA:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_PERFORMANCE_DATA\n",current_time,(cmd==CMD_ENABLE_PERFORMANCE_DATA)?"ENABLE":"DISABLE");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_PERFORMANCE_DATA",current_time,(cmd==CMD_ENABLE_PERFORMANCE_DATA)?"ENABLE":"DISABLE");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 		
+ 	case CMD_START_EXECUTING_HOST_CHECKS:
+ 	case CMD_STOP_EXECUTING_HOST_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_EXECUTING_HOST_CHECKS;\n",current_time,(cmd==CMD_START_EXECUTING_HOST_CHECKS)?"START":"STOP");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_EXECUTING_HOST_CHECKS;",current_time,(cmd==CMD_START_EXECUTING_HOST_CHECKS)?"START":"STOP");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_START_ACCEPTING_PASSIVE_HOST_CHECKS:
+ 	case CMD_STOP_ACCEPTING_PASSIVE_HOST_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_ACCEPTING_PASSIVE_HOST_CHECKS;\n",current_time,(cmd==CMD_START_ACCEPTING_PASSIVE_HOST_CHECKS)?"START":"STOP");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_ACCEPTING_PASSIVE_HOST_CHECKS;",current_time,(cmd==CMD_START_ACCEPTING_PASSIVE_HOST_CHECKS)?"START":"STOP");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_PASSIVE_HOST_CHECKS:
+ 	case CMD_DISABLE_PASSIVE_HOST_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_PASSIVE_HOST_CHECKS;%s\n",current_time,(cmd==CMD_ENABLE_PASSIVE_HOST_CHECKS)?"ENABLE":"DISABLE",host_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_PASSIVE_HOST_CHECKS;%s",current_time,(cmd==CMD_ENABLE_PASSIVE_HOST_CHECKS)?"ENABLE":"DISABLE",host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_START_OBSESSING_OVER_HOST_CHECKS:
+ 	case CMD_STOP_OBSESSING_OVER_HOST_CHECKS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_OBSESSING_OVER_HOST_CHECKS;\n",current_time,(cmd==CMD_START_OBSESSING_OVER_HOST_CHECKS)?"START":"STOP");
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_OBSESSING_OVER_HOST_CHECKS;",current_time,(cmd==CMD_START_OBSESSING_OVER_HOST_CHECKS)?"START":"STOP");
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_SCHEDULE_HOST_CHECK:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_%sHOST_CHECK;%s;%lu\n",current_time,(force_check==TRUE)?"FORCED_":"",host_name,start_time);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_%sHOST_CHECK;%s;%lu",current_time,(force_check==TRUE)?"FORCED_":"",host_name,start_time);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_START_OBSESSING_OVER_SVC:
+ 	case CMD_STOP_OBSESSING_OVER_SVC:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_OBSESSING_OVER_SVC;%s;%s\n",current_time,(cmd==CMD_START_OBSESSING_OVER_SVC)?"START":"STOP",host_name,service_desc);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_OBSESSING_OVER_SVC;%s;%s",current_time,(cmd==CMD_START_OBSESSING_OVER_SVC)?"START":"STOP",host_name,service_desc);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_START_OBSESSING_OVER_HOST:
+ 	case CMD_STOP_OBSESSING_OVER_HOST:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_OBSESSING_OVER_HOST;%s\n",current_time,(cmd==CMD_START_OBSESSING_OVER_HOST)?"START":"STOP",host_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_OBSESSING_OVER_HOST;%s",current_time,(cmd==CMD_START_OBSESSING_OVER_HOST)?"START":"STOP",host_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 
+@@ -2108,34 +2343,84 @@
+ 
+ 	case CMD_ENABLE_HOSTGROUP_SVC_NOTIFICATIONS:
+ 	case CMD_DISABLE_HOSTGROUP_SVC_NOTIFICATIONS:
+-		if(affect_host_and_services==FALSE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_SVC_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",hostgroup_name);
+-		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_SVC_NOTIFICATIONS;%s\n[%lu] %s_HOSTGROUP_HOST_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",hostgroup_name,current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",hostgroup_name);
++		if(affect_host_and_services==FALSE) {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_SVC_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",hostgroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++		} else {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_SVC_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",hostgroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_HOST_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",hostgroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result|=write_command_to_file(command_buffer);
++		}
+ 		break;
+ 
+ 	case CMD_ENABLE_HOSTGROUP_HOST_NOTIFICATIONS:
+ 	case CMD_DISABLE_HOSTGROUP_HOST_NOTIFICATIONS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_HOST_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_HOSTGROUP_HOST_NOTIFICATIONS)?"ENABLE":"DISABLE",hostgroup_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_HOST_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_HOSTGROUP_HOST_NOTIFICATIONS)?"ENABLE":"DISABLE",hostgroup_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_HOSTGROUP_SVC_CHECKS:
+ 	case CMD_DISABLE_HOSTGROUP_SVC_CHECKS:
+-		if(affect_host_and_services==FALSE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_SVC_CHECKS;%s\n",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",hostgroup_name);
+-		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_SVC_CHECKS;%s\n[%lu] %s_HOSTGROUP_HOST_CHECKS;%s\n",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",hostgroup_name,current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",hostgroup_name);
++		if(affect_host_and_services==FALSE) {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_SVC_CHECKS;%s",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",hostgroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++		} else {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_SVC_CHECKS;%s",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",hostgroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_HOSTGROUP_HOST_CHECKS;%s",current_time,(cmd==CMD_ENABLE_HOSTGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",hostgroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result|=write_command_to_file(command_buffer);
++		} 
+ 		break;
+ 
+ 	case CMD_SCHEDULE_HOSTGROUP_HOST_DOWNTIME:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOSTGROUP_HOST_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s\n",current_time,hostgroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOSTGROUP_HOST_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s",current_time,hostgroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result|=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_SCHEDULE_HOSTGROUP_SVC_DOWNTIME:
+-		if(affect_host_and_services==FALSE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOSTGROUP_SVC_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s\n",current_time,hostgroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
+-		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOSTGROUP_SVC_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s\n[%lu] SCHEDULE_HOSTGROUP_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%s;%s\n",current_time,hostgroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data,current_time,hostgroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++		if(affect_host_and_services==FALSE) {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOSTGROUP_SVC_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s",current_time,hostgroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++		} else {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOSTGROUP_SVC_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s",current_time,hostgroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_HOSTGROUP_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%s;%s",current_time,hostgroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result|=write_command_to_file(command_buffer);
++		}
+ 		break;
+ 
+ 
+@@ -2143,34 +2428,84 @@
+ 
+ 	case CMD_ENABLE_SERVICEGROUP_SVC_NOTIFICATIONS:
+ 	case CMD_DISABLE_SERVICEGROUP_SVC_NOTIFICATIONS:
+-		if(affect_host_and_services==FALSE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_SVC_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",servicegroup_name);
+-		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_SVC_NOTIFICATIONS;%s\n[%lu] %s_SERVICEGROUP_HOST_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",servicegroup_name,current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",servicegroup_name);
++		if(affect_host_and_services==FALSE) {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_SVC_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",servicegroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++		} else {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_SVC_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",servicegroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_HOST_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_NOTIFICATIONS)?"ENABLE":"DISABLE",servicegroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result|=write_command_to_file(command_buffer);
++		}
+ 		break;
+ 
+ 	case CMD_ENABLE_SERVICEGROUP_HOST_NOTIFICATIONS:
+ 	case CMD_DISABLE_SERVICEGROUP_HOST_NOTIFICATIONS:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_HOST_NOTIFICATIONS;%s\n",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_HOST_NOTIFICATIONS)?"ENABLE":"DISABLE",servicegroup_name);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_HOST_NOTIFICATIONS;%s",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_HOST_NOTIFICATIONS)?"ENABLE":"DISABLE",servicegroup_name);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_ENABLE_SERVICEGROUP_SVC_CHECKS:
+ 	case CMD_DISABLE_SERVICEGROUP_SVC_CHECKS:
+-		if(affect_host_and_services==FALSE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_SVC_CHECKS;%s\n",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",servicegroup_name);
+-		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_SVC_CHECKS;%s\n[%lu] %s_SERVICEGROUP_HOST_CHECKS;%s\n",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",servicegroup_name,current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",servicegroup_name);
++		if(affect_host_and_services==FALSE) {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_SVC_CHECKS;%s",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",servicegroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++		} else {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_SVC_CHECKS;%s",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",servicegroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] %s_SERVICEGROUP_HOST_CHECKS;%s",current_time,(cmd==CMD_ENABLE_SERVICEGROUP_SVC_CHECKS)?"ENABLE":"DISABLE",servicegroup_name);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result|=write_command_to_file(command_buffer);
++		}
+ 		break;
+ 
+ 	case CMD_SCHEDULE_SERVICEGROUP_HOST_DOWNTIME:
+-		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SERVICEGROUP_HOST_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s\n",current_time,servicegroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++		snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SERVICEGROUP_HOST_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s",current_time,servicegroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++		/* make sure command buffer is terminated */
++		command_buffer[sizeof(command_buffer)-1]='\x0';
++		/* write the command to the command file */
++		result=write_command_to_file(command_buffer);
+ 		break;
+ 
+ 	case CMD_SCHEDULE_SERVICEGROUP_SVC_DOWNTIME:
+-		if(affect_host_and_services==FALSE)
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SERVICEGROUP_SVC_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s\n",current_time,servicegroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
+-		else
+-			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SERVICEGROUP_SVC_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s\n[%lu] SCHEDULE_SERVICEGROUP_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%s;%s\n",current_time,servicegroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data,current_time,servicegroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++		if(affect_host_and_services==FALSE) {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SERVICEGROUP_SVC_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s",current_time,servicegroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++		} else {
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SERVICEGROUP_SVC_DOWNTIME;%s;%lu;%lu;%d;0;%lu;%s;%s",current_time,servicegroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result=write_command_to_file(command_buffer);
++			snprintf(command_buffer,sizeof(command_buffer)-1,"[%lu] SCHEDULE_SERVICEGROUP_HOST_DOWNTIME;%s;%lu;%lu;%d;%lu;%s;%s",current_time,servicegroup_name,start_time,end_time,(fixed==TRUE)?1:0,duration,comment_author,comment_data);
++			/* make sure command buffer is terminated */
++			command_buffer[sizeof(command_buffer)-1]='\x0';
++			/* write the command to the command file */
++			result|=write_command_to_file(command_buffer);
++		}
+ 		break;
+ 
+ 	default:
+@@ -2178,17 +2513,10 @@
+ 		break;
+ 	        }
+ 
+-	/* make sure command buffer is terminated */
+-	command_buffer[sizeof(command_buffer)-1]='\x0';
+-
+-	/* write the command to the command file */
+-	result=write_command_to_file(command_buffer);
+-
+ 	return result;
+         }
+ 
+ 
+-
+ /* write a command entry to the command file */
+ int write_command_to_file(char *cmd){
+ 	char buffer[MAX_INPUT_BUFFER];
+@@ -2196,6 +2524,11 @@
+ 	FILE *fp;
+ 	struct stat statbuf;
+ 
++	/* Patch from Nagios 3.0.5 */
++	/* Commands are not allowed to have new lines in them */
++	if (!cmd || !*cmd || strchr(cmd, '\n'))
++		return ERROR;
++
+ 	/* bail out if the external command file doesn't exist */
+ 	if(stat(command_file,&statbuf)){
+ 
+@@ -2238,7 +2571,7 @@
+ 	write_to_opsview_audit_proxy_log(buffer);
+ 
+ 	/* write the command to file */
+-	fputs(cmd,fp);
++	fprintf(fp, "%s\n", cmd);
+ 
+ 	/* flush buffer */
+ 	fflush(fp);

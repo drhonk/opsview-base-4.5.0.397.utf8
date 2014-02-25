@@ -1,0 +1,23 @@
+--- nagios-2.10.original/cgi/status.c	2008-03-13 13:54:50.000000000 -0600
++++ nagios-2.10/cgi/status.c	2008-03-13 13:54:38.000000000 -0600
+@@ -780,17 +780,17 @@
+ 
+ 			if(temp_servicestatus->status==SERVICE_CRITICAL){
+ 				total_critical++;
+-				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->checks_enabled==TRUE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
++				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && (temp_servicestatus->checks_enabled==TRUE || temp_servicestatus->accept_passive_service_checks==TRUE) && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
+ 					problem_services_critical++;
+ 			        }
+ 			else if(temp_servicestatus->status==SERVICE_WARNING){
+ 				total_warning++;
+-				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->checks_enabled==TRUE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
++				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && (temp_servicestatus->checks_enabled==TRUE || temp_servicestatus->accept_passive_service_checks==TRUE) && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
+ 					problem_services_warning++;
+ 			        }
+ 			else if(temp_servicestatus->status==SERVICE_UNKNOWN){
+ 				total_unknown++;
+-				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->checks_enabled==TRUE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
++				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && (temp_servicestatus->checks_enabled==TRUE || temp_servicestatus->accept_passive_service_checks==TRUE) && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
+ 					problem_services_unknown++;
+ 			        }
+ 			else if(temp_servicestatus->status==SERVICE_OK)

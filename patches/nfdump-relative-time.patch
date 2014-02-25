@@ -1,0 +1,75 @@
+diff -ur nfdump-1.6.9/bin/nfdump.c nfdump-1.6.9.endtime/bin/nfdump.c
+--- nfdump-1.6.9/bin/nfdump.c	2013-01-01 13:14:07.000000000 +0000
++++ nfdump-1.6.9.endtime/bin/nfdump.c	2013-05-29 15:27:07.000000000 +0000
+@@ -726,6 +726,7 @@
+ uint16_t	Aggregate_Bits;
+ uint32_t	limitflows;
+ uint64_t	AggregateMasks[AGGR_SIZE];
++long		gfile;
+ char 		Ident[IDENTLEN];
+ 
+ 	rfile = Rfile = Mdirs = wfile = ffile = filter = tstring = stat_type = NULL;
+@@ -754,6 +755,7 @@
+ 	csv_output		= 0;
+ 	is_anonymized	= 0;
+ 	GuessDir		= 0;
++	gfile		= 0;
+ 	nameserver		= NULL;
+ 
+ 	print_format    = NULL;
+@@ -770,7 +772,7 @@
+ 
+ 	for ( i=0; i<AGGR_SIZE; AggregateMasks[i++] = 0 ) ;
+ 
+-	while ((c = getopt(argc, argv, "6aA:Bbc:D:E:s:hHn:i:j:f:qzr:v:w:K:M:NImO:R:XZt:TVv:x:l:L:o:")) != EOF) {
++	while ((c = getopt(argc, argv, "6aA:Bbc:D:E:s:hHn:i:j:f:qzr:v:w:K:M:NImO:R:XZt:TVv:x:l:L:o:g:")) != EOF) {
+ 		switch (c) {
+ 			case 'h':
+ 				usage(argv[0]);
+@@ -867,7 +869,45 @@
+ 				ffile = optarg;
+ 				break;
+ 			case 't':
+-				tstring = optarg;
++				if(!tstring)
++					tstring = optarg;
++				break;
++			case 'g':
++				{
++					time_t rawtime;
++					struct tm *start_time, *end_time;
++					char colonPos = 0;
++					char *right_side = NULL;
++					char *colon = NULL;
++				
++					tstring = (char *)malloc(sizeof(char) * 40);
++
++					colonPos = strchr(optarg, ':') - optarg;
++					colon = strchr(optarg, ':');
++
++					if ( colon ) {
++						right_side = colon + 1;
++						*colon = 0;
++					}
++
++					if ( right_side ) {
++						rawtime = (time_t)atoi(right_side);
++					} else {
++						rawtime = time(NULL);
++					}
++					end_time = localtime(&rawtime);
++					strftime(tstring+20, 20, "%Y/%m/%d.%H:%M:%S", end_time);
++
++					if ( *optarg == '-' ) {
++						rawtime -= atoi(optarg+1); /* rawtime is the previously calculated end_time */
++					} else {
++						rawtime = (time_t)atoi(optarg);
++					}
++					start_time = localtime( &rawtime );
++
++					strftime(tstring, 20, "%Y/%m/%d.%H:%M:%S", start_time);
++					tstring[19] = '-'; /* start/end time delimiter */
++				}
+ 				break;
+ 			case 'r':
+ 				rfile = optarg;

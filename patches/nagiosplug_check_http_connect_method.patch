@@ -1,0 +1,90 @@
+diff --git a/plugins/check_http.c b/plugins/check_http.c
+index 5c8a80c..02f89c6 100644
+--- a/plugins/check_http.c
++++ b/plugins/check_http.c
+@@ -818,11 +818,35 @@ check_http (void)
+   /* try to connect to the host at the given port number */
+   if (my_tcp_connect (server_address, server_port, &sd) != STATE_OK)
+     die (STATE_CRITICAL, _("HTTP CRITICAL - Unable to open TCP socket\n"));
++
++  /* if we are called with the -I option, the -j method is CONNECT and */
++  /* we received -S for SSL, then we tunnel the request through a proxy*/
++  /* @20100414, public[at]frank4dd.com, http://www.frank4dd.com/howto  */
++  if ( server_address != NULL && strcmp(http_method, "CONNECT") == 0
++    && host_name != NULL && use_ssl == TRUE) {
++
++    if (verbose) printf ("Entering CONNECT tunnel mode with proxy %s:%d to dst %s:%d\n", server_address, server_port, host_name, HTTPS_PORT);
++    xasprintf (&buf, "%s %s:%d HTTP/1.1\r\n%s\r\n", http_method, host_name, HTTPS_PORT, user_agent);
++    xasprintf (&buf, "%sProxy-Connection: keep-alive\r\n", buf);
++    xasprintf (&buf, "%sHost: %s\r\n", buf, host_name);
++    /* we finished our request, send empty line with CRLF */
++    xasprintf (&buf, "%s%s", buf, CRLF);
++    if (verbose) printf ("%s\n", buf);
++    send(sd, buf, strlen (buf), 0);
++    buf[0]='\0';
++
++    if (verbose) printf ("Receive response from proxy\n");
++    read (sd, buffer, MAX_INPUT_BUFFER-1);
++    if (verbose) printf ("%s", buffer);
++    /* Here we should check if we got HTTP/1.1 200 Connection established */
++  }
++
+ #ifdef HAVE_SSL
+   if (use_ssl == TRUE) {
+     result = np_net_ssl_init_with_hostname_and_version(sd, (use_sni ? host_name : NULL), ssl_version);
+     if (result != STATE_OK)
+       return result;
++    if (verbose) printf ("SSL initialized\n");
+     if (check_cert == TRUE) {
+       result = np_net_ssl_check_cert(days_till_exp_warn, days_till_exp_crit);
+       np_net_ssl_cleanup();
+@@ -832,7 +856,12 @@ check_http (void)
+   }
+ #endif /* HAVE_SSL */
+ 
+-  xasprintf (&buf, "%s %s %s\r\n%s\r\n", http_method, server_url, host_name ? "HTTP/1.1" : "HTTP/1.0", user_agent);
++  if ( server_address != NULL && strcmp(http_method, "CONNECT") == 0
++      && host_name != NULL && use_ssl == TRUE)
++    xasprintf (&buf, "%s %s %s\r\n%s\r\n", "GET", server_url, host_name ? "HTTP/1.1" : "HTTP/1.0", user_agent);
++  else
++    xasprintf (&buf, "%s %s %s\r\n%s\r\n", http_method, server_url, host_name ? "HTTP/1.1" : "HTTP/1.0", user_agent);
++ 
+ 
+   /* tell HTTP/1.1 servers not to keep the connection alive */
+   xasprintf (&buf, "%sConnection: close\r\n", buf);
+@@ -845,7 +874,9 @@ check_http (void)
+      * (default) port is explicitly specified in the "Host:" header line.
+      */
+     if ((use_ssl == FALSE && server_port == HTTP_PORT) ||
+-        (use_ssl == TRUE && server_port == HTTPS_PORT))
++        (use_ssl == TRUE && server_port == HTTPS_PORT) ||
++        ( server_address != NULL && strcmp(http_method, "CONNECT") == 0
++          && host_name != NULL && use_ssl == TRUE))
+       xasprintf (&buf, "%sHost: %s\r\n", buf, host_name);
+     else
+       xasprintf (&buf, "%sHost: %s:%d\r\n", buf, host_name, server_port);
+@@ -1368,7 +1399,7 @@ print_help (void)
+   printf ("    %s\n", _("URL to GET or POST (default: /)"));
+   printf (" %s\n", "-P, --post=STRING");
+   printf ("    %s\n", _("URL encoded http POST data"));
+-  printf (" %s\n", "-j, --method=STRING  (for example: HEAD, OPTIONS, TRACE, PUT, DELETE)");
++  printf (" %s\n", "-j, --method=STRING  (for example: HEAD, OPTIONS, TRACE, PUT, DELETE, CONNECT)");
+   printf ("    %s\n", _("Set HTTP method."));
+   printf (" %s\n", "-N, --no-body");
+   printf ("    %s\n", _("Don't wait for document body: stop reading after headers."));
+@@ -1446,7 +1477,14 @@ print_help (void)
+   printf (" %s\n", _("When the certificate of 'www.verisign.com' is valid for more than 30 days,"));
+   printf (" %s\n", _("a STATE_OK is returned. When the certificate is still valid, but for less than"));
+   printf (" %s\n", _("30 days, but more than 14 days, a STATE_WARNING is returned."));
+-  printf (" %s\n", _("A STATE_CRITICAL will be returned when certificate expires in less than 14 days"));
++  printf (" %s\n\n", _("A STATE_CRITICAL will be returned when certificate expires in less than 14 days"));
++
++  printf (" %s\n\n", "CHECK SSL WEBSERVER CONTENT VIA PROXY USING HTTP 1.1 CONNECT: ");
++  printf (" %s\n\n", _("check_http -I 192.168.100.35 -p 80 -u https://www.verisign.com/ -S -j CONNECT -H www.verisign.com "));
++  printf (" %s\n", _("All these options are needed: -I <proxy> -p <proxy-port> -u <check-url> -S(sl) -j CONNECT -H <webserver>"));
++  printf (" %s\n", _("A STATE_OK will be returned. When the server returns its content but exceeds"));
++  printf (" %s\n", _("the 5-second threshold, a STATE_WARNING will be returned. When an error occurs,"));
++  printf (" %s\n", _("a STATE_CRITICAL will be returned."));
+ 
+ #endif
+ 

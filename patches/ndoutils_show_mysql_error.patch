@@ -1,0 +1,11 @@
+diff -ur ndoutils-1.4b3.original/src/db.c ndoutils-1.4b3/src/db.c
+--- ndoutils-1.4b3.original/src/db.c	2007-10-02 12:37:19.376105680 +0100
++++ ndoutils-1.4b3/src/db.c	2007-10-02 12:35:26.540259336 +0100
+@@ -550,6 +550,7 @@
+ #ifdef USE_MYSQL
+ 		if((query_result=mysql_query(&idi->dbinfo.mysql_conn,buf))){
+ 			syslog(LOG_USER|LOG_INFO,"Error: mysql_query() failed for '%s'\n",buf);
++			syslog(LOG_USER|LOG_INFO,"mysql_error: '%s'\n", mysql_error(&idi->dbinfo.mysql_conn));
+ 			result=NDO_ERROR;
+ 		        }
+ #endif

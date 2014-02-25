@@ -1,0 +1,23 @@
+diff -ur nagvis-1.4.4.original/nagvis/includes/classes/NagVisFrontend.php nagvis-1.4.4/nagvis/includes/classes/NagVisFrontend.php
+--- nagvis-1.4.4.original/nagvis/includes/classes/NagVisFrontend.php	2012-03-26 14:04:10.000000000 +0000
++++ nagvis-1.4.4/nagvis/includes/classes/NagVisFrontend.php	2012-03-26 14:35:53.000000000 +0000
+@@ -82,7 +82,7 @@
+ 															$this->htmlBase.'/nagvis/includes/js/NagVisTextbox.js',
+ 															$this->htmlBase.'/nagvis/includes/js/NagVisRotation.js',
+ 															$this->htmlBase.'/nagvis/includes/js/wz_jsgraphics.js');
+-		$prop['extHeader'] = '<link rel="shortcut icon" href="'.$this->htmlBase.'/nagvis/images/internal/favicon.png">';
++		$prop['extHeader'] = '<link rel="shortcut icon" href="'.$CORE->MAINCFG->getValue('paths','opsviewbase').'/favicon.ico">';
+ 		$prop['languageRoot'] = 'nagvis';
+ 		
+ 		// Only do this, when a map needs to be displayed
+diff -ur nagvis-1.4.4.original/nagvis/includes/js/frontend.js nagvis-1.4.4/nagvis/includes/js/frontend.js
+--- nagvis-1.4.4.original/nagvis/includes/js/frontend.js	2012-03-26 14:04:10.000000000 +0000
++++ nagvis-1.4.4/nagvis/includes/js/frontend.js	2012-03-26 14:34:24.000000000 +0000
+@@ -379,6 +379,7 @@
+  * @author	Lars Michelsen <lars@vertical-visions.de>
+  */
+ function setPageFavicon(sFavicon) {
++    return; //Opsview patch: Ignore favicon changes
+ 	favicon.change(sFavicon);
+ }
+ 

@@ -1,0 +1,13 @@
+diff -ur nrpe-2.12.original/src/nrpe.c nrpe-2.12/src/nrpe.c
+--- nrpe-2.12.original/src/nrpe.c	2012-04-30 15:56:41.000000000 +0000
++++ nrpe-2.12/src/nrpe.c	2012-04-30 15:59:16.000000000 +0000
+@@ -241,7 +241,8 @@
+ 		SSL_CTX_set_options(ctx,SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+ 
+ 		/* use anonymous DH ciphers */
+-		SSL_CTX_set_cipher_list(ctx,"ADH");
++/* Opsview: We set the only cipher to use is 256 or 128 bit to reduce security exposure */
++		SSL_CTX_set_cipher_list(ctx,"ADH-AES256-SHA:ADH-AES128-SHA");
+ 		dh=get_dh512();
+ 		SSL_CTX_set_tmp_dh(ctx,dh);
+ 		DH_free(dh);

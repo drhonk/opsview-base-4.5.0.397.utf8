@@ -1,0 +1,139 @@
+diff -ur nagios-4.0.20130107.original//base/utils.c nagios-4.0.20130107/base/utils.c
+--- nagios-4.0.20130107.original//base/utils.c	2013-08-05 23:14:41.000000000 +0000
++++ nagios-4.0.20130107/base/utils.c	2013-08-05 23:15:25.000000000 +0000
+@@ -1973,14 +1973,15 @@
+ /* processes files in the check result queue directory */
+ int process_check_result_queue(char *dirname) {
+ 	char file[MAX_FILENAME_LENGTH];
+-	DIR *dirp = NULL;
+-	struct dirent *dirfile = NULL;
+ 	register int x = 0;
+ 	struct stat stat_buf;
+-	struct stat ok_stat_buf;
+-	char *temp_buffer = NULL;
+ 	int result = OK, check_result_files = 0;
+ 	time_t start;
++	char fileok[MAX_FILENAME_LENGTH + 3];
++	struct dirent **dirfilelist;
++	int i, n, process_file;
++
++	log_debug_info(DEBUGL_CHECKS, 1, "Starting to read check result queue '%s'...\n", dirname);
+ 
+ 	/* make sure we have what we need */
+ 	if(dirname == NULL) {
+@@ -1989,17 +1990,18 @@
+ 		}
+ 
+ 	/* open the directory for reading */
+-	if((dirp = opendir(dirname)) == NULL) {
++	/* Opsview patch: We sort the directory contents so that the most recent messages are processed first,
++		rather than in an random order */
++	if((n = scandir(dirname, &dirfilelist, 0, alphasort)) < 0) {
+ 		logit(NSLOG_CONFIG_ERROR, TRUE, "Error: Could not open check result queue directory '%s' for reading.\n", dirname);
+ 		return ERROR;
+ 		}
+ 
+-	log_debug_info(DEBUGL_CHECKS, 1, "Starting to read check result queue '%s'...\n", dirname);
+-
+ 	start = time(NULL);
+ 
+ 	/* process all files in the directory... */
+-	while((dirfile = readdir(dirp)) != NULL) {
++	i = 0;
++	while (i < n) {
+ 		/* bail out if we encountered a signal */
+ 		if (sigshutdown == TRUE || sigrestart == TRUE) {
+ 			log_debug_info(DEBUGL_CHECKS, 0, "Breaking out of check result reaper: signal encountered\n");
+@@ -2013,36 +2015,56 @@
+ 			}
+ 
+ 		/* create /path/to/file */
+-		snprintf(file, sizeof(file), "%s/%s", dirname, dirfile->d_name);
++		snprintf(file, sizeof(file), "%s/%s", dirname, dirfilelist[i]->d_name);
+ 		file[sizeof(file) - 1] = '\x0';
+ 
+ 		/* process this if it's a check result file... */
+-		x = strlen(dirfile->d_name);
+-		if(x == 7 && dirfile->d_name[0] == 'c') {
++		x = strlen(dirfilelist[i]->d_name);
++
++		//fprintf(stderr, "Looking at %s - length=%d, first=%c\n", file, x, dirfilelist[i]->d_name[0]);
++
++		process_file=0;
++		if((x == 7 || x == 29) && dirfilelist[i]->d_name[0] == 'c') {
++			process_file=1;
++		}
+ 
++		free(dirfilelist[i]);
++		i++;
++
++		if (process_file) {
+ 			if(stat(file, &stat_buf) == -1) {
+ 				logit(NSLOG_RUNTIME_WARNING, TRUE, "Warning: Could not stat() check result file '%s'.\n", file);
+ 				continue;
+ 				}
+ 
+-			/* we only care about real files */
+-			if (!S_ISREG(stat_buf.st_mode))
++			/* Ignore old files - use modification time, rather than time within file */
++			if(max_check_result_file_age > 0 && ((start - stat_buf.st_mtime) > max_check_result_file_age)) {
++				delete_check_result_file(file);
+ 				continue;
++				}
+ 
+-			/* at this point we have a regular file... */
++			/* can we find the associated ok-to-go file ? */
++			snprintf(fileok, sizeof(fileok), "%s.ok", file);
++			fileok[sizeof(fileok) - 1] = '\x0';
+ 
+-			/* if the file is too old, we delete it */
+-			if (stat_buf.st_mtime + max_check_result_file_age < time(NULL)) {
+-				delete_check_result_file(dirfile->d_name);
++			/* Use access() as faster than stat() */
++			result = access(fileok, F_OK);
++			if(result == -1){
++				/* Leave file as .ok may arrive later */
+ 				continue;
+ 				}
+ 
+-			/* can we find the associated ok-to-go file ? */
+-			asprintf(&temp_buffer, "%s.ok", file);
+-			result = stat(temp_buffer, &ok_stat_buf);
+-			my_free(temp_buffer);
+-			if(result == -1)
++			/* we only care about real files */
++			if (!S_ISREG(stat_buf.st_mode))
++				continue;
++
++			/* at this point we have a regular file... */
++
++			/* Check if file is 0 bytes in size - if so, delete */
++			if(stat_buf.st_size == 0) {
++				delete_check_result_file(file);
+ 				continue;
++			}
+ 
+ 			/* process the file */
+ 			result = process_check_result_file(file);
+@@ -2053,9 +2075,20 @@
+ 
+ 			check_result_files++;
+ 			}
++
++		if(sigshutdown == TRUE || sigrestart == TRUE) {
++			log_debug_info(DEBUGL_CHECKS, 0, "Breaking out of check results: signal encountered\n");
++			break;
++			}
++
+ 		}
+ 
+-	closedir(dirp);
++	/* Clean up if broke out of earlier loop */
++	while (i < n) {
++		free(dirfilelist[i]);
++		i++;
++	}
++	free(dirfilelist);
+ 
+ 	return check_result_files;
+ 

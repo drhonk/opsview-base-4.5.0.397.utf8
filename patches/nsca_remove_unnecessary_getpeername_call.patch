@@ -1,0 +1,67 @@
+Binary files nsca-2.9.1.dist/src/nsca and nsca-2.9.1.semi/src/nsca differ
+diff -ur nsca-2.9.1.dist/src/nsca.c nsca-2.9.1.semi/src/nsca.c
+--- nsca-2.9.1.dist/src/nsca.c	2012-01-27 13:20:36.000000000 +0000
++++ nsca-2.9.1.semi/src/nsca.c	2013-07-23 15:46:47.000000000 +0000
+@@ -752,13 +752,13 @@
+ static void accept_connection(int sock, void *unused){
+         int new_sd;
+         pid_t pid;
+-        struct sockaddr addr;
+-        struct sockaddr_in *nptr;
+-        socklen_t addrlen;
+         int rc;
+ #ifdef HAVE_LIBWRAP
+ 	struct request_info req;
+ #endif
++        struct sockaddr_in cli_addr;
++        int clilen;
++        clilen = sizeof (cli_addr);
+ 
+ 	/* DO NOT REMOVE! 01/29/2007 single process daemon will fail if this is removed */
+         if(mode==SINGLE_PROCESS_DAEMON)
+@@ -890,7 +890,7 @@
+         while(1){
+ 
+ 		/* we got a live one... */
+-                if((new_sd=accept(sock,0,0))>=0)
++                if((new_sd=accept(sock,(struct sockaddr *)&cli_addr,&clilen))>=0)
+                         break;
+ 
+ 		/* handle the error */
+@@ -916,7 +916,7 @@
+         if(new_sd<0){
+ 
+                 /* log error to syslog facility */
+-                syslog(LOG_ERR,"Network server accept failure (%d: %s)",errno,strerror(errno));
++                syslog(LOG_ERR,"Network server accept failure from %s (%d: %s)",inet_ntoa(cli_addr.sin_addr),errno,strerror(errno));
+ 
+                 /* close socket prior to exiting */
+                 close(sock);
+@@ -955,26 +955,9 @@
+                         }
+                 }
+ 
+-        /* find out who just connected... */
+-        addrlen=sizeof(addr);
+-        rc=getpeername(new_sd,&addr,&addrlen);
+-
+-        if(rc<0){
+-                /* log error to syslog facility */
+-                syslog(LOG_ERR,"Error: Network server getpeername() failure (%d: %s)",errno,strerror(errno));
+-
+-                /* close socket prior to exiting */
+-                close(new_sd);
+-		if(mode==MULTI_PROCESS_DAEMON)
+-			do_exit(STATE_CRITICAL);
+-		return;
+-                }
+-
+-        nptr=(struct sockaddr_in *)&addr;
+-
+         /* log info to syslog facility */
+         if(debug==TRUE)
+-                syslog(LOG_DEBUG,"Connection from %s port %d",inet_ntoa(nptr->sin_addr),nptr->sin_port);
++                syslog(LOG_DEBUG,"Connection from %s port %d",inet_ntoa(cli_addr.sin_addr),cli_addr.sin_port);
+ 
+ 	/* handle the connection */
+ 	if(mode==SINGLE_PROCESS_DAEMON)

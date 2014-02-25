@@ -1,0 +1,12 @@
+diff -ur nagiosgraph-0.8.2.original/show.cgi nagiosgraph-0.8.2/show.cgi
+--- nagiosgraph-0.8.2.original/show.cgi	2008-05-14 14:19:12.000000000 +0200
++++ nagiosgraph-0.8.2/show.cgi	2008-06-11 15:29:04.126018960 +0200
+@@ -196,7 +196,7 @@
+     @style
+     );
+   page($host,$service,$geom,$rrdopts,@db);
+-  print div({-id => "footer"}, hr(), small( "Created by ". a( {-href=>"http://nagiosgraph.sf.net/"}, "nagiosgraph"). "." ));
++  print div({-id => "nagiosgraph_footer"}, hr(), small( "Created by ". a( {-href=>"http://nagiosgraph.sf.net/"}, "nagiosgraph"). "." ));
+   print end_html();
+ }
+ 

@@ -1,0 +1,11 @@
+diff -ur nagvis-1.4rc2.original/nagvis/includes/classes/GlobalBackendndomy.php nagvis-1.4rc2/nagvis/includes/classes/GlobalBackendndomy.php
+--- nagvis-1.4rc2.original/nagvis/includes/classes/GlobalBackendndomy.php	2009-01-19 07:16:49.000000000 +0000
++++ nagvis-1.4rc2/nagvis/includes/classes/GlobalBackendndomy.php	2009-03-09 13:14:41.000000000 +0000
+@@ -155,6 +155,7 @@
+ 		}
+ 		
+ 		$returnCode = mysql_select_db($this->dbName, $this->CONN);
++		$this->mysqlQuery('SET time_zone = "+00:00"');
+ 		
+ 		// set the old level of reporting back
+ 		error_reporting($oldLevel);

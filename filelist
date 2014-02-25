@@ -1,0 +1,9 @@
+# type owner:group mode file_dest [file_source]
+# type=d(ir), f(ile), c(onfig file)
+# owner can be "owner:group", "owner.group" or "owner" (group defaults to bin)
+
+
+d nagios:nagios 0755 /usr/local/nagios
+d nagios:nagios 0755 /usr/local/nagios/installer
+f nagios:nagios 0550 /usr/local/nagios/installer/opsview_base_postinstall installer/opsview_base_postinstall
+f nagios:nagios 0550 /usr/local/nagios/installer/opsview_base_upgrade_nagvis_config installer/opsview_base_upgrade_nagvis_config

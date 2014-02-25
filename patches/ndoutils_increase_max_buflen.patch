@@ -1,0 +1,12 @@
+diff -urN ndoutils-2-0/include/ndomod.h ndoutils-2-0.limit//include/ndomod.h
+--- ndoutils-2-0/include/ndomod.h	2012-09-24 22:29:40.000000000 +0000
++++ ndoutils-2-0.limit//include/ndomod.h	2013-05-29 10:10:18.000000000 +0000
+@@ -24,7 +24,7 @@
+         }ndomod_sink_buffer;
+ 
+ 
+-#define NDOMOD_MAX_BUFLEN   16384
++#define NDOMOD_MAX_BUFLEN   32768 /* 16384 * 2 */
+ 
+ 
+ #define NDOMOD_PROCESS_PROCESS_DATA                   1

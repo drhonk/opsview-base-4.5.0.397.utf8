@@ -1,0 +1,186 @@
+#!/usr/bin/perl
+
+#  Copyright (C) 2003-2013 Opsview Limited. All rights reserved
+#  W: http://www.opsview.com/
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+use Getopt::Std;
+use IO::Socket;
+
+$script         = "check_memory";
+$script_version = "1.2 osx";
+
+$total_memory    = 0;
+$inactive_memory = 0;
+$free_memory     = 0;
+$buffer_memory   = 0;
+$cache_memory    = 0;
+$used_swap       = 0;
+$free_swap       = 0;
+$total_swap      = 0;
+
+$warning  = 99;
+$critical = 100;
+
+# Do we have enough information?
+if ( @ARGV < 0 ) {
+    print "Too few arguments\n";
+    usage();
+}
+
+getopts("h:w:c:");
+if ($opt_h) {
+    usage();
+}
+if ($opt_w) {
+    $warning = $opt_w;
+}
+if ($opt_c) {
+    $critical = $opt_c;
+}
+
+@vmstat = `vm_stat`;
+
+# $swapusage = `sysctl vm.swapusage`;
+# $swapusage =~ s/vm.swapusage://g;
+# $swapusage =~ s/ //g;
+# print "swap usage: $swapusage\n";
+
+#$mem_phys = `sysctl hw.physmem`; # Physical memory, this breaks > 2GB - arrgghh!
+#$mem_phys =~ s/hw.physmem//g;
+#$mem_phys =~ s/=//g;
+#$mem_phys =~ s/://g;
+#$mem_phys =~ s/ //g;
+#$mem_phys = $mem_phys / (1024*1024);
+
+$mem_phys = `/usr/sbin/system_profiler SPHardwareDataType | grep "Memory"`;    # Physical memory,
+$mem_phys =~ s/Memory://g;
+if ( $mem_phys =~ /GB/ ) {
+    $mem_phys =~ s/GB//g;
+    $mem_phys =~ s/ //g;
+    $mem_phys = $mem_phys * 1024;
+}
+if ( $mem_phys =~ /MB/ ) {
+    $mem_phys =~ s/MB//g;
+    $mem_phys =~ s/ //g;
+}
+
+# Mach Virtual Memory Statistics: (page size of 4096 bytes)
+# Pages free:                    64609.
+# Pages active:                  61389.
+# Pages inactive:               168206.
+# Pages wired down:              33476.
+# "Translation faults":       11011154.
+# Pages copy-on-write:          191568.
+# Pages zero filled:           7110528.
+# Pages reactivated:                 0.
+# Pageins:                       51882.
+# Pageouts:                          0.
+# Object cache: 58718 hits of 110336 lookups (53% hit rate)
+
+my $counter = 0;
+foreach $line (@vmstat) {
+    if ( $line =~ /Pages free:/ ) {
+        $line =~ s/Pages free://g;
+        $line =~ s/ //g;
+        $line =~ s/\n//g;
+        $line     = $line * 4096;               # page size is 4096 bytes
+        $line     = $line / ( 1024 * 1024 );    # converts bytes to megabytes
+        $mem_free = $line;
+    }
+    elsif ( $line =~ /Pages active:/ ) {
+        $line =~ s/Pages active://g;
+        $line =~ s/ //g;
+        $line =~ s/\n//g;
+        $line       = $line * 4096;               # page size is 4096 bytes
+        $line       = $line / ( 1024 * 1024 );    # converts bytes to megabytes
+        $mem_active = $line;
+    }
+    elsif ( $line =~ /Pages inactive:/ ) {
+        $line =~ s/Pages inactive://g;
+        $line =~ s/ //g;
+        $line =~ s/\n//g;
+        $line         = $line * 4096;               # page size is 4096 bytes
+        $line         = $line / ( 1024 * 1024 );    # converts bytes to megabytes
+        $mem_inactive = $line;
+    }
+    elsif ( $line =~ /Pages wired down:/ ) {
+        $line =~ s/Pages wired down://g;
+        $line =~ s/ //g;
+        $line =~ s/\n//g;
+        $line      = $line * 4096;                  # page size is 4096 bytes
+        $line      = $line / ( 1024 * 1024 );       # converts bytes to megabytes
+        $mem_wired = $line;
+    }
+}
+
+$mem_total = ( $mem_active + $mem_inactive + $mem_wired + $mem_free );
+
+#$percent_virtual_free = ((100 / $mem_total)* $mem_free);
+$mem_physical_free = ( $mem_phys - ( $mem_active + $mem_wired ) );
+
+$status = 0;
+
+# If used < physical
+if ( $mem_physical_free > 0 ) {
+    $percent_physical_free = ( ( 100 / $mem_phys ) * $mem_physical_free );
+    if ( $percent_physical_free < $critical ) {
+        $status = 2;
+    }
+    elsif ( $percent_physical_free < $warning ) {
+        $status = 1;
+    }
+    printf
+        "Memory: total %.0f MB, active %.0f MB, inactive %.0f MB, wired: %.0f MB, free: %.0f MB (%.0f%%)|free=%.0f\n",
+        $mem_phys, $mem_active, $mem_inactive, $mem_wired, $mem_physical_free,
+        $percent_physical_free, $percent_physical_free;
+}
+
+# If system is overcommitted
+else {
+    $mem_overcommit = ( ( $mem_active + $mem_inactive + $mem_wired ) - $mem_phys );
+    printf
+        "Memory: total %.0f MB, active %.0f MB, inactive %.0f MB, wired: %.0f MB, Swapped: %.0f MB\n",
+        $mem_phys, $mem_active, $mem_inactive, $mem_wired, $mem_overcommit;
+    $status = 2;
+}
+
+exit $status;
+
+sub usage {
+    print << "USAGE";
+
+$script v$script_version
+
+Returns memory utilisation.
+
+Usage: $script -w <warning threshold> -c <critical threshold>
+Options: -w 		Warning threshold (integer)
+         -c 		Critical threshold (integer)
+
+		Threshold is against free memory
+
+		active: recently accessed pages
+		inactive: pages not accessed recently but may contain data
+		wired: stores kernel code and data structures that should never be paged to disk
+		free: available for use by any process
+		
+
+		 }
+
+USAGE
+    exit 1;
+}

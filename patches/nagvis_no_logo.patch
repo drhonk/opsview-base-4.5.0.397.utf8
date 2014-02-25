@@ -1,0 +1,11 @@
+diff --exclude='.*.sw?' -urN nagvis-1.4.4/nagvis/templates/header/tmpl.default.html nagvis-1.4.4-patched/nagvis/templates/header/tmpl.default.html
+--- nagvis-1.4.4/nagvis/templates/header/tmpl.default.html	2012-03-19 23:03:20.000000000 +0000
++++ nagvis-1.4.4-patched/nagvis/templates/header/tmpl.default.html	2012-03-19 23:06:11.000000000 +0000
+@@ -1,7 +1,6 @@
+ <link rel="stylesheet" type="text/css" href="[html_templates]tmpl.default.css" />
+ <table class="header_table">
+ 	<tr>
+-		<th class="logo"><a href="[html_base]/index.php"><img src="[html_base]/nagvis/images/internal/logo_119x31.png" alt="NagVis"></a></th>
+ 		<td style="width:150px;padding-left:10px;">[lang_select_map]: </td>
+ 		<td style="width:150px;">
+ 			<select style="width:100%;" name="chooseMap" onChange="changeMap('[html_base]',this.options[this.selectedIndex].value)">

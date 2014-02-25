@@ -1,0 +1,29 @@
+
+die() { echo $1; exit 1; }
+
+/usr/sbin/chroot $BASEDIR /usr/bin/getent group nagios 1>/dev/null
+if [ $? != 0 ]; then
+	/usr/sbin/chroot $BASEDIR /usr/sbin/groupadd nagios || die "Unable to add group 'nagios'"
+fi
+
+/usr/sbin/chroot $BASEDIR /usr/bin/getent group nagcmd 1>/dev/null
+if [ $? != 0 ]; then
+	/usr/sbin/chroot $BASEDIR /usr/sbin/groupadd nagcmd || die "Unable to add group 'nagcmd'"
+fi
+
+/usr/sbin/chroot $BASEDIR /usr/bin/getent passwd nagios 1>/dev/null
+if [ $? != 0 ]; then
+	/usr/sbin/chroot $BASEDIR /usr/sbin/useradd -g nagios -d /var/log/nagios -c "Nagios user" -s /usr/bin/bash -m nagios
+	/usr/sbin/chroot $BASEDIR /usr/bin/passwd -N nagios
+fi
+
+/usr/sbin/chroot $BASEDIR /usr/bin/groups nagios | grep nagcmd 1>/dev/null
+if [ $? != 0 ]; then
+    /usr/sbin/chroot $BASEDIR /usr/sbin/usermod -G nagcmd nagios  || die "Unable to add group 'nagcmd' to 'nagios' user"
+fi
+
+# This is the webserver user for OpenCSW's apache
+/usr/sbin/chroot $BASEDIR /usr/bin/groups nobody | grep nagcmd 1>/dev/null
+if [ $? != 0 ]; then
+    /usr/sbin/chroot $BASEDIR /usr/sbin/usermod -G nagcmd nobody  || die "Unable to add group 'nagcmd' to 'nobody' user"
+fi

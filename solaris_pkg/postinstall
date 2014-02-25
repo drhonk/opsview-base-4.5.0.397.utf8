@@ -1,0 +1,25 @@
+#
+# $Id$
+#
+# postinstall script
+#
+PATH=/usr/sadm/bin:$PATH
+
+die () { echo "$@" ; exit 1; }
+
+/usr/sbin/chroot $BASEDIR /usr/bin/su - nagios -c "/usr/local/nagios/installer/opsview_base_postinstall" || die "Failed to complete postinstall tasks"
+
+UPGR_SCRIPT=/tmp/upgr.$PKGINST
+if [ -f $UPGR_SCRIPT ]; then
+    sh $UPGR_SCRIPT &
+
+# steps moved to ALTovcore
+#else
+#    # start up the agent
+#    /usr/sbin/chroot $BASEDIR /etc/init.d/opsview-agent restart
+#
+#    # start up opsview only if the opsview database exists
+#    /usr/sbin/chroot $BASEDIR /usr/bin/su - nagios -c "/usr/local/nagios/bin/db_opsview db_exists 2>/dev/null && /etc/init.d/opsview restart"
+
+fi
+exit 0

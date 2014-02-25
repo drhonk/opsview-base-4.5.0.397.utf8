@@ -1,0 +1,20 @@
+diff -ur nagios-4.0.20121205.orig//cgi/status.c nagios-4.0.20121205/cgi/status.c
+--- nagios-4.0.20121205.orig//cgi/status.c	2012-12-14 16:13:36.000000000 +0000
++++ nagios-4.0.20121205/cgi/status.c	2012-12-19 11:20:19.000000000 +0000
+@@ -1081,12 +1081,14 @@
+ 				total_up++;
+ 			else if(temp_hoststatus->status == SD_HOST_DOWN) {
+ 				total_down++;
+-				if(temp_hoststatus->problem_has_been_acknowledged == FALSE && temp_hoststatus->notifications_enabled == TRUE && temp_hoststatus->checks_enabled == TRUE && temp_hoststatus->scheduled_downtime_depth == 0)
++				// Opsview patch: Remove checks_enabled==TRUE so that distributed hosts alert on master
++				if(temp_hoststatus->problem_has_been_acknowledged == FALSE && temp_hoststatus->notifications_enabled == TRUE && temp_hoststatus->scheduled_downtime_depth == 0)
+ 					problem_hosts_down++;
+ 				}
+ 			else if(temp_hoststatus->status == SD_HOST_UNREACHABLE) {
+ 				total_unreachable++;
+-				if(temp_hoststatus->problem_has_been_acknowledged == FALSE && temp_hoststatus->notifications_enabled == TRUE && temp_hoststatus->checks_enabled == TRUE && temp_hoststatus->scheduled_downtime_depth == 0)
++				// Opsview patch: Remove checks_enabled==TRUE so that distributed hosts alert on master
++				if(temp_hoststatus->problem_has_been_acknowledged == FALSE && temp_hoststatus->notifications_enabled == TRUE && temp_hoststatus->scheduled_downtime_depth == 0)
+ 					problem_hosts_unreachable++;
+ 				}
+ 

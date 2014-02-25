@@ -1,0 +1,226 @@
+diff -ur ndoutils-2-0.original//include/nagios-3x/nebstructs.h ndoutils-2-0/include/nagios-3x/nebstructs.h
+--- ndoutils-2-0.original//include/nagios-4x/nebstructs.h	2012-09-24 22:29:40.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/nebstructs.h	2012-12-19 13:16:38.000000000 +0000
+@@ -520,6 +520,10 @@
+ 	int             state_type;
+ 	int             current_attempt;
+ 	int             max_attempts;
++    int             scheduled_downtime_depth;
++    int             downtime_id;
++    int             problem_has_been_acknowledged;
++    int             eventtype;
+ 	char            *output;
+ 
+ 	void            *object_ptr;
+diff -ur ndoutils-2-0.original//include/protoapi.h ndoutils-2-0/include/protoapi.h
+--- ndoutils-2-0.original//include/protoapi.h	2012-09-24 22:29:40.000000000 +0000
++++ ndoutils-2-0/include/protoapi.h	2012-12-19 13:16:38.000000000 +0000
+@@ -107,7 +107,7 @@
+ 
+ /************** COMMON DATA ATTRIBUTES **************/
+ 
+-#define NDO_MAX_DATA_TYPES                           266
++#define NDO_MAX_DATA_TYPES                           410   // Opsview patch: We set to a really high number at the expense of a bit more memory but allows extending with new types easier
+ 
+ #define NDO_DATA_NONE                                0
+ 
+@@ -386,4 +386,8 @@
+ #define NDO_DATA_CONTACT                             264
+ #define NDO_DATA_LASTSTATE                           265
+ 
++// Extra attributes added by Opsview
++#define NDO_DATA_HOSTSTATE                           400
++#define NDO_DATA_HOSTSTATETYPE                       401
++
+ #endif
+diff -ur ndoutils-2-0.original//src/dbhandlers.c ndoutils-2-0/src/dbhandlers.c
+--- ndoutils-2-0.original//src/dbhandlers.c	2012-12-19 13:16:15.000000000 +0000
++++ ndoutils-2-0/src/dbhandlers.c	2012-12-19 13:22:03.000000000 +0000
+@@ -2928,6 +2928,10 @@
+ 	char *ts[1];
+ 	char *es[2];
+ 	char *buf=NULL;
++    char *buf2=NULL;
++    int scheduled_downtime_depth,downtime_id,problem_has_been_acknowledged,eventtype,host_state,host_state_type;
++    int downtimehistory_id = -1;
++    int was_logged = 0;
+ 
+ 	if(idi==NULL)
+ 		return NDO_ERROR;
+@@ -2939,6 +2943,62 @@
+ 	if(type!=NEBTYPE_STATECHANGE_END)
+ 		return NDO_OK;
+ 
++	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_EVENTTYPE],&eventtype);
++	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_DOWNTIMEID],&downtime_id);
++
++    /* If we get downtime information, we try to find the row this matches to in the downtime table */
++    if(downtime_id > 0) {
++
++        /* If a related value cannot be found, we set to 0. This allows us to determine how many missing values we have here */
++        downtimehistory_id=0;
++
++        /* We use LIMIT 1 in case retention.dat was removed and internal_downtime_ids are reused */
++        if(asprintf(&buf,
++            "SELECT downtimehistory_id, was_logged FROM %s WHERE internal_downtime_id=%d ORDER BY downtimehistory_id DESC LIMIT 1",
++            ndo2db_db_tablenames[NDO2DB_DBTABLE_DOWNTIMEHISTORY],
++            downtime_id)==-1) 
++        {
++            buf=NULL;
++        }
++        if((result=ndo2db_db_query(idi,buf))==NDO_OK){
++            switch(idi->dbinfo.server_type){
++            case NDO2DB_DBSERVER_MYSQL:
++#ifdef USE_MYSQL
++                idi->dbinfo.mysql_result=mysql_store_result(&idi->dbinfo.mysql_conn);
++                if((idi->dbinfo.mysql_row=mysql_fetch_row(idi->dbinfo.mysql_result))!=NULL){
++                    ndo2db_convert_string_to_int(idi->dbinfo.mysql_row[0],&downtimehistory_id);
++                    ndo2db_convert_string_to_int(idi->dbinfo.mysql_row[1],&was_logged);
++                }
++                mysql_free_result(idi->dbinfo.mysql_result);
++                idi->dbinfo.mysql_result=NULL;
++#endif
++                break;
++            default:
++                break;
++            }
++        }
++        free(buf);
++
++        /* Set the was_logged flag for downtimestart events only */
++        if (eventtype==3 && was_logged==0 && downtimehistory_id > 0) {
++            if(asprintf(&buf,"UPDATE %s SET was_logged=1 WHERE downtimehistory_id=%d",
++                    ndo2db_db_tablenames[NDO2DB_DBTABLE_DOWNTIMEHISTORY],
++                    downtimehistory_id
++                )==-1)
++                buf=NULL;
++
++            ndo2db_db_query(idi,buf);
++            free(buf);
++        }
++    }
++
++    /* This state change is for a downtime history start record, which was already logged to state change table
++       Therefore, we drop out now and ignore. Otherwise, duplicate records appear in the statehistory
++       table when Nagios is reloaded
++    */
++    if (eventtype==3 && was_logged == 1)
++        return NDO_OK;
++
+ 	/* convert vars */
+ 	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_STATECHANGETYPE],&statechange_type);
+ 	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_STATECHANGE],&state_change_occurred);
+@@ -2949,19 +3009,30 @@
+ 	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_LASTHARDSTATE],&last_hard_state);
+ 	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_LASTSTATE],&last_state);
+ 
+-	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
+-
+-	ts[0]=ndo2db_db_timet_to_sql(idi,tstamp.tv_sec);
+-
+ 	/* get the object id */
+ 	if(statechange_type==SERVICE_STATECHANGE)
+ 		result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_SERVICE,idi->buffered_input[NDO_DATA_HOST],idi->buffered_input[NDO_DATA_SERVICE],&object_id);
+ 	else
+ 		result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_HOST,idi->buffered_input[NDO_DATA_HOST],NULL,&object_id);
+ 
++    if(downtimehistory_id > -1) {
++        asprintf(&buf2,"'%d'",downtimehistory_id);
++    } else {
++        buf2=strdup("NULL");
++    }
++
++	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
++	es[1]=strdup("dummy"); // Need this dummy so free() below doesn't segfault
++
++	ts[0]=ndo2db_db_timet_to_sql(idi,tstamp.tv_sec);
++
++	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_SCHEDULEDDOWNTIMEDEPTH],&scheduled_downtime_depth);
++	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_PROBLEMHASBEENACKNOWLEDGED],&problem_has_been_acknowledged);
++	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_HOSTSTATE],&host_state);
++	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_HOSTSTATETYPE],&host_state_type);
++
+ 	/* save entry to db */
+-	if(asprintf(&buf,"INSERT INTO %s SET instance_id='%lu', state_time=%s, state_time_usec='%lu', object_id='%lu', state_change='%d', state='%d', state_type='%d', current_check_attempt='%d', max_check_attempts='%d', last_state='%d', last_hard_state='%d', output='%s'"
++	if(asprintf(&buf,"INSERT INTO %s SET instance_id='%lu', state_time=%s, state_time_usec='%lu', object_id='%lu', state_change='%d', state='%d', state_type='%d', current_check_attempt='%d', max_check_attempts='%d', last_state='%d', last_hard_state='%d', output='%s', scheduled_downtime_depth='%d', downtimehistory_id=%s, problem_has_been_acknowledged='%d', eventtype='%d', host_state='%d', host_state_type='%d'"
+ 		    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_STATEHISTORY]
+ 		    ,idi->dbinfo.instance_id
+ 		    ,ts[0]
+@@ -2975,11 +3046,18 @@
+ 		    ,last_state
+ 		    ,last_hard_state
+ 		    ,es[0]
++            ,scheduled_downtime_depth
++            ,buf2
++            ,problem_has_been_acknowledged
++            ,eventtype
++            ,host_state
++            ,host_state_type
+ 		   )==-1)
+ 		buf=NULL;
+ 
+ 	result=ndo2db_db_query(idi,buf);
+ 	free(buf);
++	free(buf2);
+ 
+         /* free memory */
+ 	for (x = 0; x < NAGIOS_SIZEOF_ARRAY(ts); x++)
+diff -ur ndoutils-2-0.original//src/ndomod.c ndoutils-2-0/src/ndomod.c
+--- ndoutils-2-0.original//src/ndomod.c	2012-12-19 13:16:15.000000000 +0000
++++ ndoutils-2-0/src/ndomod.c	2012-12-19 13:25:13.000000000 +0000
+@@ -1347,6 +1347,8 @@
+ 	double retry_interval=0.0;
+ 	int last_state=-1;
+ 	int last_hard_state=-1;
++	int host_state=-1;
++	int host_state_type=-1;
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+ 	customvariablesmember *temp_customvar=NULL;
+ #endif
+@@ -3236,6 +3238,8 @@
+ 				}
+ 			last_state=temp_host->last_state;
+ 			last_state=temp_host->last_hard_state;
++            host_state=temp_host->current_state;
++            host_state_type=temp_host->state_type;
+ 			}
+ 		else{
+ 			if((temp_service=(service *)schangedata->object_ptr)==NULL){
+@@ -3244,6 +3248,8 @@
+ 				}
+ 			last_state=temp_service->last_state;
+ 			last_hard_state=temp_service->last_hard_state;
++            host_state=temp_service->host_ptr->current_state;
++            host_state_type=temp_service->host_ptr->state_type;
+ 			}
+ #endif
+ 
+@@ -3254,7 +3260,7 @@
+ 		es[3]=ndo_escape_buffer(schangedata->output);
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d\n\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d\n\n"
+ 			 ,NDO_API_STATECHANGEDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,schangedata->type
+@@ -3285,6 +3291,18 @@
+ 			 ,last_state
+ 			 ,NDO_DATA_LASTHARDSTATE
+ 			 ,last_hard_state
++             ,NDO_DATA_SCHEDULEDDOWNTIMEDEPTH
++             ,schangedata->scheduled_downtime_depth
++             ,NDO_DATA_DOWNTIMEID
++             ,schangedata->downtime_id
++             ,NDO_DATA_PROBLEMHASBEENACKNOWLEDGED
++             ,schangedata->problem_has_been_acknowledged
++             ,NDO_DATA_EVENTTYPE
++             ,schangedata->eventtype
++             ,NDO_DATA_HOSTSTATE
++             ,host_state
++             ,NDO_DATA_HOSTSTATETYPE
++             ,host_state_type
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,es[2]
+ 			 ,NDO_DATA_LONGOUTPUT

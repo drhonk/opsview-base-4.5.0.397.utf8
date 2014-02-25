@@ -1,0 +1,44 @@
+diff -ur -x Makefile -x config.log -x config.status -x libtool nagios-4.0.20121116.orig_with_new_patches/base/checks.c nagios-4.0.20121116/base/checks.c
+--- nagios-4.0.20121116.orig_with_new_patches/base/checks.c	2012-11-20 10:54:19.000000000 +0000
++++ nagios-4.0.20121116/base/checks.c	2012-11-20 14:48:36.000000000 +0000
+@@ -285,6 +285,9 @@
+ 	/* send data to event broker */
+ 	neb_result = broker_service_check(NEBTYPE_SERVICECHECK_INITIATE, NEBFLAG_NONE, NEBATTR_NONE, svc, CHECK_TYPE_ACTIVE, start_time, end_time, svc->check_command, svc->latency, 0.0, service_check_timeout, FALSE, 0, processed_command, NULL, cr);
+ 
++	my_free(svc->processed_command);
++	svc->processed_command=strdup(processed_command);
++
+ 	/* neb module wants to override the service check - perhaps it will check the service itself */
+ 	if(neb_result == NEBERROR_CALLBACKOVERRIDE) {
+ 		clear_volatile_macros_r(&mac);
+@@ -1032,7 +1035,7 @@
+ 
+ #ifdef USE_EVENT_BROKER
+ 	/* send data to event broker */
+-	broker_service_check(NEBTYPE_SERVICECHECK_PROCESSED, NEBFLAG_NONE, NEBATTR_NONE, temp_service, temp_service->check_type, queued_check_result->start_time, queued_check_result->finish_time, NULL, temp_service->latency, temp_service->execution_time, service_check_timeout, queued_check_result->early_timeout, queued_check_result->return_code, NULL, NULL, queued_check_result);
++	broker_service_check(NEBTYPE_SERVICECHECK_PROCESSED, NEBFLAG_NONE, NEBATTR_NONE, temp_service, temp_service->check_type, queued_check_result->start_time, queued_check_result->finish_time, temp_service->check_command, temp_service->latency, temp_service->execution_time, service_check_timeout, queued_check_result->early_timeout, queued_check_result->return_code, temp_service->processed_command, NULL, queued_check_result);
+ #endif
+ 
+ 	/* set the checked flag */
+diff -ur -x Makefile -x config.log -x config.status -x libtool nagios-4.0.20121116.orig_with_new_patches/common/objects.c nagios-4.0.20121116/common/objects.c
+--- nagios-4.0.20121116.orig_with_new_patches/common/objects.c	2012-11-20 10:54:19.000000000 +0000
++++ nagios-4.0.20121116/common/objects.c	2012-11-20 14:44:27.000000000 +0000
+@@ -1639,6 +1639,7 @@
+ 		my_free(new_service->perf_data);
+ 		my_free(new_service->plugin_output);
+ 		my_free(new_service->long_plugin_output);
++		new_service->processed_command=NULL;
+ #endif
+ 		my_free(new_service->event_handler);
+ 		my_free(new_service->check_command);
+diff -ur -x Makefile -x config.log -x config.status -x libtool nagios-4.0.20121116.orig_with_new_patches/include/objects.h nagios-4.0.20121116/include/objects.h
+--- nagios-4.0.20121116.orig_with_new_patches/include/objects.h	2012-11-20 10:54:19.000000000 +0000
++++ nagios-4.0.20121116/include/objects.h	2012-11-20 14:44:27.000000000 +0000
+@@ -610,6 +610,7 @@
+ 	char	*plugin_output;
+ 	char    *long_plugin_output;
+ 	char    *perf_data;
++	char	*processed_command;
+ 	int     state_type;
+ 	time_t	next_check;
+ 	int     should_be_scheduled;

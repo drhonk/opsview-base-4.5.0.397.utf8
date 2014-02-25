@@ -1,0 +1,83 @@
+diff -ur nagios-3.2.0.original/base/checks.c nagios-3.2.0/base/checks.c
+--- nagios-3.2.0.original/base/checks.c	2009-08-11 16:56:39.000000000 +0000
++++ nagios-3.2.0/base/checks.c	2009-09-22 22:13:15.000000000 +0000
+@@ -2034,31 +2034,14 @@
+ 
+ 	log_debug_info(DEBUGL_CHECKS,2,"Checking freshness of service '%s' on host '%s'...\n",temp_service->description,temp_service->host_name);
+ 
+-	/* use user-supplied freshness threshold or auto-calculate a freshness threshold to use? */
+-	if(temp_service->freshness_threshold==0){
+-		if(temp_service->state_type==HARD_STATE || temp_service->current_state==STATE_OK)
+-			freshness_threshold=(temp_service->check_interval*interval_length)+temp_service->latency+additional_freshness_latency;
+-		else
+-			freshness_threshold=(temp_service->retry_interval*interval_length)+temp_service->latency+additional_freshness_latency;
+-		}
++	freshness_threshold = calculate_service_freshness_threshold(temp_service);
++	if (temp_service->has_been_checked==TRUE)
++		expiration_time = (time_t)(temp_service->last_check + freshness_threshold);
+ 	else
+-		freshness_threshold=temp_service->freshness_threshold;
++		expiration_time = (time_t)(program_start + freshness_threshold);
+ 
+ 	log_debug_info(DEBUGL_CHECKS,2,"Freshness thresholds: service=%d, use=%d\n",temp_service->freshness_threshold,freshness_threshold);
+ 
+-	/* calculate expiration time */
+-	/* CHANGED 11/10/05 EG - program start is only used in expiration time calculation if > last check AND active checks are enabled, so active checks can become stale immediately upon program startup */
+-	/* CHANGED 02/25/06 SG - passive checks also become stale, so remove dependence on active check logic */
+-	if(temp_service->has_been_checked==FALSE)
+-		expiration_time=(time_t)(event_start+freshness_threshold);
+-	/* CHANGED 06/19/07 EG - Per Ton's suggestion (and user requests), only use program start time over last check if no specific threshold has been set by user.  Otheriwse use it.  Problems can occur if Nagios is restarted more frequently that freshness threshold intervals (services never go stale). */
+-	/* CHANGED 10/07/07 EG - Only match next condition for services that have active checks enabled... */
+-	/* CHANGED 10/07/07 EG - Added max_service_check_spread to expiration time as suggested by Altinity */
+-	else if(temp_service->checks_enabled==TRUE && event_start>temp_service->last_check && temp_service->freshness_threshold==0)
+-		expiration_time=(time_t)(event_start+freshness_threshold+(max_service_check_spread*interval_length));
+-	else
+-		expiration_time=(time_t)(temp_service->last_check+freshness_threshold);
+-
+ 	log_debug_info(DEBUGL_CHECKS,2,"HBC: %d, PS: %lu, ES: %lu, LC: %lu, CT: %lu, ET: %lu\n",temp_service->has_been_checked,(unsigned long)program_start,(unsigned long)event_start,(unsigned long)temp_service->last_check,(unsigned long)current_time,(unsigned long)expiration_time);
+ 
+ 	/* the results for the last check of this service are stale */
+@@ -2428,25 +2411,14 @@
+ 
+ 	log_debug_info(DEBUGL_CHECKS,2,"Checking freshness of host '%s'...\n",temp_host->name);
+ 
+-	/* use user-supplied freshness threshold or auto-calculate a freshness threshold to use? */
+-	if(temp_host->freshness_threshold==0)
+-		freshness_threshold=(temp_host->check_interval*interval_length)+temp_host->latency+additional_freshness_latency;
++	freshness_threshold = calculate_host_freshness_threshold(temp_host);
++	if (temp_host->has_been_checked==TRUE)
++		expiration_time = (time_t)(temp_host->last_check + freshness_threshold);
+ 	else
+-		freshness_threshold=temp_host->freshness_threshold;
++		expiration_time = (time_t)(program_start + freshness_threshold);
+ 
+ 	log_debug_info(DEBUGL_CHECKS,2,"Freshness thresholds: host=%d, use=%d\n",temp_host->freshness_threshold,freshness_threshold);
+ 
+-	/* calculate expiration time */
+-	/* CHANGED 11/10/05 EG - program start is only used in expiration time calculation if > last check AND active checks are enabled, so active checks can become stale immediately upon program startup */
+-	if(temp_host->has_been_checked==FALSE)
+-		expiration_time=(time_t)(event_start+freshness_threshold);
+-	/* CHANGED 06/19/07 EG - Per Ton's suggestion (and user requests), only use program start time over last check if no specific threshold has been set by user.  Otheriwse use it.  Problems can occur if Nagios is restarted more frequently that freshness threshold intervals (hosts never go stale). */
+-	/* CHANGED 10/07/07 EG - Added max_host_check_spread to expiration time as suggested by Altinity */
+-	else if(temp_host->checks_enabled==TRUE && event_start>temp_host->last_check && temp_host->freshness_threshold==0)
+-		expiration_time=(time_t)(event_start+freshness_threshold+(max_host_check_spread*interval_length));
+-	else
+-		expiration_time=(time_t)(temp_host->last_check+freshness_threshold);
+-
+ 	log_debug_info(DEBUGL_CHECKS,2,"HBC: %d, PS: %lu, ES: %lu, LC: %lu, CT: %lu, ET: %lu\n",temp_host->has_been_checked,(unsigned long)program_start,(unsigned long)event_start,(unsigned long)temp_host->last_check,(unsigned long)current_time,(unsigned long)expiration_time);
+ 
+ 	/* the results for the last check of this host are stale */
+Only in nagios-3.2.0/base: checks.c.orig
+diff -ur nagios-3.2.0.original/base/Makefile.in nagios-3.2.0/base/Makefile.in
+--- nagios-3.2.0.original/base/Makefile.in	2009-06-17 03:57:21.000000000 +0000
++++ nagios-3.2.0/base/Makefile.in	2009-09-22 22:13:49.000000000 +0000
+@@ -122,7 +122,7 @@
+ DDATADEPS=$(DDATALIBS)
+ 
+ 
+-OBJS=$(BROKER_O) checks.o config.o commands.o events.o flapping.o logging.o macros-base.o netutils.o notifications.o sehandlers.o skiplist.o utils.o $(RDATALIBS) $(CDATALIBS) $(ODATALIBS) $(SDATALIBS) $(PDATALIBS) $(DDATALIBS) $(BASEEXTRALIBS) $(SNPRINTF_O) $(PERLXSI_O)
++OBJS=$(BROKER_O) checks.o config.o commands.o events.o freshness.o flapping.o logging.o macros-base.o netutils.o notifications.o sehandlers.o skiplist.o utils.o $(RDATALIBS) $(CDATALIBS) $(ODATALIBS) $(SDATALIBS) $(PDATALIBS) $(DDATALIBS) $(BASEEXTRALIBS) $(SNPRINTF_O) $(PERLXSI_O)
+ OBJDEPS=$(ODATADEPS) $(ODATADEPS) $(RDATADEPS) $(CDATADEPS) $(SDATADEPS) $(PDATADEPS) $(DDATADEPS) $(BROKER_H)
+ 
+ all: nagios nagiostats
+Only in nagios-3.2.0/base: Makefile.in.orig

@@ -1,0 +1,249 @@
+diff -ur ndoutils-2-0.original//src/ndomod.c ndoutils-2-0/src/ndomod.c
+--- ndoutils-2-0.original//src/ndomod.c	2013-04-30 10:39:23.000000000 +0000
++++ ndoutils-2-0/src/ndomod.c	2013-10-15 12:06:25.000000000 +0000
+@@ -1683,10 +1683,10 @@
+ 
+ 		es[0]=ndo_escape_buffer(cmddata->command_line);
+ 		es[1]=ndo_escape_buffer(cmddata->output);
+-		es[2]=ndo_escape_buffer(cmddata->output);
++		//es[2]=ndo_escape_buffer(cmddata->output);
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%d\n%d=%s\n%d=%d\n%d=%.5lf\n%d=%d\n%d=%s\n%d=%s\n%d\n\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%d\n%d=%s\n%d=%d\n%d=%.5lf\n%d=%d\n%d=%s\n%d\n\n"
+ 			 ,NDO_API_SYSTEMCOMMANDDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,cmddata->type
+@@ -1715,8 +1715,8 @@
+ 			 ,cmddata->return_code
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,(es[1]==NULL)?"":es[1]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,(es[2]==NULL)?"":es[2]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,(es[2]==NULL)?"":es[2]
+ 			 ,NDO_API_ENDDATA
+ 			);
+ 
+@@ -1736,10 +1736,10 @@
+ 		es[4]=ndo_escape_buffer(ehanddata->command_line);
+ 		es[5]=ndo_escape_buffer(ehanddata->output);
+ 		/* Preparing if eventhandler will have long_output in the future */
+-		es[6]=ndo_escape_buffer(ehanddata->output);
++		//es[6]=ndo_escape_buffer(ehanddata->output);
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%.5lf\n%d=%d\n%d=%s\n%d=%s\n%d\n\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%.5lf\n%d=%d\n%d=%s\n%d\n\n"
+ 			 ,NDO_API_EVENTHANDLERDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,ehanddata->type
+@@ -1780,8 +1780,8 @@
+ 			 ,ehanddata->return_code
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,(es[5]==NULL)?"":es[5]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,(es[6]==NULL)?"":es[6]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,(es[6]==NULL)?"":es[6]
+ 			 ,NDO_API_ENDDATA
+ 			);
+ 
+@@ -1798,7 +1798,7 @@
+ 		es[1]=ndo_escape_buffer(notdata->service_description);
+ 		es[2]=ndo_escape_buffer(notdata->output);
+ 		/* Preparing if notifications will have long_output in the future */
+-		es[3]=ndo_escape_buffer(notdata->output);
++		//es[3]=ndo_escape_buffer(notdata->output);
+ 		es[4]=ndo_escape_buffer(notdata->ack_author);
+ 		es[5]=ndo_escape_buffer(notdata->ack_data);
+ 
+@@ -1845,7 +1845,7 @@
+ //printf("NDO_API_ENDDATA                    %d\n",NDO_API_ENDDATA);
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d\n\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d\n\n"
+ 			 ,NDO_API_NOTIFICATIONDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,notdata->type
+@@ -1876,8 +1876,8 @@
+ 			 ,notdata->state
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,(es[2]==NULL)?"":es[2]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,(es[3]==NULL)?"":es[3]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,(es[3]==NULL)?"":es[3]
+ 			 ,NDO_DATA_ACKAUTHOR
+ 			 ,(es[4]==NULL)?"":es[4]
+ 			 ,NDO_DATA_ACKDATA
+@@ -1915,12 +1915,12 @@
+ 		es[4]=ndo_escape_buffer(scdata->command_line);
+ 		es[5]=ndo_escape_plugin_output(scdata->output, scdata->long_output);
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+-		es[6]=ndo_escape_buffer(scdata->long_output);
++		//es[6]=ndo_escape_buffer(scdata->long_output);
+ #endif
+ 		es[7]=ndo_escape_buffer(scdata->perf_data);
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%d\n%d=%.5lf\n%d=%.5lf\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d\n\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%d\n%d=%.5lf\n%d=%.5lf\n%d=%d\n%d=%s\n%d=%s\n%d\n\n"
+ 			 ,NDO_API_SERVICECHECKDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,scdata->type
+@@ -1969,8 +1969,8 @@
+ 			 ,scdata->return_code
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,(es[5]==NULL)?"":es[5]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,(es[6]==NULL)?"":es[6]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,(es[6]==NULL)?"":es[6]
+ 			 ,NDO_DATA_PERFDATA
+ 			 ,(es[7]==NULL)?"":es[7]
+ 			 ,NDO_API_ENDDATA
+@@ -1996,13 +1996,13 @@
+ 		es[3]=ndo_escape_buffer(hcdata->command_line);
+ 		es[4]=ndo_escape_plugin_output(hcdata->output, hcdata->long_output);
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+-		es[5]=ndo_escape_buffer(hcdata->long_output);
++		//es[5]=ndo_escape_buffer(hcdata->long_output);
+ #endif
+ 		es[6]=ndo_escape_buffer(hcdata->perf_data);
+ 
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%d\n%d=%.5lf\n%d=%.5lf\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d\n\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%d\n%d=%.5lf\n%d=%.5lf\n%d=%d\n%d=%s\n%d=%s\n%d\n\n"
+ 			 ,NDO_API_HOSTCHECKDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,hcdata->type
+@@ -2049,8 +2049,8 @@
+ 			 ,hcdata->return_code
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,(es[4]==NULL)?"":es[4]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,(es[5]==NULL)?"":es[5]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,(es[5]==NULL)?"":es[5]
+ 			 ,NDO_DATA_PERFDATA
+ 			 ,(es[6]==NULL)?"":es[6]
+ 			 ,NDO_API_ENDDATA
+@@ -2302,7 +2302,7 @@
+ 		es[0]=ndo_escape_buffer(temp_host->name);
+ 		es[1]=ndo_escape_plugin_output(temp_host->plugin_output, temp_host->long_plugin_output);
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+-		es[2]=ndo_escape_buffer(temp_host->long_plugin_output);
++		//es[2]=ndo_escape_buffer(temp_host->long_plugin_output);
+ #endif
+ 		es[3]=ndo_escape_buffer(temp_host->perf_data);
+ 		es[4]=ndo_escape_buffer(temp_host->event_handler);
+@@ -2321,7 +2321,7 @@
+ #endif
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%.5lf\n%d=%.5lf\n%d=%.5lf\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%lu\n%d=%s\n%d=%s\n%d=%lf\n%d=%lf\n%d=%s\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%.5lf\n%d=%.5lf\n%d=%.5lf\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%lu\n%d=%s\n%d=%s\n%d=%lf\n%d=%lf\n%d=%s\n"
+ 			 ,NDO_API_HOSTSTATUSDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,hsdata->type
+@@ -2336,8 +2336,8 @@
+ 			 ,(es[0]==NULL)?"":es[0]
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,(es[1]==NULL)?"":es[1]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,(es[2]==NULL)?"":es[2]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,(es[2]==NULL)?"":es[2]
+ 			 ,NDO_DATA_PERFDATA
+ 			 ,(es[3]==NULL)?"":es[3]
+ 			 ,NDO_DATA_CURRENTSTATE
+@@ -2494,7 +2494,7 @@
+ 		es[1]=ndo_escape_buffer(temp_service->description);
+ 		es[2]=ndo_escape_plugin_output(temp_service->plugin_output, temp_service->long_plugin_output);
+ #if ( defined( BUILD_NAGIOS_3X) || defined( BUILD_NAGIOS_4X))
+-		es[3]=ndo_escape_buffer(temp_service->long_plugin_output);
++		//es[3]=ndo_escape_buffer(temp_service->long_plugin_output);
+ #endif
+ 		es[4]=ndo_escape_buffer(temp_service->perf_data);
+ 		es[5]=ndo_escape_buffer(temp_service->event_handler);
+@@ -2506,7 +2506,7 @@
+ 		es[7]=ndo_escape_buffer(temp_service->check_period);
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%.5lf\n%d=%.5lf\n%d=%.5lf\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%lu\n%d=%s\n%d=%s\n%d=%lf\n%d=%lf\n%d=%s\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%lu\n%d=%lu\n%d=%d\n%d=%lu\n%d=%lu\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%.5lf\n%d=%.5lf\n%d=%.5lf\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%lu\n%d=%s\n%d=%s\n%d=%lf\n%d=%lf\n%d=%s\n"
+ 			 ,NDO_API_SERVICESTATUSDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,ssdata->type
+@@ -2523,8 +2523,8 @@
+ 			 ,(es[1]==NULL)?"":es[1]
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,(es[2]==NULL)?"":es[2]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,(es[3]==NULL)?"":es[3]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,(es[3]==NULL)?"":es[3]
+ 			 ,NDO_DATA_PERFDATA
+ 			 ,(es[4]==NULL)?"":es[4]
+ 			 ,NDO_DATA_CURRENTSTATE
+@@ -3046,15 +3046,15 @@
+ 		es[1]=ndo_escape_buffer(cnotdata->service_description);
+ 		es[2]=ndo_escape_buffer(cnotdata->output);
+ 		/* Preparing long output for the future */
+-		es[3]=ndo_escape_buffer(cnotdata->output);
++		//es[3]=ndo_escape_buffer(cnotdata->output);
+ 		/* Preparing for long_output in the future */
+-		es[4]=ndo_escape_buffer(cnotdata->output);
++		//es[4]=ndo_escape_buffer(cnotdata->output);
+ 		es[5]=ndo_escape_buffer(cnotdata->ack_author);
+ 		es[6]=ndo_escape_buffer(cnotdata->ack_data);
+ 		es[7]=ndo_escape_buffer(cnotdata->contact_name);
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d=%s\n%d=%s\n%d\n\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%ld.%ld\n%d=%ld.%ld\n%d=%s\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d=%s\n%d\n\n"
+ 			 ,NDO_API_CONTACTNOTIFICATIONDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,cnotdata->type
+@@ -3085,10 +3085,10 @@
+ 			 ,cnotdata->state
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,(es[2]==NULL)?"":es[2]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,(es[3]==NULL)?"":es[3]
+-			 ,NDO_DATA_OUTPUT
+-			 ,(es[4]==NULL)?"":es[4]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,(es[3]==NULL)?"":es[3]
++			 //,NDO_DATA_OUTPUT
++			 //,(es[4]==NULL)?"":es[4]
+ 			 ,NDO_DATA_ACKAUTHOR
+ 			 ,(es[5]==NULL)?"":es[5]
+ 			 ,NDO_DATA_ACKDATA
+@@ -3257,10 +3257,10 @@
+ 		es[1]=ndo_escape_buffer(schangedata->service_description);
+ 		es[2]=ndo_escape_buffer(schangedata->output);
+ 		/* Preparing for long_output in the future */
+-		es[3]=ndo_escape_buffer(schangedata->output);
++		//es[3]=ndo_escape_buffer(schangedata->output);
+ 
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1
+-			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d=%s\n%d\n\n"
++			 ,"\n%d:\n%d=%d\n%d=%d\n%d=%d\n%d=%ld.%ld\n%d=%d\n%d=%s\n%d=%s\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%d\n%d=%s\n%d\n\n"
+ 			 ,NDO_API_STATECHANGEDATA
+ 			 ,NDO_DATA_TYPE
+ 			 ,schangedata->type
+@@ -3305,8 +3305,8 @@
+              ,host_state_type
+ 			 ,NDO_DATA_OUTPUT
+ 			 ,es[2]
+-			 ,NDO_DATA_LONGOUTPUT
+-			 ,es[3]
++			 //,NDO_DATA_LONGOUTPUT
++			 //,es[3]
+ 			 ,NDO_API_ENDDATA
+ 			);
+ 

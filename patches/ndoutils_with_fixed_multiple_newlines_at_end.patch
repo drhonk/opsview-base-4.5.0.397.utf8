@@ -1,0 +1,38 @@
+diff -ur ndoutils-2-0/src/io.c ndoutils-2-0.with_fiex_unescape_newlines/src/io.c
+--- ndoutils-2-0/src/io.c	2013-03-23 00:12:59.000000000 +0000
++++ ndoutils-2-0.with_fiex_unescape_newlines/src/io.c	2013-03-23 00:10:35.000000000 +0000
+@@ -545,26 +545,19 @@
+ 	register int x,y;
+ 
+ 	for(x=0,y=0;rawbuf[x]!=(char)'\x0';x++){
+-
+ 		if(rawbuf[x]=='\\'){
+-
+-			/* unescape newlines */
+-			if(rawbuf[x+1]=='n'){
++			if(rawbuf[x+1]=='n')
+ 				rawbuf[y++]='\n';
+-				x++;
+-				}
+-
+-			/* unescape backslashes and other stuff */
+-			if(rawbuf[x+1]!='\x0'){
++			else
+ 				rawbuf[y++]=rawbuf[x+1];
+-				x++;
+-				}
+-
+-			}
++			x++;
++		        }
+ 		else
+ 			rawbuf[y++]=rawbuf[x];
+-		}
+-	rawbuf[y]='\x0';
++	        }
++
++	/* terminate string */
++	rawbuf[y++]='\x0';
+ 
+ 	return rawbuf;
+ 	}

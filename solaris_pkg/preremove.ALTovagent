@@ -1,0 +1,7 @@
+#
+# preremove script
+#
+# moved to ALTovcore
+$BASEDIR/etc/init.d/opsview-agent stop
+
+exit 0

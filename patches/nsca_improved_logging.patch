@@ -1,0 +1,169 @@
+diff -ur nsca-2.9.1/src/nsca.c nsca-2.9.1.new/src/nsca.c
+--- nsca-2.9.1/src/nsca.c	2013-07-24 15:07:26.000000000 +0000
++++ nsca-2.9.1.new/src/nsca.c	2013-07-24 15:11:08.000000000 +0000
+@@ -330,6 +330,9 @@
+ 
+ 	do_cleanup();
+ 
++	if(debug)
++	    syslog(LOG_DEBUG,"Exiting with return code: %u\n",return_code);
++
+ 	exit(return_code);
+         }
+ 
+@@ -933,7 +936,7 @@
+ 
+ 	if(!hosts_access(&req)){
+ 		/* refuse the connection */
+-		syslog(LOG_ERR, "refused connect from %s", eval_client(&req));
++		syslog(LOG_ERR, "Refused connection from %s", eval_client(&req));
+ 		close(new_sd);
+ 		return;
+ 		}
+@@ -980,11 +983,33 @@
+         int flags;
+         time_t packet_send_time;
+         struct crypt_instance *CI;
++        struct sockaddr_in cli_addr;
++        socklen_t cli_addrlen;
++
++        /* get the remote connection detail */
++        cli_addrlen=sizeof(cli_addr);
++        rc=getpeername(sock,(struct sockaddr *)&cli_addr,&cli_addrlen);
++
++        if(rc<0){
++            /* 
++            Lookup failed, cannot say why,  Since the address will be
++            logged previously from the accept call, just log here we
++            failed the lookup and close off the connection
++            */
++            syslog(LOG_ERR, "Unable to lookup connection information so dropping it");
++            close(sock);
++            if(mode==SINGLE_PROCESS_DAEMON)
++                return;
++
++            else
++                do_exit(STATE_OK);
++            }
++
+ 
+ 
+         /* log info to syslog facility */
+         if(debug==TRUE)
+-                syslog(LOG_INFO,"Handling the connection...");
++                syslog(LOG_INFO,"Handling the connection for %s...",inet_ntoa(cli_addr.sin_addr));
+ 
+         /* socket should be non-blocking */
+         fcntl(sock,F_GETFL,&flags);
+@@ -1009,7 +1034,7 @@
+ 
+         /* there was an error sending the packet */
+         if(rc==-1){
+-                syslog(LOG_ERR,"Could not send init packet to client\n");
++                syslog(LOG_ERR,"Could not send init packet to client %s",inet_ntoa(cli_addr.sin_addr));
+                 encrypt_cleanup(decryption_method,CI);
+                 close(sock);
+ 		if(mode==MULTI_PROCESS_DAEMON)
+@@ -1019,7 +1044,7 @@
+ 
+         /* for some reason we didn't send all the bytes we were supposed to */
+ 	else if(bytes_to_send<sizeof(send_packet)){
+-                syslog(LOG_ERR,"Only able to send %d of %d bytes of init packet to client\n",rc,sizeof(send_packet));
++                syslog(LOG_ERR,"Only able to send %d of %d bytes of init packet to client %s",rc,sizeof(send_packet),inet_ntoa(cli_addr.sin_addr));
+                 encrypt_cleanup(decryption_method,CI);
+                 close(sock);
+ 		if(mode==MULTI_PROCESS_DAEMON)
+@@ -1066,6 +1091,27 @@
+         char host_name[MAX_HOSTNAME_LENGTH];
+         char svc_description[MAX_DESCRIPTION_LENGTH];
+         char plugin_output[MAX_PLUGINOUTPUT_LENGTH];
++        struct sockaddr_in cli_addr;
++        socklen_t cli_addrlen;
++
++        /* get the remote connection detail */
++        cli_addrlen=sizeof(cli_addr);
++        rc=getpeername(sock,(struct sockaddr *)&cli_addr,&cli_addrlen);
++
++        if(rc<0){
++            /*
++            Lookup failed, cannot say why,  Since the address will be
++            logged previously from the accept call, just log here we
++            failed the lookup and close off the connection
++            */
++            syslog(LOG_ERR, "Unable to lookup connection so dropping it");
++            close(sock);
++            if(mode==SINGLE_PROCESS_DAEMON)
++                return;
++
++            else
++                do_exit(STATE_OK);
++            }
+ 
+         CI=data;
+ 
+@@ -1000,7 +954,7 @@
+         /* recv() error or client disconnect */
+         if(rc<=0){
+                 if(debug==TRUE)
+-                        syslog(LOG_ERR,"End of connection...");
++                        syslog(LOG_ERR,"End of connection for %s...", inet_ntoa(cli_addr.sin_addr));
+                 encrypt_cleanup(decryption_method, CI);
+                 close(sock);
+                 if(mode==SINGLE_PROCESS_DAEMON)
+@@ -1095,7 +1095,7 @@
+ 
+         /* we couldn't read the correct amount of data, so bail out */
+         if(bytes_to_recv!=sizeof(receive_packet)){
+-                syslog(LOG_ERR,"Data sent from client was too short (%d < %d), aborting...",bytes_to_recv,sizeof(receive_packet));
++                syslog(LOG_ERR,"Data sent from client %s was too short (%d < %d), aborting...",inet_ntoa(cli_addr.sin_addr),bytes_to_recv,sizeof(receive_packet));
+                 encrypt_cleanup(decryption_method, CI);
+                 close(sock);
+ 		return;
+@@ -1114,7 +1160,7 @@
+ 
+         /* make sure this is the right type of packet */
+         if(ntohs(receive_packet.packet_version)!=NSCA_PACKET_VERSION_3){
+-                syslog(LOG_ERR,"Received invalid packet type/version from client - possibly due to client using wrong password or crypto algorithm?");
++                syslog(LOG_ERR,"Received invalid packet type/version from client %s - possibly due to client using wrong password or crypto algorithm?",inet_ntoa(cli_addr.sin_addr));
+ 		/*return;*/
+ 		close(sock);
+                 if(mode==SINGLE_PROCESS_DAEMON)
+@@ -1128,7 +1174,7 @@
+         receive_packet.crc32_value=0L;
+         calculated_crc32=calculate_crc32((char *)&receive_packet,sizeof(receive_packet));
+         if(packet_crc32!=calculated_crc32){
+-                syslog(LOG_ERR,"Dropping packet with invalid CRC32 - possibly due to client using wrong password or crypto algorithm?");
++                syslog(LOG_ERR,"Dropping packet with invalid CRC32 - possibly due to client %s using wrong password or crypto algorithm?",inet_ntoa(cli_addr.sin_addr));
+                 /*return;*/
+ 		close(sock);
+                 if(mode==SINGLE_PROCESS_DAEMON)
+@@ -1059,7 +1013,7 @@
+         if(packet_time>current_time){
+             packet_age=(long)(packet_time-current_time);
+             if(max_packet_age>0 && (packet_age>max_packet_age)){
+-                syslog(LOG_ERR,"Dropping packet with future timestamp - packet was %lu seconds ahead.",packet_age);
++                syslog(LOG_ERR,"Dropping packet with future timestamp - packet was %lu seconds ahead for client %s.",packet_age,inet_ntoa(cli_addr.sin_addr));
+                 /*return;*/
+        close(sock);
+                 if(mode==SINGLE_PROCESS_DAEMON)
+@@ -1072,7 +1026,7 @@
+         if(packet_time<current_time){
+                 packet_age=(unsigned long)(current_time-packet_time);
+                 if(max_packet_age>0 && (packet_age>max_packet_age)){
+-                        syslog(LOG_ERR,"Dropping packet with stale timestamp - packet was %lu seconds old.",packet_age);
++                        syslog(LOG_ERR,"Dropping packet with stale timestamp - packet was %lu seconds old for client %s.",packet_age,inet_ntoa(cli_addr.sin_addr));
+                         /*return;*/
+            close(sock);
+            if(mode==SINGLE_PROCESS_DAEMON)
+@@ -1174,9 +1220,9 @@
+         /* log info to syslog facility */
+         if(debug==TRUE){
+ 		if(!strcmp(svc_description,""))
+-			syslog(LOG_NOTICE,"HOST CHECK -> Host Name: '%s', Return Code: '%d', Output: '%s'",host_name,return_code,plugin_output);
++			syslog(LOG_NOTICE,"HOST CHECK -> Host Name: '%s', Return Code: '%d', Output: '%s' from client %s",host_name,return_code,plugin_output,inet_ntoa(cli_addr.sin_addr));
+ 		else
+-			syslog(LOG_NOTICE,"SERVICE CHECK -> Host Name: '%s', Service Description: '%s', Return Code: '%d', Output: '%s'",host_name,svc_description,return_code,plugin_output);
++			syslog(LOG_NOTICE,"SERVICE CHECK -> Host Name: '%s', Service Description: '%s', Return Code: '%d', Output: '%s' client %s",host_name,svc_description,return_code,plugin_output,inet_ntoa(cli_addr.sin_addr));
+ 	        }
+ 
+         /* write the check result to the external command file.

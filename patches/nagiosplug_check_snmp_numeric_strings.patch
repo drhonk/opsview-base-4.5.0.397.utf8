@@ -1,0 +1,32 @@
+diff --git a/plugins/check_snmp.c b/plugins/check_snmp.c
+index f32a26e..9d91942 100644
+--- a/plugins/check_snmp.c
++++ b/plugins/check_snmp.c
+@@ -160,6 +160,7 @@ main (int argc, char **argv)
+ 	char *outbuff;
+ 	char *ptr = NULL;
+ 	char *show = NULL;
++	char *endptr = NULL;
+ 	char *th_warn=NULL;
+ 	char *th_crit=NULL;
+ 	char type[8] = "";
+@@ -395,6 +396,19 @@ main (int argc, char **argv)
+ 				}
+ 			}
+ 
++			/* Allow numeric conversion if whole string is a number. Make concession for strings with " at beginning or end */
++			/* This duplicates the conversion a bit later, but is cleaner to separate out the checking against the conversion */
++			ptr = show;
++			if (*ptr == '"')
++				ptr++;
++			if (*ptr != '\0' ) {
++				strtod( ptr, &endptr );
++				if (*endptr == '"')
++					endptr++;
++				if (*endptr == '\0')
++					is_numeric=1;
++			}
++
+ 		}
+ 		else if (strstr (response, "Timeticks: "))
+ 			show = strstr (response, "Timeticks: ");

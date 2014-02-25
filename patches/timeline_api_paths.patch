@@ -1,0 +1,16 @@
+Only in timeline-libraries-2.3.0/timeline_2.3.0: timeline
+diff -ur timeline-libraries-2.3.0.original/timeline_2.3.0/timeline_js/timeline-api.js timeline-libraries-2.3.0/timeline_2.3.0/timeline_js/timeline-api.js
+--- timeline-libraries-2.3.0.original/timeline_2.3.0/timeline_js/timeline-api.js	2009-08-10 09:17:49.000000000 +0100
++++ timeline-libraries-2.3.0/timeline_2.3.0/timeline_js/timeline-api.js	2009-08-10 09:20:41.000000000 +0100
+@@ -52,6 +52,11 @@
+  *================================================== 
+  */
+ 
++// Timeline settings
++Timeline_ajax_url="/javascript/timeline/timeline_ajax/simile-ajax-api.js";
++Timeline_urlPrefix="/javascript/timeline/timeline_js/";
++Timeline_parameters="bundle=true";
++
+ (function() {
+     var useLocalResources = false;
+     if (document.location.search.length > 0) {

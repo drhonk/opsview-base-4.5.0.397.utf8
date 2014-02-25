@@ -1,0 +1,427 @@
+Index: Changelog
+===================================================================
+RCS file: /cvsroot/nagios/nagios/Changelog,v
+retrieving revision 1.457
+diff -u -r1.457 Changelog
+--- Changelog	4 Oct 2010 04:14:53 -0000	1.457
++++ Changelog	20 Oct 2010 14:02:06 -0000
+@@ -2,6 +2,15 @@
+ Nagios 3.x Change Log
+ #####################
+ 
++3.2.4 - ?????
++------------------
++ENHANCEMENTS
++
++FIXES
++* Fixes status.cgi when called with no parameters, where host should be set to all if none specified
++
++WARNINGS
++
+ 
+ 3.2.3 - 10/03/2010
+ ------------------
+Index: cgi/status.c
+===================================================================
+RCS file: /cvsroot/nagios/nagios/cgi/status.c,v
+retrieving revision 1.83
+diff -u -r1.83 status.c
+--- cgi/status.c	21 Sep 2010 15:05:31 -0000	1.83
++++ cgi/status.c	20 Oct 2010 14:02:11 -0000
+@@ -851,7 +851,7 @@
+ 	printf("<TH CLASS='serviceTotals'>");
+ 	printf("<A CLASS='serviceTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s&style=detail",url_encode(servicegroup_name));
+ 	else
+@@ -863,7 +863,7 @@
+ 	printf("<TH CLASS='serviceTotals'>");
+ 	printf("<A CLASS='serviceTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s&style=detail",url_encode(servicegroup_name));
+ 	else
+@@ -875,7 +875,7 @@
+ 	printf("<TH CLASS='serviceTotals'>");
+ 	printf("<A CLASS='serviceTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s&style=detail",url_encode(servicegroup_name));
+ 	else
+@@ -887,7 +887,7 @@
+ 	printf("<TH CLASS='serviceTotals'>");
+ 	printf("<A CLASS='serviceTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s&style=detail",url_encode(servicegroup_name));
+ 	else
+@@ -899,7 +899,7 @@
+ 	printf("<TH CLASS='serviceTotals'>");
+ 	printf("<A CLASS='serviceTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s&style=detail",url_encode(servicegroup_name));
+ 	else
+@@ -940,7 +940,7 @@
+ 	printf("<TH CLASS='serviceTotals'>");
+ 	printf("<A CLASS='serviceTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s&style=detail",url_encode(servicegroup_name));
+ 	else
+@@ -952,7 +952,7 @@
+ 	printf("<TH CLASS='serviceTotals'>");
+ 	printf("<A CLASS='serviceTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s&style=detail",url_encode(servicegroup_name));
+ 	else
+@@ -1064,7 +1064,7 @@
+ 	printf("<TH CLASS='hostTotals'>");
+ 	printf("<A CLASS='hostTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s",url_encode(servicegroup_name));
+ 	else{
+@@ -1082,7 +1082,7 @@
+ 	printf("<TH CLASS='hostTotals'>");
+ 	printf("<A CLASS='hostTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s",url_encode(servicegroup_name));
+ 	else{
+@@ -1100,7 +1100,7 @@
+ 	printf("<TH CLASS='hostTotals'>");
+ 	printf("<A CLASS='hostTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s",url_encode(servicegroup_name));
+ 	else{
+@@ -1118,7 +1118,7 @@
+ 	printf("<TH CLASS='hostTotals'>");
+ 	printf("<A CLASS='hostTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s",url_encode(servicegroup_name));
+ 	else{
+@@ -1161,7 +1161,7 @@
+ 	printf("<TH CLASS='hostTotals'>");
+ 	printf("<A CLASS='hostTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s",url_encode(servicegroup_name));
+ 	else{
+@@ -1179,7 +1179,7 @@
+ 	printf("<TH CLASS='hostTotals'>");
+ 	printf("<A CLASS='hostTotals' HREF='%s?",STATUS_CGI);
+ 	if(display_type==DISPLAY_HOSTS)
+-		printf("host=%s",url_encode(host_name));
++               printf("host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		printf("servicegroup=%s",url_encode(servicegroup_name));
+ 	else{
+@@ -1336,7 +1336,7 @@
+ 	snprintf(temp_url,sizeof(temp_url)-1,"%s?",STATUS_CGI);
+ 	temp_url[sizeof(temp_url)-1]='\x0';
+ 	if(display_type==DISPLAY_HOSTS)
+-		snprintf(temp_buffer,sizeof(temp_buffer)-1,"host=%s",url_encode(host_name));
++               snprintf(temp_buffer,sizeof(temp_buffer)-1,"host=%s",(host_name==NULL)?"all":url_encode(host_name));
+ 	else if(display_type==DISPLAY_SERVICEGROUPS)
+ 		snprintf(temp_buffer,sizeof(temp_buffer)-1,"servicegroup=%s&style=detail",url_encode(servicegroup_name));
+ 	else
+Index: t/610cgistatus.t
+===================================================================
+RCS file: t/610cgistatus.t
+diff -N t/610cgistatus.t
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ t/610cgistatus.t	20 Oct 2010 14:02:12 -0000
+@@ -0,0 +1,43 @@
++#!/usr/bin/perl
++# 
++# Checks for status.cgi
++
++use warnings;
++use strict;
++use Test::More;
++use FindBin qw($Bin);
++
++chdir $Bin or die "Cannot chdir";
++
++my $topdir = "$Bin/..";
++my $cgi_dir = "$topdir/cgi";
++my $cgi = "$cgi_dir/status.cgi";
++
++my $output;
++
++plan tests => 8;
++
++my $numhosts;
++
++$output = `NAGIOS_CGI_CONFIG=etc/cgi.cfg REMOTE_USER=nagiosadmin REQUEST_METHOD=GET QUERY_STRING=host=all $cgi`;
++like( $output, '/status.cgi\?host=all&sorttype=1&sortoption=1/', "Host value should be set to all if host=all passed in" );
++
++# Bit of a hacky way to count number of hosts
++$numhosts = grep /title=/, split("\n", $output);
++
++ok( $numhosts > 1, "Got $numhosts hosts, which is more than 1");
++
++$output = `NAGIOS_CGI_CONFIG=etc/cgi.cfg REMOTE_USER=nagiosadmin REQUEST_METHOD=GET QUERY_STRING=host=host1 $cgi`;
++like( $output, '/status.cgi\?host=host1&sorttype=1&sortoption=1/', "Host value should be set to specific host if passed in" );
++like( $output, '/1 Matching Service Entries Displayed/', "Found the one host" );
++
++$output = `NAGIOS_CGI_CONFIG=etc/cgi.cfg REMOTE_USER=nagiosadmin REQUEST_METHOD=GET QUERY_STRING=host= $cgi`;
++like( $output, '/status.cgi\?host=&sorttype=1&sortoption=1/', "Host value kept as blank if set to blank" );
++like( $output, '/0 Matching Service Entries Displayed/', "Got no hosts because looking for a blank name" );
++
++$output = `NAGIOS_CGI_CONFIG=etc/cgi.cfg REMOTE_USER=nagiosadmin REQUEST_METHOD=GET $cgi`;
++like( $output, '/status.cgi\?host=all&sorttype=1&sortoption=1/', "Host value should be set to all if nothing set initially" );
++
++$_ = grep /title=/, split("\n", $output);
++is( $_, $numhosts, "Same number of hosts" );
++
+Index: t/var/objects.cache
+===================================================================
+RCS file: /cvsroot/nagios/nagios/t/var/objects.cache,v
+retrieving revision 1.2
+diff -u -r1.2 objects.cache
+--- t/var/objects.cache	14 May 2009 23:18:47 -0000	1.2
++++ t/var/objects.cache	20 Oct 2010 14:02:12 -0000
+@@ -95,6 +95,38 @@
+ 	retain_nonstatus_information	1
+ 	}
+ 
++define host {
++	host_name	host2
++	alias	host2 test
++	address	192.168.1.2
++	check_period	none
++	contacts	nagiosadmin
++	notification_period	none
++	initial_state	o
++	check_interval	5.000000
++	retry_interval	1.000000
++	max_check_attempts	2
++	active_checks_enabled	1
++	passive_checks_enabled	1
++	obsess_over_host	1
++	event_handler_enabled	1
++	low_flap_threshold	0.000000
++	high_flap_threshold	0.000000
++	flap_detection_enabled	1
++	flap_detection_options	o,d,u
++	freshness_threshold	0
++	check_freshness	0
++	notification_options	d,u,r,f,s
++	notifications_enabled	1
++	notification_interval	60.000000
++	first_notification_delay	0.000000
++	stalking_options	n
++	process_perf_data	1
++	failure_prediction_enabled	1
++	retain_status_information	1
++	retain_nonstatus_information	1
++	}
++
+ define service {
+ 	host_name	host1
+ 	service_description	Dummy service
+@@ -129,3 +161,37 @@
+ 	retain_nonstatus_information	1
+ 	}
+ 
++define service {
++	host_name	host2
++	service_description	Dummy service
++	check_period	none
++	check_command	check_me
++	contacts	nagiosadmin
++	notification_period	none
++	initial_state	o
++	check_interval	32.000000
++	retry_interval	1.000000
++	max_check_attempts	3
++	is_volatile	0
++	parallelize_check	1
++	active_checks_enabled	1
++	passive_checks_enabled	1
++	obsess_over_service	1
++	event_handler_enabled	1
++	low_flap_threshold	0.000000
++	high_flap_threshold	0.000000
++	flap_detection_enabled	1
++	flap_detection_options	o,w,u,c
++	freshness_threshold	0
++	check_freshness	0
++	notification_options	u,w,c,r,f,s
++	notifications_enabled	1
++	notification_interval	60.000000
++	first_notification_delay	0.000000
++	stalking_options	n
++	process_perf_data	1
++	failure_prediction_enabled	1
++	retain_status_information	1
++	retain_nonstatus_information	1
++	}
++
+Index: t/var/status.dat
+===================================================================
+RCS file: /cvsroot/nagios/nagios/t/var/status.dat,v
+retrieving revision 1.2
+diff -u -r1.2 status.dat
+--- t/var/status.dat	16 Sep 2009 22:08:52 -0000	1.2
++++ t/var/status.dat	20 Oct 2010 14:02:12 -0000
+@@ -115,6 +115,63 @@
+ 	scheduled_downtime_depth=0
+ 	}
+ 
++hoststatus {
++	host_name=host2
++	modified_attributes=0
++	check_command=
++	check_period=none
++	notification_period=none
++	check_interval=5.000000
++	retry_interval=1.000000
++	event_handler=
++	has_been_checked=0
++	should_be_scheduled=0
++	check_execution_time=0.000
++	check_latency=0.000
++	check_type=0
++	current_state=0
++	last_hard_state=0
++	last_event_id=0
++	current_event_id=0
++	current_problem_id=0
++	last_problem_id=0
++	plugin_output=
++	long_plugin_output=
++	performance_data=
++	last_check=0
++	next_check=0
++	check_options=0
++	current_attempt=1
++	max_attempts=2
++	current_event_id=0
++	last_event_id=0
++	state_type=1
++	last_state_change=0
++	last_hard_state_change=0
++	last_time_up=0
++	last_time_down=0
++	last_time_unreachable=0
++	last_notification=0
++	next_notification=0
++	no_more_notifications=0
++	current_notification_number=0
++	current_notification_id=0
++	notifications_enabled=1
++	problem_has_been_acknowledged=0
++	acknowledgement_type=0
++	active_checks_enabled=1
++	passive_checks_enabled=1
++	event_handler_enabled=1
++	flap_detection_enabled=1
++	failure_prediction_enabled=1
++	process_performance_data=1
++	obsess_over_host=1
++	last_update=1242341791
++	is_flapping=0
++	percent_state_change=0.00
++	scheduled_downtime_depth=0
++	}
++
+ servicestatus {
+ 	host_name=host1
+ 	service_description=Dummy service
+@@ -174,6 +231,65 @@
+ 	scheduled_downtime_depth=0
+ 	}
+ 
++servicestatus {
++	host_name=host2
++	service_description=Dummy service
++	modified_attributes=0
++	check_command=check_me
++	check_period=none
++	notification_period=none
++	check_interval=32.000000
++	retry_interval=1.000000
++	event_handler=
++	has_been_checked=0
++	should_be_scheduled=0
++	check_execution_time=0.000
++	check_latency=0.000
++	check_type=0
++	current_state=0
++	last_hard_state=0
++	last_event_id=0
++	current_event_id=0
++	current_problem_id=0
++	last_problem_id=0
++	current_attempt=1
++	max_attempts=3
++	current_event_id=0
++	last_event_id=0
++	state_type=1
++	last_state_change=0
++	last_hard_state_change=0
++	last_time_ok=0
++	last_time_warning=0
++	last_time_unknown=0
++	last_time_critical=0
++	plugin_output=
++	long_plugin_output=
++	performance_data=
++	last_check=0
++	next_check=0
++	check_options=0
++	current_notification_number=0
++	current_notification_id=0
++	last_notification=0
++	next_notification=0
++	no_more_notifications=0
++	notifications_enabled=1
++	active_checks_enabled=1
++	passive_checks_enabled=1
++	event_handler_enabled=1
++	problem_has_been_acknowledged=0
++	acknowledgement_type=0
++	flap_detection_enabled=1
++	failure_prediction_enabled=1
++	process_performance_data=1
++	obsess_over_service=1
++	last_update=1242341791
++	is_flapping=0
++	percent_state_change=0.00
++	scheduled_downtime_depth=0
++	}
++
+ contactstatus {
+ 	contact_name=nagiosadmin
+ 	modified_attributes=0

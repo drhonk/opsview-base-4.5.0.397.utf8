@@ -1,0 +1,12 @@
+diff -ur nfdump-1.6.9/bin/util.c nfdump-1.6.9.logerr/bin/util.c
+--- nfdump-1.6.9/bin/util.c	2012-08-03 15:14:32.000000000 +0000
++++ nfdump-1.6.9.logerr/bin/util.c	2013-06-11 09:37:39.000000000 +0000
+@@ -148,6 +148,8 @@
+ 	openlog(logname, LOG_CONS|LOG_PID, facilitynames[i].c_val);
+ 	use_syslog = 1;
+ 
++ 	setlogmask(LOG_ERR);
++
+ 	return 1;
+ 
+ } // End of InitLog

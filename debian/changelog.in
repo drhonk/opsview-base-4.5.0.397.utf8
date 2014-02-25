@@ -1,0 +1,30 @@
+opsview-base (2.7.4-1sarge1) stable; urgency=low
+
+  * New upstream release of 2.7.4
+
+ -- Neil Ferguson <neil.ferguson@opsview.com>  Tue, 22 May 2007 15:03:00 +0100
+
+opsview-base (2.7.2-1sarge1) unstable; urgency=low
+
+  * New upstream release of 2.7.2
+
+ -- Neil Ferguson <neil.ferguson@opsview.com>  Tue, 24 Apr 2007 15:23:55 +0100
+
+opsview-base (2.7.1-1) unstable; urgency=low
+
+  * New upstream release of 2.7.1
+
+ -- Neil Ferguson <neil.ferguson@opsview.com>  Mon, 16 Apr 2007 11:29:07 +0100
+
+opsview-base (2.7-1) unstable; urgency=low
+
+  * Upstream beta release of 2.7
+
+ -- Neil Ferguson <neil.ferguson@opsview.com>  Mon,  9 Apr 2007 14:49:45 +0100
+
+opsview-base (2.6.4-1) unstable; urgency=low
+
+  * Initial release
+
+ -- Neil Ferguson (Opsview Limited) <neil.ferguson@opsview.com>  Sun, 14 Jan 2007 16:51:16 +0000
+

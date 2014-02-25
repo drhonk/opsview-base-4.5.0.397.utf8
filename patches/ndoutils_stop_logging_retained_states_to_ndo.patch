@@ -1,0 +1,19 @@
+Only in ndoutils-1.4b3.original/src: .dbhandlers.c.swp
+diff -ur ndoutils-1.4b3.original/src/dbhandlers.c ndoutils-1.4b3/src/dbhandlers.c
+--- ndoutils-1.4b3.original/src/dbhandlers.c	2007-08-17 16:35:05.000000000 +0000
++++ ndoutils-1.4b3/src/dbhandlers.c	2007-08-20 10:16:57.000000000 +0000
+@@ -645,8 +645,12 @@
+ 
+ 		/* clear realtime data */
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_PROGRAMSTATUS]);
+-		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_HOSTSTATUS]);
+-		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_SERVICESTATUS]);
++		/* Because of disabling the sending of the retained host/service status, we can't 
++		 * clear this table on a load any more, otherwise a nagios reload necessitates an entire
++		 * cycle of each check to get status. This means deleted hosts and services might still exist
++		 * in this table over time, but will not be in the config tables, so will be ignored. */
++		/* ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_HOSTSTATUS]);	*/
++		/* ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_SERVICESTATUS]); */
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_CONTACTSTATUS]);
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_TIMEDEVENTQUEUE]);
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_COMMENTS]);

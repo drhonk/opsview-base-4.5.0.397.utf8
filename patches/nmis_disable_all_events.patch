@@ -1,0 +1,233 @@
+diff -ur nmis-4.2.13.original/conf/events.csv nmis-4.2.13/conf/events.csv
+--- nmis-4.2.13.original/conf/events.csv	2005-03-02 08:43:02.000000000 +0100
++++ nmis-4.2.13/conf/events.csv	2008-04-25 21:10:44.459351584 +0200
+@@ -1,117 +1,117 @@
+ Event	Level	Log	Mail	Notify	Pager	Role	Type
+-Node Failover	Warning	true	false	true	false	access	router
+-default	normal	true	false	true	false	default	default
+-Generic Down	Warning	true	false	true	false	access	router
+-Generic Down	Warning	true	false	true	false	access	server
+-Generic Down	Minor	true	false	true	false	access	switch
+-Generic Down	Critical	true	false	true	false	core	router
+-Generic Down	Major	true	false	true	false	core	server
+-Generic Down	Critical	true	false	true	false	core	switch
+-Generic Down	Major	true	false	true	false	distribution	router
+-Generic Down	Minor	true	false	true	false	distribution	server
+-Generic Down	Major	true	false	true	false	distribution	switch
+-Generic Up	Normal	true	false	true	false	access	router
+-Generic Up	Normal	true	false	true	false	access	server
+-Generic Up	Normal	true	false	true	false	access	switch
+-Generic Up	Normal	true	false	true	false	core	router
+-Generic Up	Normal	true	false	true	false	core	server
+-Generic Up	Normal	true	false	true	false	core	switch
+-Generic Up	Normal	true	false	true	false	distribution	router
+-Generic Up	Normal	true	false	true	false	distribution	server
+-Generic Up	Normal	true	false	true	false	distribution	switch
+-Interface Down	Warning	true	false	true	false	access	router
+-Interface Down	Warning	true	false	true	false	access	server
+-Interface Down	Warning	true	false	true	false	access	switch
+-Interface Down	Major	true	false	true	false	core	router
+-Interface Down	Major	true	false	true	false	core	server
+-Interface Down	Major	true	false	true	false	core	switch
++Node Failover	Warning	false	false	true	false	access	router
++default	normal	false	false	true	false	default	default
++Generic Down	Warning	false	false	true	false	access	router
++Generic Down	Warning	false	false	true	false	access	server
++Generic Down	Minor	false	false	true	false	access	switch
++Generic Down	Critical	false	false	true	false	core	router
++Generic Down	Major	false	false	true	false	core	server
++Generic Down	Critical	false	false	true	false	core	switch
++Generic Down	Major	false	false	true	false	distribution	router
++Generic Down	Minor	false	false	true	false	distribution	server
++Generic Down	Major	false	false	true	false	distribution	switch
++Generic Up	Normal	false	false	true	false	access	router
++Generic Up	Normal	false	false	true	false	access	server
++Generic Up	Normal	false	false	true	false	access	switch
++Generic Up	Normal	false	false	true	false	core	router
++Generic Up	Normal	false	false	true	false	core	server
++Generic Up	Normal	false	false	true	false	core	switch
++Generic Up	Normal	false	false	true	false	distribution	router
++Generic Up	Normal	false	false	true	false	distribution	server
++Generic Up	Normal	false	false	true	false	distribution	switch
++Interface Down	Warning	false	false	true	false	access	router
++Interface Down	Warning	false	false	true	false	access	server
++Interface Down	Warning	false	false	true	false	access	switch
++Interface Down	Major	false	false	true	false	core	router
++Interface Down	Major	false	false	true	false	core	server
++Interface Down	Major	false	false	true	false	core	switch
+ Interface Down	Minor	false	false	false	false	distribution	generic
+-Interface Down	Minor	true	false	true	false	distribution	router
+-Interface Down	Minor	true	false	true	false	distribution	server
++Interface Down	Minor	false	false	true	false	distribution	router
++Interface Down	Minor	false	false	true	false	distribution	server
+ Interface Down	Minor	false	false	false	false	distribution	switch
+-Interface Up	Normal	true	false	true	false	access	router
+-Interface Up	Normal	true	false	true	false	access	server
+-Interface Up	Normal	true	false	true	false	access	switch
+-Interface Up	Normal	true	false	true	false	core	router
+-Interface Up	Normal	true	false	true	false	core	server
+-Interface Up	Normal	true	false	true	false	core	switch
++Interface Up	Normal	false	false	true	false	access	router
++Interface Up	Normal	false	false	true	false	access	server
++Interface Up	Normal	false	false	true	false	access	switch
++Interface Up	Normal	false	false	true	false	core	router
++Interface Up	Normal	false	false	true	false	core	server
++Interface Up	Normal	false	false	true	false	core	switch
+ Interface Up	Normal	false	false	false	false	distribution	generic
+-Interface Up	Normal	true	false	true	false	distribution	router
+-Interface Up	Normal	true	false	true	false	distribution	server
++Interface Up	Normal	false	false	true	false	distribution	router
++Interface Up	Normal	false	false	true	false	distribution	server
+ Interface Up	Normal	false	false	false	false	distribution	switch
+-Node Down	Minor	true	false	true	false	access	router
+-Node Down	Warning	true	false	true	false	access	server
+-Node Down	Minor	true	false	true	false	access	switch
+-Node Down	Critical	true	false	true	false	core	router
+-Node Down	Major	true	false	true	false	core	server
+-Node Down	Critical	true	false	true	false	core	switch
+-Node Down	Major	true	false	true	false	distribution	generic
+-Node Down	Major	true	false	true	false	distribution	router
+-Node Down	Minor	true	false	true	false	distribution	server
+-Node Down	Major	true	false	true	false	distribution	switch
+-Node Failover	Warning	true	false	true	false	core	router
+-Node Failover	Warning	true	false	true	false	distribution	router
+-Node Reset	Warning	true	false	true	false	access	router
+-Node Reset	Warning	true	false	true	false	access	server
+-Node Reset	Warning	true	false	true	false	access	switch
+-Node Reset	Minor	true	false	true	false	core	router
+-Node Reset	Minor	true	false	true	false	core	server
+-Node Reset	Minor	true	false	true	false	core	switch
+-Node Reset	Warning	true	false	true	false	distribution	router
+-Node Reset	Warning	true	false	true	false	distribution	server
+-Node Reset	Warning	true	false	true	false	distribution	switch
+-Node Up	Normal	true	false	true	false	access	router
+-Node Up	Normal	true	false	true	false	access	server
+-Node Up	Normal	true	false	true	false	access	switch
+-Node Up	Normal	true	false	true	false	core	router
+-Node Up	Normal	true	false	true	false	core	server
+-Node Up	Normal	true	false	true	false	core	switch
+-Node Up	Normal	true	false	true	false	distribution	generic
+-Node Up	Normal	true	false	true	false	distribution	router
+-Node Up	Normal	true	false	true	false	distribution	server
+-Node Up	Normal	true	false	true	false	distribution	switch
+-Proactive Closed	Normal	true	false	true	false	Normal	n/a
+-Proactive	Critical	true	false	true	false	Critical	n/a
+-Proactive	Fatal	true	false	true	false	Fatal	n/a
+-Proactive	Major	true	false	true	false	Major	n/a
+-Proactive	Minor	true	false	true	false	Minor	n/a
+-Proactive	Normal	true	false	true	false	Normal	n/a
+-Proactive	Warning	true	false	true	false	Warning	n/a
+-SNMP Down	Warning	true	false	true	false	access	router
+-SNMP Down	Warning	true	false	true	false	access	server
+-SNMP Down	Minor	true	false	true	false	access	switch
+-SNMP Down	Critical	true	false	true	false	core	router
+-SNMP Down	Major	true	false	true	false	core	server
+-SNMP Down	Critical	true	false	true	false	core	switch
+-SNMP Down	Major	true	false	true	false	distribution	router
+-SNMP Down	Minor	true	false	true	false	distribution	server
+-SNMP Down	Major	true	false	true	false	distribution	switch
+-SNMP Up	Normal	true	false	true	false	access	router
+-SNMP Up	Normal	true	false	true	false	access	server
+-SNMP Up	Normal	true	false	true	false	access	switch
+-SNMP Up	Normal	true	false	true	false	core	router
+-SNMP Up	Normal	true	false	true	false	core	server
+-SNMP Up	Normal	true	false	true	false	core	switch
+-SNMP Up	Normal	true	false	true	false	distribution	router
+-SNMP Up	Normal	true	false	true	false	distribution	server
+-SNMP Up	Normal	true	false	true	false	distribution	switch
+-RPS Fail	Warning	true	false	true	false	core	router
+-RPS Fail	Warning	true	false	true	false	distribution	router
+-Service Down	Warning	true	false	true	false	access	router
+-Service Down	Warning	true	false	true	false	access	server
+-Service Down	Warning	true	false	true	false	access	switch
+-Service Down	Warning	true	false	true	false	core	router
+-Service Down	Warning	true	false	true	false	core	server
+-Service Down	Warning	true	false	true	false	core	switch
+-Service Down	Warning	true	false	true	false	distribution	router
+-Service Down	Warning	true	false	true	false	distribution	server
+-Service Down	Warning	true	false	true	false	distribution	switch
+-Service Up	Normal	true	false	true	false	access	router
+-Service Up	Normal	true	false	true	false	access	server
+-Service Up	Normal	true	false	true	false	access	switch
+-Service Up	Normal	true	false	true	false	core	router
+-Service Up	Normal	true	false	true	false	core	server
+-Service Up	Normal	true	false	true	false	core	switch
+-Service Up	Normal	true	false	true	false	distribution	router
+-Service Up	Normal	true	false	true	false	distribution	server
+-Service Up	Normal	true	false	true	false	distribution	switch
++Node Down	Minor	false	false	true	false	access	router
++Node Down	Warning	false	false	true	false	access	server
++Node Down	Minor	false	false	true	false	access	switch
++Node Down	Critical	false	false	true	false	core	router
++Node Down	Major	false	false	true	false	core	server
++Node Down	Critical	false	false	true	false	core	switch
++Node Down	Major	false	false	true	false	distribution	generic
++Node Down	Major	false	false	true	false	distribution	router
++Node Down	Minor	false	false	true	false	distribution	server
++Node Down	Major	false	false	true	false	distribution	switch
++Node Failover	Warning	false	false	true	false	core	router
++Node Failover	Warning	false	false	true	false	distribution	router
++Node Reset	Warning	false	false	true	false	access	router
++Node Reset	Warning	false	false	true	false	access	server
++Node Reset	Warning	false	false	true	false	access	switch
++Node Reset	Minor	false	false	true	false	core	router
++Node Reset	Minor	false	false	true	false	core	server
++Node Reset	Minor	false	false	true	false	core	switch
++Node Reset	Warning	false	false	true	false	distribution	router
++Node Reset	Warning	false	false	true	false	distribution	server
++Node Reset	Warning	false	false	true	false	distribution	switch
++Node Up	Normal	false	false	true	false	access	router
++Node Up	Normal	false	false	true	false	access	server
++Node Up	Normal	false	false	true	false	access	switch
++Node Up	Normal	false	false	true	false	core	router
++Node Up	Normal	false	false	true	false	core	server
++Node Up	Normal	false	false	true	false	core	switch
++Node Up	Normal	false	false	true	false	distribution	generic
++Node Up	Normal	false	false	true	false	distribution	router
++Node Up	Normal	false	false	true	false	distribution	server
++Node Up	Normal	false	false	true	false	distribution	switch
++Proactive Closed	Normal	false	false	true	false	Normal	n/a
++Proactive	Critical	false	false	true	false	Critical	n/a
++Proactive	Fatal	false	false	true	false	Fatal	n/a
++Proactive	Major	false	false	true	false	Major	n/a
++Proactive	Minor	false	false	true	false	Minor	n/a
++Proactive	Normal	false	false	true	false	Normal	n/a
++Proactive	Warning	false	false	true	false	Warning	n/a
++SNMP Down	Warning	false	false	true	false	access	router
++SNMP Down	Warning	false	false	true	false	access	server
++SNMP Down	Minor	false	false	true	false	access	switch
++SNMP Down	Critical	false	false	true	false	core	router
++SNMP Down	Major	false	false	true	false	core	server
++SNMP Down	Critical	false	false	true	false	core	switch
++SNMP Down	Major	false	false	true	false	distribution	router
++SNMP Down	Minor	false	false	true	false	distribution	server
++SNMP Down	Major	false	false	true	false	distribution	switch
++SNMP Up	Normal	false	false	true	false	access	router
++SNMP Up	Normal	false	false	true	false	access	server
++SNMP Up	Normal	false	false	true	false	access	switch
++SNMP Up	Normal	false	false	true	false	core	router
++SNMP Up	Normal	false	false	true	false	core	server
++SNMP Up	Normal	false	false	true	false	core	switch
++SNMP Up	Normal	false	false	true	false	distribution	router
++SNMP Up	Normal	false	false	true	false	distribution	server
++SNMP Up	Normal	false	false	true	false	distribution	switch
++RPS Fail	Warning	false	false	true	false	core	router
++RPS Fail	Warning	false	false	true	false	distribution	router
++Service Down	Warning	false	false	true	false	access	router
++Service Down	Warning	false	false	true	false	access	server
++Service Down	Warning	false	false	true	false	access	switch
++Service Down	Warning	false	false	true	false	core	router
++Service Down	Warning	false	false	true	false	core	server
++Service Down	Warning	false	false	true	false	core	switch
++Service Down	Warning	false	false	true	false	distribution	router
++Service Down	Warning	false	false	true	false	distribution	server
++Service Down	Warning	false	false	true	false	distribution	switch
++Service Up	Normal	false	false	true	false	access	router
++Service Up	Normal	false	false	true	false	access	server
++Service Up	Normal	false	false	true	false	access	switch
++Service Up	Normal	false	false	true	false	core	router
++Service Up	Normal	false	false	true	false	core	server
++Service Up	Normal	false	false	true	false	core	switch
++Service Up	Normal	false	false	true	false	distribution	router
++Service Up	Normal	false	false	true	false	distribution	server
++Service Up	Normal	false	false	true	false	distribution	switch

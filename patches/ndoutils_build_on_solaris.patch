@@ -1,0 +1,69 @@
+diff -ur ndoutils-1.4b3.orig/src/Makefile.in ndoutils-1.4b3/src/Makefile.in
+--- ndoutils-1.4b3.orig/src/Makefile.in	2007-10-12 09:45:42.154888000 +0000
++++ ndoutils-1.4b3/src/Makefile.in	2007-10-12 09:30:37.027521000 +0000
+@@ -30,8 +30,8 @@
+ OTHERLIBS=@OTHERLIBS@
+ 
+ COMMON_INC=$(SRC_INCLUDE)/config.h $(SRC_INCLUDE)/common.h $(SRC_INCLUDE)/io.h $(SRC_INCLUDE)/protoapi.h $(SRC_INCLUDE)/utils.h
+-COMMON_SRC=io.c utils.c
+-COMMON_OBJS=io.o utils.o
++COMMON_SRC=io.c utils.c sunos.c
++COMMON_OBJS=io.o utils.o sunos.o
+ 
+ NDO_INC=$(SRC_INCLUDE)/ndo2db.h $(SRC_INCLUDE)/db.h
+ NDO_SRC=db.c
+diff -ur ndoutils-1.4b3.orig/src/db.c ndoutils-1.4b3/src/db.c
+--- ndoutils-1.4b3.orig/src/db.c	2007-10-12 09:45:42.481236000 +0000
++++ ndoutils-1.4b3/src/db.c	2007-10-11 16:36:30.492999000 +0000
+@@ -16,6 +16,7 @@
+ #include "../include/ndo2db.h"
+ #include "../include/dbhandlers.h"
+ #include "../include/db.h"
++#include "../include/sunos.h"
+ 
+ extern int errno;
+ 
+diff -ur ndoutils-1.4b3.orig/src/io.c ndoutils-1.4b3/src/io.c
+--- ndoutils-1.4b3.orig/src/io.c	2007-01-08 00:35:50.000000000 +0000
++++ ndoutils-1.4b3/src/io.c	2007-10-11 16:36:30.498028000 +0000
+@@ -10,6 +10,7 @@
+ #include "../include/config.h"
+ #include "../include/common.h"
+ #include "../include/io.h"
++#include "../include/sunos.h"
+ 
+ 
+ 
+diff -ur ndoutils-1.4b3.orig/src/ndo2db.c ndoutils-1.4b3/src/ndo2db.c
+--- ndoutils-2-0.original/src/ndo2db.c	Mon Jan  7 16:21:06 2013
++++ ndoutils-2-0/src/ndo2db.c	Mon Jan  7 16:22:32 2013
+@@ -25,6 +25,7 @@
+ #include "../include/db.h"
+ #include "../include/dbhandlers.h"
+ #include "../include/queue.h"
++#include "../include/sunos.h"
+ 
+ #ifdef HAVE_SSL
+ #include "../include/dh.h"
+diff -ur ndoutils-1.4b3.orig/src/ndomod.c ndoutils-1.4b3/src/ndomod.c
+--- ndoutils-1.4b3.orig/src/ndomod.c	2007-04-10 16:21:36.000000000 +0000
++++ ndoutils-1.4b3/src/ndomod.c	2007-10-11 16:36:30.509275000 +0000
+@@ -15,6 +15,7 @@
+ #include "../include/utils.h"
+ #include "../include/protoapi.h"
+ #include "../include/ndomod.h"
++#include "../include/sunos.h"
+ 
+ /* include (minimum required) event broker header files */
+ #ifdef BUILD_NAGIOS_2X
+diff -ur ndoutils-1.4b3.orig/src/sockdebug.c ndoutils-1.4b3/src/sockdebug.c
+--- ndoutils-1.4b3.orig/src/sockdebug.c	2007-04-10 16:21:36.000000000 +0000
++++ ndoutils-1.4b3/src/sockdebug.c	2007-10-11 16:36:30.512290000 +0000
+@@ -9,6 +9,7 @@
+  **************************************************************/
+ 
+ #include "../include/config.h"
++#include "../include/sunos.h"
+ 
+ #define SOCKDEBUG_VERSION "1.4b3"
+ #define SOCKDEBUG_NAME "SOCKDEBUG"

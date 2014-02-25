@@ -1,0 +1,121 @@
+diff -ur nmis-4.2.13.original/bin/nmis.pl nmis-4.2.13/bin/nmis.pl
+--- nmis-4.2.13.original/bin/nmis.pl	2008-03-31 15:41:43.476177000 +0200
++++ nmis-4.2.13/bin/nmis.pl	2008-03-31 15:42:21.861342488 +0200
+@@ -883,15 +883,30 @@
+ 		my %summaryHash8 = ();
+ 		my %summaryHash16 = ();
+ 		# get nodeTable from slave with addition values
+-		my %nodeTable = slaveConnect(host => $name, type => 'send', func => 'sumnodeTable');
++		my $nodeTable = slaveConnect(host => $name, type => 'send', func => 'sumnodeTable');
++		if (not defined $nodeTable) {
++			print returnTime." ERROR: Connection error to slave $name - moving to next slave\n";
++			next;
++		}
++		my %nodeTable = %$nodeTable;
+ 		$num_keys = scalar keys %nodeTable;
+ 		print returnTime." httpMaster: node table from $name contains $num_keys keys\n" if $debug;
+ 		if (%nodeTable) {
+ 			# get summary info
+-			my %summary8 = slaveConnect(host => $name, type => 'send', func => 'summary8');
++			my $hash = slaveConnect(host => $name, type => 'send', func => 'summary8');
++			if (not defined $hash) {
++				print returnTime." ERROR: Connection error to slave $name while retrieving summary8 - moving to next slave\n";
++				next;
++			}
++			my %summary8 = %$hash;
+ 			$num_keys = scalar keys %summary8;
+ 			print returnTime." httpMaster: summary8 from $name contains $num_keys keys\n" if $debug;
+-			my %summary16 = slaveConnect(host => $name, type => 'send', func => 'summary16');
++			my $hash = slaveConnect(host => $name, type => 'send', func => 'summary16');
++			if (not defined $hash) {
++				print returnTime." ERROR: Connection error to slave $name while retrieving summary16 - moving to next slave\n";
++				next;
++			}
++			my %summary16 = %$hash;
+ 			$num_keys = scalar keys %summary16;
+ 			print returnTime." httpMaster: summary16 from $name contains $num_keys keys\n" if $debug;
+ 			foreach my $node ( keys %nodeTable)  {
+@@ -906,10 +921,11 @@
+ 				$summaryHash16{$node}{health} = (exists $summary16{$node}{health}) ? $summary16{$node}{health} : 0;
+ 				$summaryHash16{$node}{available} = (exists $summary16{$node}{available}) ? $summary16{$node}{available} : 0;
+ 			}
+-			writeHashtoVar("$name-nodes",\%nodeTable);
+-			writeHashtoVar("$name-summary8",\%summaryHash8);
+-			writeHashtoVar("$name-summary16",\%summaryHash16);
+ 		}
++		# Write node table. Not within if above because this will delete nodes if no longer monitored
++		writeHashtoVar("$name-nodes",\%nodeTable);
++		writeHashtoVar("$name-summary8",\%summaryHash8);
++		writeHashtoVar("$name-summary16",\%summaryHash16);
+ 	}
+ 	print returnTime." httpMaster: Finished\n" if $debug;
+ }
+diff -ur nmis-4.2.13.original/lib/NMIS.pm nmis-4.2.13/lib/NMIS.pm
+--- nmis-4.2.13.original/lib/NMIS.pm	2008-03-31 15:41:43.381192000 +0200
++++ nmis-4.2.13/lib/NMIS.pm	2008-03-31 16:17:32.161385200 +0200
+@@ -3260,6 +3260,8 @@
+ 
+ # connect slave by hhtp or https (SSL) and send a document request to the slave
+ # at the slave side the request will be processed by cgi-bin/connect.pl
++# Returns a ref to the hash/list, or a scalar, or undef if an error
++# Warning: If called with %hash = slaveConnect(...), this will return an empty hash in error situations
+ # Cologne 2005
+ sub slaveConnect {
+ 
+@@ -3311,7 +3313,7 @@
+ 	unless ($remote) { 
+ 		logMessage"slaveConnect, ERROR, cannot connect to http daemon on $host ($NMIS::slaveTable{$host}{Host})\n";
+ 		print returnTime." slaveConnect: ERROR, cannot connect to http daemon on $host ($NMIS::slaveTable{$host}{Host})\n" if $NMIS::debug;
+-		return; 
++		return wantarray ? () : undef; 
+ 	}
+ 	$remote->autoflush(1);
+ 	print $remote "GET $url HTTP/1.0" . $BLANK;
+@@ -3328,7 +3330,7 @@
+ 	unless ($slave_connection) { 
+ 		logMessage "slaveConnect, ERROR, cannot find slave in connections.dat\n";
+ 		print returnTime." slaveConnect: ERROR, cannot find slave in connections.dat\n" if $NMIS::debug;
+-		return; 
++		return wantarray ? () : undef; 
+ 	}
+ 	my @cmd = $slave_connection->ssh_command("/usr/local/nagios/nmis/cgi-bin/connect.pl '".join("' '",@params)."'");
+ 	my $pid = open F, "-|", @cmd;
+@@ -3340,29 +3342,32 @@
+ 		$body =~ m/(\w+).*/s ;
+ 		if ( $1 eq "hash" )	{
+ 			%hash = eval $body;
+-			return (%hash);
++			return wantarray ? (%hash) : \%hash;
+ 		} elsif ($1 eq "array") {
+ 			@array = eval $body;
+-			return (@array);
++			return wantarray ? (@array) : \@array;
+ 		} elsif ($1 eq "scalar") {
+ 			$scalar = eval $body;
+ 			return ($scalar);
+ 		} else {
+ 			# error
+ 			if (  ($error) = ($line =~ m/<error>(.*)<\/error>/s)) { 
+-				logMessage"slaveConnect, ERROR msg from $host - $error\n";
++				logMessage("slaveConnect, ERROR msg from $host - $error\n");
+ 				print returnTime." slaveConnect: ERROR msg from $host - $error\n" if $NMIS::debug;
++				return wantarray ? () : undef; 
+ 			} else {
+-				logMessage"slaveConnect: ERROR, unknown data format $1\n" if $NMIS::debug;
++				logMessage("slaveConnect: ERROR, unknown data format $1\n");
+ 				print returnTime." slaveConnect: ERROR, unknown data format $1\n" if $NMIS::debug;
++				return wantarray ? () : undef; 
+ 			}
+ 		}
+ 	} else {
+-		logMessage"slaveConnect, ERROR, no data received from slave (see http errlog on $host)\n" if $NMIS::debug; 
++		logMessage("slaveConnect, ERROR, no data received from slave (see http errlog on $host)\n");
+ 		print returnTime." slaveConnect: ERROR, no data received from slave(see http errlog on $host)\n" if $NMIS::debug; 
++		return wantarray ? () : undef; 
+ 	}
+ 
+-	return;
++	return wantarray ? () : undef;
+ 
+ 	sub openSlaveSSL {
+ 		my $host = shift;

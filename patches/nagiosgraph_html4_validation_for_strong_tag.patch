@@ -1,0 +1,17 @@
+diff -ur nagiosgraph-0.8.2.original/show.cgi nagiosgraph-0.8.2/show.cgi
+--- nagiosgraph-0.8.2.original/show.cgi	2007-08-28 09:50:34.000000000 +0100
++++ nagiosgraph-0.8.2/show.cgi	2007-11-21 10:35:09.000000000 +0000
+@@ -277,7 +277,12 @@
+         my @gl = split ',', $g;
+         my $ds = shift @gl;
+         print div({-class => "graphs"}, img( {-src => "?$arg", -alt => "Graph"} ) );
+-        print div({-class => "graph_description"}, cite(strong($ds).br().small(join(", ", @gl))));
++        # <strong> requires data, otherwise is invalid HTML4. Ignore if $ds not set
++        my $ds_text = "";
++        $ds_text = strong($ds) if ($ds);
++        my $gl_text = "";
++        $gl_text = small(join(", ", @gl)) if (@gl);
++        print div({-class => "graph_description"}, cite($ds_text.br().$gl_text));
+       }
+     } else {
+       my $arg = join '&', "host=$h", "service=$s", "graph=$t",

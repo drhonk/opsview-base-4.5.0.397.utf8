@@ -1,0 +1,255 @@
+diff -ur nagios-2.5/cgi/status.c nagios-2.5.unacks/cgi/status.c
+--- nagios-2.5/cgi/status.c	2006-10-27 16:49:23.331243314 +0100
++++ nagios-2.5.unacks/cgi/status.c	2006-10-27 17:14:47.307101974 +0100
+@@ -775,17 +775,17 @@
+ 
+ 			if(temp_servicestatus->status==SERVICE_CRITICAL){
+ 				total_critical++;
+-				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->checks_enabled==TRUE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
++				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
+ 					problem_services_critical++;
+ 			        }
+ 			else if(temp_servicestatus->status==SERVICE_WARNING){
+ 				total_warning++;
+-				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->checks_enabled==TRUE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
++				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
+ 					problem_services_warning++;
+ 			        }
+ 			else if(temp_servicestatus->status==SERVICE_UNKNOWN){
+ 				total_unknown++;
+-				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->checks_enabled==TRUE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
++				if(temp_servicestatus->problem_has_been_acknowledged==FALSE && temp_servicestatus->notifications_enabled==TRUE && temp_servicestatus->scheduled_downtime_depth==0)
+ 					problem_services_unknown++;
+ 			        }
+ 			else if(temp_servicestatus->status==SERVICE_OK)
+@@ -995,12 +995,12 @@
+ 				total_up++;
+ 			else if(temp_hoststatus->status==HOST_DOWN){
+ 				total_down++;
+-				if(temp_hoststatus->problem_has_been_acknowledged==FALSE && temp_hoststatus->notifications_enabled==TRUE && temp_hoststatus->checks_enabled==TRUE && temp_hoststatus->scheduled_downtime_depth==0)
++				if(temp_hoststatus->problem_has_been_acknowledged==FALSE && temp_hoststatus->notifications_enabled==TRUE && temp_hoststatus->scheduled_downtime_depth==0)
+ 					problem_hosts_down++;
+ 			        }
+ 			else if(temp_hoststatus->status==HOST_UNREACHABLE){
+ 				total_unreachable++;
+-				if(temp_hoststatus->problem_has_been_acknowledged==FALSE && temp_hoststatus->notifications_enabled==TRUE && temp_hoststatus->checks_enabled==TRUE && temp_hoststatus->scheduled_downtime_depth==0)
++				if(temp_hoststatus->problem_has_been_acknowledged==FALSE && temp_hoststatus->notifications_enabled==TRUE && temp_hoststatus->scheduled_downtime_depth==0)
+ 					problem_hosts_unreachable++;
+ 			        }
+ 
+@@ -3427,6 +3427,7 @@
+ 	int total_down=0;
+ 	int total_unreachable=0;
+ 	int total_pending=0;
++	int total_unhandled=0;
+ 	hoststatus *temp_hoststatus;
+ 	host *temp_host;
+ 
+@@ -3453,13 +3454,20 @@
+ 
+ 		if(temp_hoststatus->status==HOST_UP)
+ 			total_up++;
+-		else if(temp_hoststatus->status==HOST_DOWN)
++		else if(temp_hoststatus->status==HOST_DOWN) {
+ 			total_down++;
+-		else if(temp_hoststatus->status==HOST_UNREACHABLE)
++			/* This logic is same as tac.c, so numbers should match */
++			if (! (temp_hoststatus->scheduled_downtime_depth>0 || temp_hoststatus->problem_has_been_acknowledged==TRUE ))
++				total_unhandled++;
++			}
++		else if(temp_hoststatus->status==HOST_UNREACHABLE) {
+ 			total_unreachable++;
++			if (! (temp_hoststatus->scheduled_downtime_depth>0 || temp_hoststatus->problem_has_been_acknowledged==TRUE ))
++				total_unhandled++;
++			}
+ 		else
+ 			total_pending++;
+-	        }
++		}
+ 
+ 	printf("<TABLE BORDER=0>\n");
+ 
+@@ -3471,6 +3479,8 @@
+ 		printf("<TR><TD CLASS='miniStatusUNREACHABLE'><A HREF='%s?hostgroup=%s&style=detail&hoststatustypes=%d&hostprops=%lu'>%d UNREACHABLE</A></TD></TR>\n",STATUS_CGI,url_encode(temp_hostgroup->group_name),HOST_UNREACHABLE,host_properties,total_unreachable);
+ 	if(total_pending>0)
+ 		printf("<TR><TD CLASS='miniStatusPENDING'><A HREF='%s?hostgroup=%s&style=detail&hoststatustypes=%d&hostprops=%lu'>%d PENDING</A></TD></TR>\n",STATUS_CGI,url_encode(temp_hostgroup->group_name),HOST_PENDING,host_properties,total_pending);
++	if(total_unhandled>0)
++		printf("<TR><TD CLASS='miniStatusDOWN'><A HREF='%s?hostgroup=all&style=hostdetail&hoststatustypes=%d&hostprops=%d'>(%d UNHANDLED)</A></TD></TR>\n",STATUS_CGI,HOST_DOWN|HOST_UNREACHABLE,HOST_NO_SCHEDULED_DOWNTIME|HOST_STATE_UNACKNOWLEDGED,total_unhandled);
+ 
+ 	printf("</TABLE>\n");
+ 
+@@ -3489,6 +3499,7 @@
+ 	int total_unknown=0;
+ 	int total_critical=0;
+ 	int total_pending=0;
++	int total_unhandled=0;
+ 	servicestatus *temp_servicestatus;
+ 	hoststatus *temp_hoststatus;
+ 	host *temp_host;
+@@ -3527,13 +3538,23 @@
+ 		if(passes_service_properties_filter(temp_servicestatus)==FALSE)
+ 			continue;
+ 
+-		if(temp_servicestatus->status==SERVICE_CRITICAL)
++		if(temp_servicestatus->status==SERVICE_CRITICAL) {
+ 			total_critical++;
+-		else if(temp_servicestatus->status==SERVICE_WARNING)
++			/* Same logic as tac.c, so numbers should match */
++			if (! (temp_hoststatus->status==HOST_DOWN || temp_hoststatus->status==HOST_UNREACHABLE || 
++				temp_servicestatus->scheduled_downtime_depth>0 || temp_servicestatus->problem_has_been_acknowledged==TRUE ))
++				total_unhandled++;
++		} else if(temp_servicestatus->status==SERVICE_WARNING) {
+ 			total_warning++;
+-		else if(temp_servicestatus->status==SERVICE_UNKNOWN)
++			if (! (temp_hoststatus->status==HOST_DOWN || temp_hoststatus->status==HOST_UNREACHABLE || 
++				temp_servicestatus->scheduled_downtime_depth>0 || temp_servicestatus->problem_has_been_acknowledged==TRUE ))
++				total_unhandled++;
++		} else if(temp_servicestatus->status==SERVICE_UNKNOWN) {
+ 			total_unknown++;
+-		else if(temp_servicestatus->status==SERVICE_OK)
++			if (! (temp_hoststatus->status==HOST_DOWN || temp_hoststatus->status==HOST_UNREACHABLE || 
++				temp_servicestatus->scheduled_downtime_depth>0 || temp_servicestatus->problem_has_been_acknowledged==TRUE ))
++				total_unhandled++;
++		} else if(temp_servicestatus->status==SERVICE_OK)
+ 			total_ok++;
+ 		else if(temp_servicestatus->status==SERVICE_PENDING)
+ 			total_pending++;
+@@ -3554,6 +3575,8 @@
+ 		printf("<TR><TD CLASS='miniStatusCRITICAL'><A HREF='%s?hostgroup=%s&style=detail&servicestatustypes=%d&hoststatustypes=%d&serviceprops=%lu&hostprops=%lu'>%d CRITICAL</A></TD></TR>\n",STATUS_CGI,url_encode(temp_hostgroup->group_name),SERVICE_CRITICAL,host_status_types,service_properties,host_properties,total_critical);
+ 	if(total_pending>0)
+ 		printf("<TR><TD CLASS='miniStatusPENDING'><A HREF='%s?hostgroup=%s&style=detail&servicestatustypes=%d&hoststatustypes=%d&serviceprops=%lu&hostprops=%lu'>%d PENDING</A></TD></TR>\n",STATUS_CGI,url_encode(temp_hostgroup->group_name),SERVICE_PENDING,host_status_types,service_properties,host_properties,total_pending);
++	if(total_unhandled>0)
++		printf("<TR><TD CLASS='miniStatusCRITICAL'><A HREF='%s?hostgroup=%s&style=detail&servicestatustypes=%d&hoststatustypes=%d&serviceprops=%lu&hostprops=%lu'>(%d UNHANDLED)</A></TD></TR>\n",STATUS_CGI,url_encode(temp_hostgroup->group_name),SERVICE_CRITICAL|SERVICE_UNKNOWN|SERVICE_WARNING,HOST_UP|HOST_PENDING,SERVICE_NO_SCHEDULED_DOWNTIME|SERVICE_STATE_UNACKNOWLEDGED,host_properties,total_unhandled);
+ 
+ 	printf("</TABLE>\n");
+ 
+diff -ur nagios-2.5/cgi/tac.c nagios-2.5.unacks/cgi/tac.c
+--- nagios-2.5/cgi/tac.c	2006-03-21 21:31:47.000000000 +0000
++++ nagios-2.5.unacks/cgi/tac.c	2006-10-27 16:43:54.505060580 +0100
+@@ -148,7 +148,6 @@
+ int hosts_pending=0;
+ int hosts_pending_disabled=0;
+ int hosts_up_disabled=0;
+-int hosts_up_unacknowledged=0;
+ int hosts_up=0;
+ int hosts_down_scheduled=0;
+ int hosts_down_acknowledged=0;
+@@ -164,7 +163,6 @@
+ int services_pending=0;
+ int services_pending_disabled=0;
+ int services_ok_disabled=0;
+-int services_ok_unacknowledged=0;
+ int services_ok=0;
+ int services_warning_host_problem=0;
+ int services_warning_scheduled=0;
+@@ -446,10 +444,10 @@
+ 		problem=TRUE;
+ 
+ 		if(temp_servicestatus->status==SERVICE_OK){
++			/*
+ 			if(temp_servicestatus->checks_enabled==FALSE)
+ 				services_ok_disabled++;
+-			else
+-				services_ok_unacknowledged++;
++			*/
+ 			services_ok++;
+ 		        }
+ 
+@@ -467,10 +465,12 @@
+ 				services_warning_acknowledged++;
+ 				problem=FALSE;
+ 			        }
++			/*
+ 			if(temp_servicestatus->checks_enabled==FALSE){
+ 				services_warning_disabled++;
+ 				problem=FALSE;
+ 			        }
++			*/
+ 			if(problem==TRUE)
+ 				services_warning_unacknowledged++;
+ 			services_warning++;
+@@ -490,10 +490,12 @@
+ 				services_unknown_acknowledged++;
+ 				problem=FALSE;
+ 			        }
++			/*
+ 			if(temp_servicestatus->checks_enabled==FALSE){
+ 				services_unknown_disabled++;
+ 				problem=FALSE;
+ 			        }
++			*/
+ 			if(problem==TRUE)
+ 				services_unknown_unacknowledged++;
+ 			services_unknown++;
+@@ -513,18 +515,22 @@
+ 				services_critical_acknowledged++;
+ 				problem=FALSE;
+ 			        }
++			/*
+ 			if(temp_servicestatus->checks_enabled==FALSE){
+ 				services_critical_disabled++;
+ 				problem=FALSE;
+ 			        }
++			*/
+ 			if(problem==TRUE)
+ 				services_critical_unacknowledged++;
+ 			services_critical++;
+ 		        }
+ 
+ 		else if(temp_servicestatus->status==SERVICE_PENDING){
++			/*
+ 			if(temp_servicestatus->checks_enabled==FALSE)
+ 				services_pending_disabled++;
++			*/
+ 			services_pending++;
+ 		        }
+ 
+@@ -605,10 +611,10 @@
+ 		problem=TRUE;
+ 
+ 		if(temp_hoststatus->status==HOST_UP){
++			/*
+ 			if(temp_hoststatus->checks_enabled==FALSE)
+ 				hosts_up_disabled++;
+-			else
+-				hosts_up_unacknowledged++;
++			*/
+ 			hosts_up++;
+ 		        }
+ 
+@@ -621,10 +627,12 @@
+ 				hosts_down_acknowledged++;
+ 				problem=FALSE;
+ 			        }
++			/*
+ 			if(temp_hoststatus->checks_enabled==FALSE){
+ 				hosts_down_disabled++;
+ 				problem=FALSE;
+ 			        }
++			*/
+ 			if(problem==TRUE)
+ 				hosts_down_unacknowledged++;
+ 			hosts_down++;
+@@ -639,18 +647,22 @@
+ 				hosts_unreachable_acknowledged++;
+ 				problem=FALSE;
+ 			        }
++			/*
+ 			if(temp_hoststatus->checks_enabled==FALSE){
+ 				hosts_unreachable_disabled++;
+ 				problem=FALSE;
+ 			        }
++			*/
+ 			if(problem==TRUE)
+ 				hosts_unreachable_unacknowledged++;
+ 			hosts_unreachable++;
+ 		        }
+ 		
+ 		else if(temp_hoststatus->status==HOST_PENDING){
++			/*
+ 			if(temp_hoststatus->checks_enabled==FALSE)
+ 				hosts_pending_disabled++;
++			*/
+ 			hosts_pending++;
+ 		        }
+ 

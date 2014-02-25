@@ -1,0 +1,124 @@
+diff -ur nagios-plugins-trunk-200804011200.orig/configure.in nagios-plugins-trunk-200804011200/configure.in
+--- nagios-plugins-trunk-200804011200.orig/configure.in	Wed Apr  9 16:21:55 2008
++++ nagios-plugins-trunk-200804011200/configure.in	Thu Apr 10 18:25:34 2008
+@@ -82,6 +82,7 @@
+ 
+ EXTRAS=
+ EXTRAS_ROOT=
++EXTRAS_ROOT_SCRIPTS=
+ dnl PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/etc:/usr/local/bin:/usr/local/sbin:$PATH
+ 
+ LDFLAGS="$LDFLAGS -L."
+@@ -536,14 +537,16 @@
+         ac_cv_ps_varlist="[procstat,&procuid,&procpid,&procppid,&procvsz,&procrss,&procpcpu,procprog,&pos]"
+         ac_cv_ps_cols=9
+         AC_MSG_RESULT([using nagios-plugins internal ps command (pst3) for solaris])
+-	if test `isainfo -b` = 64 ; then
+-		PST3CFLAGS="-m64"
+-		AC_SUBST(PST3CFLAGS)
+-		AC_MSG_NOTICE([using 64bit pst3])	
+-	else
+-		AC_MSG_NOTICE([using 32bit pst3])
+-	fi
+-        EXTRAS_ROOT="$EXTRAS_ROOT pst3"
++dnl	if test `isainfo -b` = 64 ; then
++dnl		PST3CFLAGS="-m64"
++dnl		AC_SUBST(PST3CFLAGS)
++dnl		AC_MSG_NOTICE([using 64bit pst3])	
++dnl	else
++dnl		AC_MSG_NOTICE([using 32bit pst3])
++dnl	fi
++	PST3CFLAGS=""
++        EXTRAS_ROOT="$EXTRAS_ROOT pst3_32 pst3_64"
++        EXTRAS_ROOT_SCRIPTS="$EXTRAS_ROOT_SCRIPTS pst3"
+ 
+ dnl Removing this for the moment - Ton
+ dnl Using /usr/ucb/ps on Solaris systems, to avoid truncation
+@@ -1522,6 +1525,7 @@
+ 
+ AC_SUBST(EXTRAS)
+ AC_SUBST(EXTRAS_ROOT)
++AC_SUBST(EXTRAS_ROOT_SCRIPTS)
+ AC_SUBST(EXTRA_NETOBJS)
+ AC_SUBST(DEPLIBS)
+ 
+@@ -1571,7 +1575,15 @@
+ 
+ dnl Some helpful common compile errors checked here
+ if test "$ac_cv_uname_s" = 'SunOS' -a \( "x$ac_cv_prog_ac_ct_AR" = "x" -o "$ac_cv_prog_ac_ct_AR" = 'false' \) ; then
+-	AC_MSG_ERROR(No ar found for Solaris - is /usr/ccs/bin in PATH?)
++	AC_MSG_CHECKING(for ar)
++	AC_PATH_PROG(PATH_TO_AR,ar)
++	if test -n "$PATH_TO_AR"; then
++		AC_MSG_ERROR(No ar found for Solaris - is /usr/ccs/bin in PATH?)
++	else
++		AC_MSG_RESULT([$PATH_TO_AR])
++		ac_cv_prog_AR=$PATH_TO_AR
++		ac_cv_prog_ac_ct_AR=$PATH_TO_AR
++	fi
+ fi
+ 
+ AC_OUTPUT(
+diff -ur nagios-plugins-trunk-200804011200.orig/plugins-root/Makefile.am nagios-plugins-trunk-200804011200/plugins-root/Makefile.am
+--- nagios-plugins-trunk-200804011200.orig/plugins-root/Makefile.am	Wed Apr  9 16:23:02 2008
++++ nagios-plugins-trunk-200804011200/plugins-root/Makefile.am	Thu Apr 10 17:13:19 2008
+@@ -4,6 +4,8 @@
+ 
+ INCLUDES = -I.. -I$(top_srcdir)/lib -I$(top_srcdir)/gl -I$(top_srcdir)/intl -I$(top_srcdir)/plugins @SSLINCLUDE@
+ 
++SUFFIXES = .sh .c
++
+ localedir = $(datadir)/locale
+ DEFS = -DLOCALEDIR=\"$(localedir)\" @DEFS@
+ # Don't add LTLIBINTL to all, as pst3 doesn't need it
+@@ -10,11 +12,17 @@
+ #LIBS = @LTLIBINTL@ @LIBS@
+ 
+ noinst_PROGRAMS = check_dhcp check_icmp @EXTRAS_ROOT@
++noinst_SCRIPTS = @EXTRAS_ROOT_SCRIPTS@
+ 
+-EXTRA_PROGRAMS = pst3
++pst3_SRC = pst3.c
+ 
+-EXTRA_DIST = pst3.c
++EXTRA_SCRIPTS = pst3
++EXTRA_PROGRAMS = pst3_32 pst3_64
++pst3_32_SOURCES = $(pst3_SRC)
++pst3_64_SOURCES = $(pst3_SRC)
+ 
++EXTRA_DIST = $(pst3_SRC) pst3.sh
++
+ BASEOBJS = ../plugins/utils.o ../lib/libnagiosplug.a ../gl/libgnu.a
+ NETOBJS = ../plugins/netutils.o $(BASEOBJS) $(EXTRA_NETOBJS)
+ NETLIBS = $(NETOBJS) $(SOCKETLIBS)
+@@ -44,7 +52,7 @@
+ install-root: $(noinst_PROGRAMS)
+ 	@$(INSTALL_SUID)
+ 
+-install-exec-local: $(noinst_PROGRAMS)
++install-exec-local: $(noinst_PROGRAMS) $(noinst_SCRIPTS)
+ 	@TMPFILE=$(DESTDIR)$(libexecdir)/.setuid-$$$$; \
+ 	rm -f $$TMPFILE; \
+ 	echo > $$TMPFILE; \
+@@ -69,9 +77,18 @@
+ check_dhcp_LDADD = @LTLIBINTL@ $(NETLIBS)
+ check_icmp_LDADD = @LTLIBINTL@ $(NETLIBS) $(SOCKETLIBS)
+ # -m64 needed at compiler and linker phase
+-pst3_CFLAGS = @PST3CFLAGS@
+-pst3_LDFLAGS = @PST3CFLAGS@
+-pst3_LDADD = -lkvm
++pst3_32_CFLAGS = -m32
++pst3_32_LDFLAGS = -m32
++pst3_32_LDADD = -lkvm
++pst3_64_CFLAGS = -m64
++pst3_64_LDFLAGS = -m64
++pst3_64_LDADD = -lkvm
+ 
+ check_dhcp_DEPENDENCIES = check_dhcp.c $(NETOBJS) $(DEPLIBS) 
+ check_icmp_DEPENDENCIES = check_icmp.c $(NETOBJS)
++
++.sh :
++	$(AWK) -f ../plugins-scripts/subst $< > $@
++	chmod +x $@
++
++CLEANFILES = $(EXTRA_PROGRAMS) $(EXTRA_SCRIPTS)

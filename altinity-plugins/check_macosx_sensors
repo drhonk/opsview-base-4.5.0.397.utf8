@@ -1,0 +1,182 @@
+#!/usr/bin/perl
+
+#  Copyright (C) 2003-2013 Opsview Limited. All rights reserved
+#  W: http://www.opsview.com/
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+use Getopt::Std;
+use IO::Socket;
+
+$script         = "check_sensor";
+$script_version = "1.0 osx";
+
+$warning     = 99;
+$critical    = 100;
+$sensorclass = "temperature";
+
+$status = 0;
+$hits   = 0;    #Used to track how many sensors we've detected
+
+# Do we have enough information?
+if ( @ARGV < 1 ) {
+    print "Too few arguments\n";
+    usage();
+}
+
+getopts("h:w:c:s:");
+if ($opt_h) {
+    usage();
+}
+if ($opt_w) {
+    $warning = $opt_w;
+}
+if ($opt_c) {
+    $critical = $opt_c;
+}
+if ($opt_s) {
+    $sensorclass = $opt_s;
+}
+
+@ioreg = `ioreg -n IOHWSensor -b`;
+
+$currentclassinstance = 0;
+$classdata            = "";
+my $counter = 0;
+$trigger = 0;
+foreach $line (@ioreg) {
+    if ( $line =~ /<class/ ) {
+        $currentclassinstance++;
+        $classdata = $line;
+        ( $null,      $classdata ) = split( /</, $classdata );
+        ( $classdata, $null )      = split( /,/, $classdata );
+        $classdata =~ s/class//g;
+        $classdata =~ s/ //g;
+
+        #print "$currentclassinstance: $classdata\n";
+    }
+    elsif ( $classdata eq "IOHWSensor" ) {
+        $trigger = $currentclassinstance;
+        $trigger++;
+
+        #print "$line";
+        if ( $line =~ /"type"/ ) {
+            $type = $line;
+            $type =~ s/\"//g;
+            $type =~ s/type =//g;
+            $type =~ s/\|//g;
+            $type =~ s/ //g;
+            $type =~ s/\n//g;
+
+            #print "$type\n";
+        }
+        if ( $line =~ /"current-value"/ ) {
+            $value = $line;
+            $value =~ s/\"//g;
+            $value =~ s/current-value =//g;
+            $value =~ s/\|//g;
+            $value =~ s/ //g;
+            $value =~ s/\n//g;
+
+            #print "$value\n";
+        }
+        if ( $line =~ /"location"/ ) {
+            $location = $line;
+            $location =~ s/\"//g;
+            $location =~ s/location =//g;
+            $location =~ s/\|//g;
+
+            #$location =~ s/ //g;
+            $location =~ s/\n//g;
+
+            #$string = shift;
+            $location =~ s/^\s+//;    # Removes whitespace
+            $location =~ s/\s+$//;    # from start and end of string
+                                      #print "$location\n";
+        }
+    }
+    if ( $trigger == $currentclassinstance ) {
+        if ( $type eq $sensorclass ) {
+            if ( $type eq "temperature" ) {
+                $value = $value / 65536;
+                print "($location: $value C) ";
+                evalstatus( $type, $value );
+            }
+            if ( $type eq "fanspeed" ) {
+                $value = $value / 65536;
+                print "($location $value RPM) ";
+                evalstatus( $type, $value );
+            }
+        }
+    }
+}
+
+sub evalstatus {
+    my $type      = $_[0];
+    my $value     = $_[1];
+    my $newstatus = 0;
+
+    $hits++;    # Keeps track of how many sensors we've tested
+
+    if ( $type eq "temperature" ) {
+        if ( $value >= $critical ) {
+            $newstatus = 2;
+        }
+        elsif ( $value >= $warning ) {
+            $newstatus = 1;
+        }
+    }
+    if ( $type eq "fanspeed" ) {
+        if ( $value < $critical ) {
+            $newstatus = 2;
+        }
+        elsif ( $value < $warning ) {
+            $newstatus = 1;
+        }
+    }
+
+    if ( $newstatus > $status ) {
+        $status = $newstatus;
+    }
+}
+
+if ( $hits < 1 ) {
+    print "No sensors found on this device!\n";
+    $status = 3;
+}
+else {
+    print "\n";
+}
+
+exit $status;
+
+sub usage {
+    print << "USAGE";
+
+$script v$script_version
+
+Returns memory utilisation.
+
+Usage: $script -w <warning threshold> -c <critical threshold>
+Options: -w 		Warning threshold (integer)
+         -c 		Critical threshold (integer)
+		 -s			Sensor class: temperature (default), fanspeed
+
+
+		 }
+
+USAGE
+    exit 1;
+}

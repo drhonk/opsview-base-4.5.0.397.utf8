@@ -1,0 +1,37 @@
+#!/bin/ksh
+#
+# Nagios NRPE startup script
+#
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/bcs/bin:/usr/local/nagios/bin; export PATH
+#
+# Start/stop nagios
+NAGIOS=/usr/local/nagios
+#
+case "$1" in
+
+'start')
+	if [ -x $NAGIOS/bin/nrpe ]; then
+		$NAGIOS/bin/nrpe -c $NAGIOS/etc/nrpe.cfg -d
+	else
+		echo "ERROR: Could not execute nrpe!"
+	fi
+	;;
+
+'stop')
+	pkill nrpe
+	sleep 1
+	pkill -9 nrpe
+	;;
+
+'restart')
+	$0 stop
+	sleep 1
+	$0 start
+	;;
+
+*)
+   echo "Usage: $0 { start | stop }"
+   ;;
+
+esac

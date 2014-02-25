@@ -1,0 +1,313 @@
+Index: xdata/xodtemplate.c
+===================================================================
+--- xdata/xodtemplate.c	(revision 2581)
++++ xdata/xodtemplate.c	(working copy)
+@@ -116,12 +116,17 @@
+ /* xodtemplate id / object counter */
+ static struct object_count xodcount;
+ 
+-#ifndef NSCGI
+ /* reusable bitmaps for expanding objects */
+ static bitmap *host_map = NULL, *contact_map = NULL;
+-#endif
+ static bitmap *service_map = NULL, *parent_map = NULL;
+ 
++/* These variables are defined in base/utils.c, but as CGIs do not need these
++   we just fake the values for this file */
++#ifdef NSCGI
++int use_precached_objects = TRUE;
++int use_regexp_matches = FALSE;
++int use_true_regexp_matching = FALSE;
++#endif
+ 
+ /*
+  * simple inheritance macros. o = object, t = template, v = variable
+@@ -369,6 +374,7 @@
+ 		/* cleanup some additive inheritance stuff... */
+ 		xodtemplate_clean_additive_strings();
+ 		}
++#endif
+ 
+ 	/* do the meat and potatoes stuff... */
+ 	host_map = bitmap_create(xodcount.hosts);
+@@ -380,16 +386,21 @@
+ 
+ 	if(result == OK)
+ 		result = xodtemplate_recombobulate_contactgroups();
++#ifndef NSCGI
+ 	if(test_scheduling == TRUE)
+ 		gettimeofday(&tv[3], NULL);
+ 	timing_point("Done recombobulating contactgroups\n");
++#endif
+ 
+ 	if(result == OK)
+ 		result = xodtemplate_recombobulate_hostgroups();
++#ifndef NSCGI
+ 	if(test_scheduling == TRUE)
+ 		gettimeofday(&tv[4], NULL);
+ 	timing_point("Done recombobulating hostgroups\n");
++#endif
+ 
++#ifndef NSCGI
+ 	if(use_precached_objects == FALSE) {
+ 		if(result == OK)
+ 			result = xodtemplate_duplicate_services();
+@@ -397,6 +408,7 @@
+ 			gettimeofday(&tv[5], NULL);
+ 		timing_point("Created %u services (dupes possible)\n", xodcount.services);
+ 		}
++#endif
+ 
+ 	/* now we have an accurate service count */
+ 	service_map = bitmap_create(xodcount.services);
+@@ -407,6 +419,7 @@
+ 
+ 	if(result == OK)
+ 		result = xodtemplate_recombobulate_servicegroups();
++#ifndef NSCGI
+ 	if(test_scheduling == TRUE)
+ 		gettimeofday(&tv[6], NULL);
+ 	timing_point("Done recombobulating servicegroups\n");
+@@ -5942,6 +5955,7 @@
+ 
+ 
+ 
++#endif
+ 
+ /******************************************************************/
+ /*************** OBJECT RECOMBOBULATION FUNCTIONS *****************/
+@@ -6512,7 +6526,6 @@
+ 	return OK;
+ 	}
+ 
+-#endif
+ 
+ 
+ 
+@@ -6547,6 +6560,7 @@
+ 	return skiplist_find_first(xobject_template_skiplists[COMMAND_SKIPLIST], &temp_command, NULL);
+ 	}
+ 
++#endif
+ 
+ /* finds a specific contactgroup object */
+ xodtemplate_contactgroup *xodtemplate_find_contactgroup(char *name) {
+@@ -6768,7 +6782,6 @@
+ 	return skiplist_find_first(xobject_template_skiplists[SERVICE_SKIPLIST], &temp_service, NULL);
+ 	}
+ 
+-#endif
+ /* finds a specific service object by its REAL name, not its TEMPLATE name */
+ xodtemplate_service *xodtemplate_find_real_service(char *host_name, char *service_description) {
+ 	xodtemplate_service temp_service;
+@@ -8556,7 +8569,6 @@
+ 
+ 
+ 
+-#ifdef NSCORE
+ /* adds a member to a list */
+ int xodtemplate_add_member_to_memberlist(xodtemplate_memberlist **list, char *name1, char *name2) {
+ 	xodtemplate_memberlist *temp_item = NULL;
+@@ -8659,14 +8671,12 @@
+ 
+ 	return;
+ 	}
+-#endif
+ 
+ 
+ /******************************************************************/
+ /********************** UTILITY FUNCTIONS *************************/
+ /******************************************************************/
+ 
+-#ifdef NSCORE
+ 
+ /* expands contacts */
+ int xodtemplate_expand_contacts(objectlist **ret, bitmap *reject_map, char *contacts, int _config_file, int _start_line) {
+@@ -8796,6 +8806,7 @@
+ 	}
+ 
+ 
++#ifdef NSCORE
+ 
+ /*
+  * expands a comma-delimited list of hostgroups and/or hosts to
+@@ -8859,6 +8870,7 @@
+ 	return ret;
+ 	}
+ 
++#endif
+ 
+ /*
+  * expands hostgroups.
+@@ -9240,7 +9252,6 @@
+ 
+ 	return OK;
+ 	}
+-#endif
+ 
+ /* expands services (host name is not expanded) */
+ int xodtemplate_expand_services(objectlist **list, bitmap *reject_map, char *host_name, char *services, int _config_file, int _start_line) {
+@@ -9452,7 +9463,6 @@
+ 	return OK;
+ 	}
+ 
+-#ifndef NSCGI
+ /* returns a comma-delimited list of hostgroup names */
+ char * xodtemplate_process_hostgroup_names(char *hostgroups, int _config_file, int _start_line) {
+ 	xodtemplate_memberlist *temp_list = NULL;
+@@ -9979,6 +9989,7 @@
+ 	return OK;
+ 	}
+ 
++#ifndef NSCGI
+ 
+ /******************************************************************/
+ /****************** ADDITIVE INHERITANCE STUFF ********************/
+Index: xdata/xodtemplate.h
+===================================================================
+--- xdata/xodtemplate.h	(revision 2581)
++++ xdata/xodtemplate.h	(working copy)
+@@ -749,7 +749,6 @@
+ int xodtemplate_process_config_dir(char *, int);            /* process all files in a specific config directory */
+ 
+ int xodtemplate_expand_services(objectlist **, bitmap *, char *, char *, int, int);
+-#ifdef NSCORE
+ int xodtemplate_expand_contactgroups(objectlist **, bitmap *, char *, int, int);
+ int xodtemplate_expand_contacts(objectlist **, bitmap *, char *, int, int);
+ 
+@@ -771,7 +770,6 @@
+ int xodtemplate_add_member_to_memberlist(xodtemplate_memberlist **, char *, char *);
+ int xodtemplate_free_memberlist(xodtemplate_memberlist **);
+ void xodtemplate_remove_memberlist_item(xodtemplate_memberlist *, xodtemplate_memberlist **);
+-#endif
+ 
+ 
+ int xodtemplate_begin_object_definition(char *, int, int, int);
+@@ -809,11 +807,13 @@
+ int xodtemplate_duplicate_servicedependency(xodtemplate_servicedependency *, char *, char *, char *, char *);
+ int xodtemplate_duplicate_hostextinfo(xodtemplate_hostextinfo *, char *);
+ int xodtemplate_duplicate_serviceextinfo(xodtemplate_serviceextinfo *, char *);
++#endif
+ 
+ int xodtemplate_recombobulate_contactgroups(void);
+ int xodtemplate_recombobulate_hostgroups(void);
+ int xodtemplate_recombobulate_servicegroups(void);
+ 
++#ifdef NSCORE
+ int xodtemplate_resolve_timeperiod(xodtemplate_timeperiod *);
+ int xodtemplate_resolve_command(xodtemplate_command *);
+ int xodtemplate_resolve_contactgroup(xodtemplate_contactgroup *);
+@@ -832,6 +832,7 @@
+ int xodtemplate_merge_extinfo_ojects(void);
+ int xodtemplate_merge_host_extinfo_object(xodtemplate_host *, xodtemplate_hostextinfo *);
+ int xodtemplate_merge_service_extinfo_object(xodtemplate_service *, xodtemplate_serviceextinfo *);
++#endif
+ 
+ xodtemplate_timeperiod *xodtemplate_find_timeperiod(char *);
+ xodtemplate_command *xodtemplate_find_command(char *);
+@@ -857,7 +858,6 @@
+ int xodtemplate_get_inherited_string(char *, char **, char *, char **);
+ int xodtemplate_clean_additive_string(char **);
+ int xodtemplate_clean_additive_strings(void);
+-#endif
+ 
+ int xodtemplate_register_timeperiod(xodtemplate_timeperiod *);
+ int xodtemplate_get_time_ranges(char *, unsigned long *, unsigned long *);
+Index: common/objects.c
+===================================================================
+--- common/objects.c	(revision 2581)
++++ common/objects.c	(working copy)
+@@ -132,6 +132,7 @@
+ }
+ 
+ 
++/* Host/Service dependencies are not visible in Nagios CGIs, so we exclude them */
+ #ifndef NSCGI
+ unsigned int host_services_value(host *h) {
+ 	servicesmember *sm;
+@@ -168,10 +169,13 @@
+ 	ret = strcmp(a->host_name, b->host_name);
+ 	return ret ? ret : strcmp(a->dependent_host_name, b->dependent_host_name);
+ 	}
++#endif
+ 
+ static void post_process_object_config(void) {
++	unsigned int i;
++#ifndef NSCGI
+ 	objectlist *list;
+-	unsigned int i, slot;
++	unsigned int slot;
+ 
+ 	if(hostdependency_ary)
+ 		free(hostdependency_ary);
+@@ -204,6 +208,8 @@
+ 	qsort(hostdependency_ary, num_objects.hostdependencies, sizeof(hostdependency *), cmp_hdep);
+ 	timing_point("Done post-processing host dependencies\n");
+ 
++#endif
++
+ 	timeperiod_list = timeperiod_ary ? *timeperiod_ary : NULL;
+ 	command_list = command_ary ? *command_ary : NULL;
+ 	hostgroup_list = hostgroup_ary ? *hostgroup_ary : NULL;
+@@ -214,8 +220,29 @@
+ 	service_list = service_ary ? *service_ary : NULL;
+ 	hostescalation_list = hostescalation_ary ? *hostescalation_ary : NULL;
+ 	serviceescalation_list = serviceescalation_ary ? *serviceescalation_ary : NULL;
++
++/* FIXME: This setups the children relationship per host. This appears to be done in
++   pre_flight_config_check, but this is not called via CGIs. */
++#ifdef NSCGI
++	for(i = 0; i < num_objects.hosts; i++) {
++			host *temp_host, *temp_host2;
++			hostsmember *temp_hostsmember = NULL;
++			temp_host = host_ary[i];
++			for(temp_hostsmember = temp_host->parent_hosts; temp_hostsmember != NULL; temp_hostsmember = temp_hostsmember->next) {
++
++				if((temp_host2 = find_host(temp_hostsmember->host_name)) == NULL) {
++					// Shouldn't happen
++					}
++				else {
++					/* add a reverse (child) link to make searches faster later on */
++					add_child_link_to_host(temp_host2, temp_host);
++					}
++
++				}
++
++			}
++#endif
+ }
+-#endif
+ 
+ /* simple state-name helpers, nifty to have all over the place */
+ const char *service_state_name(int state)
+@@ -270,9 +297,7 @@
+ 		return ERROR;
+ #endif
+ 	/* handle any remaining config mangling */
+-#ifndef NSCGI
+ 	post_process_object_config();
+-#endif
+ 	timing_point("Done post-processing configuration\n");
+ 
+ 	return result;
+@@ -2253,7 +2278,19 @@
+ /* returns a count of the immediate children for a given host */
+ /* NOTE: This function is only used by the CGIS */
+ int number_of_immediate_child_hosts(host *hst) {
+-	return hst == NULL ? 0 : hostsmember_elements(hst->child_hosts);
++	int children=0;
++	host *temp_host=NULL;
++	if (hst == NULL) {
++		/* Special case for main Nagios process in statusmap.c */
++		for(temp_host=host_list;temp_host!=NULL;temp_host=temp_host->next){
++			if(is_host_immediate_child_of_host(hst,temp_host)==TRUE)
++				children++;
++			}
++		}
++	else {
++		children = hostsmember_elements(hst->child_hosts);
++		}
++	return children;
+ 	}
+ 
+ 

@@ -1,0 +1,19 @@
+#
+# $Id$
+#
+PKG=ALTovagent
+NAME=Opsview agent package
+DESC=Opsview is a versatile network monitoring tool based upon Nagios(tm)
+# VERSION= # provided at 'pkgmk' stage
+BASEDIR=/
+# ARCH= # provided at 'pkgmk' stage
+CLASSES=none
+CATEGORY=application,monitoring
+VENDOR=Opsview Limited
+EMAIL=http://opsview.org/support
+HOTLINE=http://www.opsview.com
+ISTATES=s S 1 2 3
+RSTATES=s S 1 2 3
+MAXINST=2
+SUNW_PKGVERS=5.10
+SUNW_PRODNAME=Opsview

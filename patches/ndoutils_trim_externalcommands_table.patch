@@ -1,0 +1,75 @@
+diff -ur ndoutils-1.4b3.original/config/ndo2db.cfg ndoutils-1.4b3/config/ndo2db.cfg
+--- ndoutils-1.4b3.original/config/ndo2db.cfg	2007-01-08 00:35:58.000000000 +0000
++++ ndoutils-1.4b3/config/ndo2db.cfg	2007-05-10 16:11:14.000000000 +0100
+@@ -122,6 +122,8 @@
+ 
+ # Keep event handlers for 31 days
+ max_eventhandlers_age=44640
+
++# Keep external commands for 31 days
++max_externalcommands_age=44640
+
+
+
+diff -ur ndoutils-1.4b3.original/include/db.h ndoutils-1.4b3/include/db.h
+--- ndoutils-1.4b3.original/include/db.h	2007-01-08 00:35:54.000000000 +0000
++++ ndoutils-1.4b3/include/db.h	2007-05-10 16:09:14.000000000 +0100
+@@ -25,6 +25,7 @@
+ 	unsigned long max_servicechecks_age;
+ 	unsigned long max_hostchecks_age;
+ 	unsigned long max_eventhandlers_age;
++	unsigned long max_externalcommands_age;
+         }ndo2db_dbconfig;
+ 
+ /*************** DB server types ***************/
+diff -ur ndoutils-1.4b3.original/include/ndo2db.h ndoutils-1.4b3/include/ndo2db.h
+--- ndoutils-1.4b3.original/include/ndo2db.h	2007-01-08 00:35:54.000000000 +0000
++++ ndoutils-1.4b3/include/ndo2db.h	2007-05-10 16:09:49.000000000 +0100
+@@ -80,6 +80,7 @@
+ 	unsigned long max_servicechecks_age;
+ 	unsigned long max_hostchecks_age;
+ 	unsigned long max_eventhandlers_age;
++	unsigned long max_externalcommands_age;
+ 	time_t last_table_trim_time;
+ 	time_t last_logentry_time;
+ 	char *last_logentry_data;
+diff -ur ndoutils-1.4b3.original/src/db.c ndoutils-1.4b3/src/db.c
+--- ndoutils-1.4b3.original/src/db.c	2007-01-08 00:35:52.000000000 +0000
++++ ndoutils-1.4b3/src/db.c	2007-05-10 16:59:50.000000000 +0100
+@@ -136,6 +134,7 @@
+ 	idi->dbinfo.max_servicechecks_age=ndo2db_db_settings.max_servicechecks_age;
+ 	idi->dbinfo.max_hostchecks_age=ndo2db_db_settings.max_hostchecks_age;
+ 	idi->dbinfo.max_eventhandlers_age=ndo2db_db_settings.max_eventhandlers_age;
++	idi->dbinfo.max_externalcommands_age=ndo2db_db_settings.max_externalcommands_age;
+ 	idi->dbinfo.last_table_trim_time=(time_t)0L;
+ 	idi->dbinfo.last_logentry_time=(time_t)0L;
+ 	idi->dbinfo.last_logentry_data=NULL;
+@@ -749,6 +748,8 @@
+ 			ndo2db_db_trim_data_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_HOSTCHECKS],"start_time",(time_t)((unsigned long)current_time-idi->dbinfo.max_hostchecks_age));
+ 		if(idi->dbinfo.max_eventhandlers_age>0L)
+ 			ndo2db_db_trim_data_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_EVENTHANDLERS],"start_time",(time_t)((unsigned long)current_time-idi->dbinfo.max_eventhandlers_age));
++		if(idi->dbinfo.max_externalcommands_age>0L)
++			ndo2db_db_trim_data_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_EXTERNALCOMMANDS],"entry_time",(time_t)((unsigned long)current_time-idi->dbinfo.max_externalcommands_age));
+ 		idi->dbinfo.last_table_trim_time=current_time;
+ 	        }
+ 
+diff -ur ndoutils-1.4b3.original/src/ndo2db.c ndoutils-1.4b3/src/ndo2db.c
+--- ndoutils-1.4b3.original/src/ndo2db.c	2007-04-10 17:21:36.000000000 +0100
++++ ndoutils-1.4b3/src/ndo2db.c	2007-05-10 17:01:11.000000000 +0100
+@@ -346,6 +346,8 @@
+ 		ndo2db_db_settings.max_hostchecks_age=strtoul(val,NULL,0)*60;
+ 	else if(!strcmp(var,"max_eventhandlers_age"))
+ 		ndo2db_db_settings.max_eventhandlers_age=strtoul(val,NULL,0)*60;
++	else if(!strcmp(var,"max_externalcommands_age"))
++		ndo2db_db_settings.max_externalcommands_age=strtoul(val,NULL,0)*60;
+ 
+ 	else if(!strcmp(var,"ndo2db_user"))
+ 		ndo2db_user=strdup(val);
+@@ -371,6 +373,7 @@
+ 	ndo2db_db_settings.max_servicechecks_age=0L;
+ 	ndo2db_db_settings.max_hostchecks_age=0L;
+ 	ndo2db_db_settings.max_eventhandlers_age=0L;
++	ndo2db_db_settings.max_externalcommands_age=0L;
+ 
+ 	return NDO_OK;
+         }

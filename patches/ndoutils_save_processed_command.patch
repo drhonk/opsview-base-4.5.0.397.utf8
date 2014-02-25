@@ -1,0 +1,11 @@
+diff -Bbur ndoutils-2-0.orig/include/nagios-4x/objects.h ndoutils-2-0/include/nagios-4x/objects.h
+--- ndoutils-2-0.orig/include/nagios-4x/objects.h	2012-11-27 15:58:32.000000000 +0000
++++ ndoutils-2-0/include/nagios-4x/objects.h	2012-11-27 16:12:47.000000000 +0000
+@@ -610,6 +610,7 @@
+ 	char	*plugin_output;
+ 	char    *long_plugin_output;
+ 	char    *perf_data;
++	char    *processed_command;
+ 	int     state_type;
+ 	time_t	next_check;
+ 	int     should_be_scheduled;

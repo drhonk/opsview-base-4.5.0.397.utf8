@@ -1,0 +1,14 @@
+diff -ur wmi-1.3.16.orig/GNUmakefile wmi-1.3.16/GNUmakefile
+--- wmi-1.3.16.orig/GNUmakefile	2012-11-07 11:47:45.000000000 +0000
++++ wmi-1.3.16/GNUmakefile	2012-11-07 11:45:02.000000000 +0000
+@@ -48,8 +48,8 @@
+ #-------------------------------------------------------------------------#
+ LIBASYNC_WMI_LIB_BASENAME    = libasync_wmi_lib
+ WMI_CONFIG_MK                = $(SAMBA_SRCDIR)/wmi/config.mk
+-LIBASYNC_WMI_LIB_VERSION_nnn = $(shell fgrep -A1 "[LIBRARY::async_wmi_lib]" $(WMI_CONFIG_MK) | sed -e "s/^VERSION=\(.*\)/\1/g"    | tail -1)
+-LIBASYNC_WMI_LIB_VERSION_n   = $(shell fgrep -A2 "[LIBRARY::async_wmi_lib]" $(WMI_CONFIG_MK) | sed -e "s/^SO_VERSION=\(.*\)/\1/g" | tail -1)
++LIBASYNC_WMI_LIB_VERSION_nnn = 0.0.2
++LIBASYNC_WMI_LIB_VERSION_n   = 0
+ ifeq ($(shell uname), Darwin)
+ LIBASYNC_WMI_LIB             = $(LIBASYNC_WMI_LIB_BASENAME).dylib.$(LIBASYNC_WMI_LIB_VERSION_nnn)
+ else

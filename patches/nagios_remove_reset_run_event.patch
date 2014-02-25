@@ -1,0 +1,14 @@
+diff -ur nagios-3.2.2.original/base/events.c nagios-3.2.2/base/events.c
+--- nagios-3.2.2.original/base/events.c	2010-08-28 14:01:24.000000000 +0100
++++ nagios-3.2.2/base/events.c	2010-09-06 15:33:22.000000000 +0100
+@@ -1084,8 +1084,9 @@
+ 
+ 			        }
+ 
++			/* Opsview patch: We remove the run_event=TRUE reset as it causes a test failure. Not entirely sure it was a correct fix */
+ 			/* reset flag */
+-			run_event=TRUE;
++			//run_event=TRUE;
+ 
+ 			/* run a few checks before executing a host check... */
+ 			if(event_list_low->event_type==EVENT_HOST_CHECK){

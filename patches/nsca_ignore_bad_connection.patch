@@ -1,0 +1,23 @@
+Binary files nsca-2.9.1/src/nsca and nsca-2.9.1.new/src/nsca differ
+diff -ur nsca-2.9.1/src/nsca.c nsca-2.9.1.new/src/nsca.c
+--- nsca-2.9.1/src/nsca.c	2013-07-25 10:14:44.000000000 +0000
++++ nsca-2.9.1.new/src/nsca.c	2013-07-25 10:14:03.000000000 +0000
+@@ -1005,7 +1005,17 @@
+                 do_exit(STATE_OK);
+             }
+ 
+-
++        /* ignore connections where sin_port and sin_addr are null */
++        /* as this causes the daemon to hang */
++        if(cli_addr.sin_port==0) {
++            if(debug==TRUE)
++		        syslog(LOG_DEBUG, "Ignoring connection from %s port %d",inet_ntoa(cli_addr.sin_addr), cli_addr.sin_port);
++	        close(sock);
++			if(mode==SINGLE_PROCESS_DAEMON)
++                return;
++			else
++				do_exit(STATE_OK);
++		}
+ 
+         /* log info to syslog facility */
+         if(debug==TRUE)

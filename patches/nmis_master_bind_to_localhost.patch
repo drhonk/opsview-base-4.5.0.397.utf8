@@ -1,0 +1,26 @@
+--- nmis-4.2.13.original/bin/master.pl	2005-07-12 19:20:28.000000000 +0100
++++ nmis-4.2.13/bin/master.pl	2007-12-14 15:54:23.135051560 +0000
+@@ -23,6 +23,7 @@
+ use RRDs;
+ use NMIS;
+ use rrdfunc;
++use Time::HiRes qw(sleep);
+ 
+ my $configfile = "$FindBin::Bin/../conf/nmis.conf";
+ if ( -r $configfile ) { loadConfiguration($configfile); }
+@@ -121,6 +122,7 @@
+ #
+ $server = new Net::EasyTCP(
+         mode            =>      "server",
++	host		=>	"127.0.0.1",
+         port            =>      2345,
+         donotencrypt	=>		1,
+         donotcompress	=>		1
+@@ -208,6 +210,7 @@
+ 	# Start the server and come back here in case we received a signal.
+ 	#
+ 	$server->do_one_loop() || die "ERROR STARTING SERVER: $@\n";
++	sleep (0.25);
+ }
+ 
+ # stop the server

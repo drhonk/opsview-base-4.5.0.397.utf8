@@ -1,0 +1,50 @@
+diff -ur nagiosgraph-0.8.2.orig/insert.pl nagiosgraph-0.8.2/insert.pl
+--- nagiosgraph-0.8.2.orig/insert.pl	2008-08-08 09:40:36.000000000 +0100
++++ nagiosgraph-0.8.2/insert.pl	2008-08-14 14:16:31.000000000 +0100
+@@ -8,6 +8,7 @@
+ use strict;
+ use lib "/usr/local/nagios/perl/lib";
+ use RRDs;
++use RRD::Simple;
+ use Nagios::Plugin::Performance use_die => 1;
+ 
+ $SIG{__DIE__} = sub { debug(1, "DIED exception: @_") };
+@@ -122,17 +123,19 @@
+ #
+ sub rrdupdate {
+   my($file,$time,$values) = @_;
+-  my($ds,$c);
++  my %ds;
++
++  my $rrd = RRD::Simple->new(
++    file => $Config{rrddir}.'/'.$file,
++    on_missing_ds => 'add',
++  );
+ 
+-  $ds = "$Config{rrddir}/$file $time";
+   for ( @$values ) {
+-    $_->[2] ||= 0;
+-    $ds .= ":$_->[2]";
++    $ds{$_->[0]} = $_->[2] || 0;
+   }
+ 
+-  my @ds = split /\s+/, $ds;
+-  debug(4, "INSERT RRDs::update ". join ' ', @ds);
+-  RRDs::update(@ds);
++  debug(4, "INSERT RRDs::update ". join ' ', %ds);
++  eval { $rrd->update($Config{rrddir}.'/'.$file, $time, %ds) }; # Must eval as RRD::Simple croaks on failure
+   debug(2, "INSERT RRDs::update ERR " . RRDs::error) if RRDs::error;
+ }
+ 
+@@ -214,10 +217,8 @@
+ my @perfdata = inputdata();
+ 
+ # Read the map file and define a subroutine that parses performance data
+-my($rules);
+-undef $/;
+ open FH, $Config{mapfile};
+-  $rules = <FH>;
++my $rules = do { local $/; <FH> };
+ close FH;
+ # Also look for and load in a xxx.local override file
+ if( -f $Config{mapfile}.'.local'){

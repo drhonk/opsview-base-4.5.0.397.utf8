@@ -1,0 +1,16 @@
+diff -ur nagiosgraph-0.8.2.orig/insert.pl nagiosgraph-0.8.2/insert.pl
+--- nagiosgraph-0.8.2.orig/insert.pl	2008-06-05 12:42:45.000000000 +0100
++++ nagiosgraph-0.8.2/insert.pl	2008-07-08 12:10:30.000000000 +0100
+@@ -219,6 +219,12 @@
+ open FH, $Config{mapfile};
+   $rules = <FH>;
+ close FH;
++# Also look for and load in a xxx.local override file
++if( -f $Config{mapfile}.'.local'){
++	open my $fh, $Config{mapfile}.'.local';
++	$rules .= do { local $/;<$fh>; };
++	close $fh;
++}
+ $rules = '
+ sub evalrules {
+   $_=$_[0];

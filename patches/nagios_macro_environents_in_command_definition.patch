@@ -1,0 +1,989 @@
+diff -ur nagios-4.0.20130107.original/base/checks.c nagios-4.0.20130107/base/checks.c
+--- nagios-4.0.20130107.original/base/checks.c	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/base/checks.c	2013-05-08 18:21:19.000000000 +0000
+@@ -167,6 +167,7 @@
+ 	double old_latency = 0.0;
+ 	check_result *cr;
+ 	int runchk_result = OK;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
+ #ifdef USE_EVENT_BROKER
+ 	int neb_result = OK;
+@@ -186,6 +187,10 @@
+ 	if((temp_host = svc->host_ptr) == NULL)
+ 		return ERROR;
+ 
++	/* Setup key vectors, for passing extra data to worker */
++	if (!kvvec_init(&kvv,0))
++		return ERROR;
++
+ 	/******** GOOD TO GO FOR A REAL SERVICE CHECK AT THIS POINT ********/
+ 
+ #ifdef USE_EVENT_BROKER
+@@ -263,6 +268,9 @@
+ 		return ERROR;
+ 		}
+ 
++	/* Process macros in the command env settings */
++	add_command_environment_to_kvv(&kvv, svc->check_command_ptr, &mac);
++
+ 	/* get the command start time */
+ 	gettimeofday(&start_time, NULL);
+ 
+@@ -312,7 +320,7 @@
+ 	svc->latency = old_latency;
+ 
+ 	/* paw off the check to a worker to run */
+-	runchk_result = wproc_run_check(cr, processed_command, &mac);
++	runchk_result = wproc_run_check(cr, processed_command, &kvv);
+ 	if (runchk_result == ERROR) {
+ 		logit(NSLOG_RUNTIME_ERROR, TRUE, "Unable to run check for service '%s' on host '%s'\n", svc->description, svc->host_name);
+ 	}
+@@ -324,6 +332,7 @@
+ 	}
+ 
+ 	/* free memory */
++	kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 	my_free(processed_command);
+ 	clear_volatile_macros_r(&mac);
+ 
+@@ -1981,6 +1990,7 @@
+ 	double old_latency = 0.0;
+ 	check_result *cr;
+ 	int runchk_result = OK;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
+ #ifdef USE_EVENT_BROKER
+ 	int neb_result = OK;
+@@ -2014,6 +2024,10 @@
+ 		return ERROR;
+ 		}
+ 
++	/* Setup key vectors, for passing extra data to worker */
++	if (!kvvec_init(&kvv,0))
++		return ERROR;
++
+ 	/******** GOOD TO GO FOR A REAL HOST CHECK AT THIS POINT ********/
+ 
+ #ifdef USE_EVENT_BROKER
+@@ -2082,6 +2096,9 @@
+ 	my_free(hst->processed_command);
+ 	hst->processed_command = strdup(processed_command);
+ 
++	/* Process macros in the command env settings */
++	add_command_environment_to_kvv(&kvv, hst->check_command_ptr, &mac);
++
+ 	/* get the command start time */
+ 	gettimeofday(&start_time, NULL);
+ 
+@@ -2118,7 +2135,7 @@
+ 	/* reset latency (permanent value for this check will get set later) */
+ 	hst->latency = old_latency;
+ 
+-	runchk_result = wproc_run_check(cr, processed_command, &mac);
++	runchk_result = wproc_run_check(cr, processed_command, &kvv);
+ 	if (runchk_result == ERROR) {
+ 		logit(NSLOG_RUNTIME_ERROR, TRUE, "Unable to send check for host '%s' to worker (ret=%d)\n", hst->name, runchk_result);
+ 	} else {
+@@ -2131,6 +2148,7 @@
+ 
+ 
+ 	/* free memory */
++	kvvec_free_kvpairs(&kvv,KVVEC_FREE_VALUES);
+ 	clear_volatile_macros_r(&mac);
+ 	my_free(processed_command);
+ 
+diff -ur nagios-4.0.20130107.original/base/notifications.c nagios-4.0.20130107/base/notifications.c
+--- nagios-4.0.20130107.original/base/notifications.c	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/base/notifications.c	2013-05-08 18:21:19.000000000 +0000
+@@ -729,6 +729,7 @@
+ 	struct timeval method_start_time, method_end_time;
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
+ 	int neb_result;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "notify_contact_of_service()\n");
+ 
+@@ -765,6 +766,9 @@
+ 			continue ;
+ #endif
+ 
++		if(!kvvec_init(&kvv,0))
++			continue;
++
+ 		/* get the raw command line */
+ 		get_raw_command_line_r(mac, temp_commandsmember->command_ptr, temp_commandsmember->command, &raw_command, macro_options);
+ 		if(raw_command == NULL)
+@@ -825,10 +829,13 @@
+ 			my_free(processed_buffer);
+ 			}
+ 
++		add_command_environment_to_kvv(&kvv, temp_commandsmember->command_ptr, mac);
++
+ 		/* run the notification command */
+-		wproc_notify(cntct->name, svc->host_name, svc->description, processed_command, mac);
++		wproc_notify(cntct->name, svc->host_name, svc->description, processed_command, &kvv);
+ 
+ 		/* free memory */
++		kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 		my_free(command_name);
+ 		my_free(processed_command);
+ 
+@@ -1663,6 +1670,7 @@
+ 	struct timeval method_end_time;
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
+ 	int neb_result;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "notify_contact_of_host()\n");
+@@ -1700,6 +1708,9 @@
+ 			continue ;
+ #endif
+ 
++		if(!kvvec_init(&kvv,0))
++			continue;
++
+ 		/* get the raw command line */
+ 		get_raw_command_line_r(mac, temp_commandsmember->command_ptr, temp_commandsmember->command, &raw_command, macro_options);
+ 		if(raw_command == NULL)
+@@ -1760,12 +1771,15 @@
+ 			my_free(processed_buffer);
+ 			}
+ 
++		add_command_environment_to_kvv(&kvv, temp_commandsmember->command_ptr, mac);
++
+ 		/* run the notification command */
+-		wproc_notify(cntct->name, hst->name, NULL, processed_command, mac);
++		wproc_notify(cntct->name, hst->name, NULL, processed_command, &kvv);
+ 
+ 		/* @todo Handle nebmod stuff when getting results from workers */
+ 
+ 		/* free memory */
++		kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 		my_free(command_name);
+ 		my_free(processed_command);
+ 
+diff -ur nagios-4.0.20130107.original/base/sehandlers.c nagios-4.0.20130107/base/sehandlers.c
+--- nagios-4.0.20130107.original/base/sehandlers.c	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/base/sehandlers.c	2013-05-08 18:21:19.000000000 +0000
+@@ -47,6 +47,7 @@
+ 	host *temp_host = NULL;
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
+ 	nagios_macros mac;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "obsessive_compulsive_service_check_processor()\n");
+ 
+@@ -65,6 +66,9 @@
+ 	if((temp_host = (host *)svc->host_ptr) == NULL)
+ 		return ERROR;
+ 
++	if(!kvvec_init(&kvv,0))
++		return ERROR;
++
+ 	/* update service macros */
+ 	memset(&mac, 0, sizeof(mac));
+ 	grab_host_macros_r(&mac, temp_host);
+@@ -89,10 +93,13 @@
+ 
+ 	log_debug_info(DEBUGL_CHECKS, 2, "Processed obsessive compulsive service processor command line: %s\n", processed_command);
+ 
++	add_command_environment_to_kvv(&kvv, ocsp_command_ptr, &mac);
++
+ 	/* run the command through a worker */
+-	wproc_run_service_job(WPJOB_OCSP, ocsp_timeout, svc, processed_command, &mac);
++	wproc_run_service_job(WPJOB_OCSP, ocsp_timeout, svc, processed_command, &kvv);
+ 
+ 	/* free memory */
++	kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 	clear_volatile_macros_r(&mac);
+ 	my_free(processed_command);
+ 
+@@ -107,6 +114,7 @@
+ 	char *processed_command = NULL;
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
+ 	nagios_macros mac;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "obsessive_compulsive_host_check_processor()\n");
+ 
+@@ -121,6 +129,9 @@
+ 	if(ochp_command == NULL)
+ 		return ERROR;
+ 
++	if(!kvvec_init(&kvv,0))
++		return ERROR;
++
+ 	/* update macros */
+ 	memset(&mac, 0, sizeof(mac));
+ 	grab_host_macros_r(&mac, hst);
+@@ -144,10 +155,13 @@
+ 
+ 	log_debug_info(DEBUGL_CHECKS, 2, "Processed obsessive compulsive host processor command line: %s\n", processed_command);
+ 
++	add_command_environment_to_kvv(&kvv, ochp_command_ptr, &mac);
++
+ 	/* run the command through a worker */
+-	wproc_run_host_job(WPJOB_OCHP, ochp_timeout, hst, processed_command, &mac);
++	wproc_run_host_job(WPJOB_OCHP, ochp_timeout, hst, processed_command, &kvv);
+ 
+ 	/* free memory */
++	kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 	clear_volatile_macros_r(&mac);
+ 	my_free(processed_command);
+ 
+@@ -221,6 +235,7 @@
+ 	int neb_result = OK;
+ #endif
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "run_global_service_event_handler()\n");
+@@ -236,6 +251,9 @@
+ 	if(global_service_event_handler == NULL)
+ 		return ERROR;
+ 
++	if(!kvvec_init(&kvv,0))
++		return ERROR;
++
+ 	log_debug_info(DEBUGL_EVENTHANDLERS, 1, "Running global event handler for service '%s' on host '%s'...\n", svc->description, svc->host_name);
+ 
+ #ifdef USE_EVENT_BROKER
+@@ -280,9 +298,11 @@
+ 		}
+ #endif
+ 
++	add_command_environment_to_kvv(&kvv, global_service_event_handler_ptr, mac);
++
+ 	/* run the command through a worker */
+ 	/* XXX FIXME make base/workers.c handle the eventbroker stuff below */
+-	result = wproc_run(WPJOB_GLOBAL_SVC_EVTHANDLER, processed_command, event_handler_timeout, mac);
++	result = wproc_run(WPJOB_GLOBAL_SVC_EVTHANDLER, processed_command, event_handler_timeout, &kvv);
+ 
+ 	/* check to see if the event handler timed out */
+ 	if(early_timeout == TRUE)
+@@ -299,6 +319,7 @@
+ #endif
+ 
+ 	/* free memory */
++	kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 	my_free(command_output);
+ 	my_free(processed_command);
+ 	my_free(raw_logentry);
+@@ -325,6 +346,7 @@
+ 	int neb_result = OK;
+ #endif
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "run_service_event_handler()\n");
+@@ -336,6 +358,9 @@
+ 	if(svc->event_handler == NULL)
+ 		return ERROR;
+ 
++	if(!kvvec_init(&kvv,0))
++		return ERROR;
++
+ 	log_debug_info(DEBUGL_EVENTHANDLERS, 1, "Running event handler for service '%s' on host '%s'...\n", svc->description, svc->host_name);
+ 
+ #ifdef USE_EVENT_BROKER
+@@ -380,9 +405,11 @@
+ 		}
+ #endif
+ 
++	add_command_environment_to_kvv(&kvv, svc->event_handler_ptr, mac);
++
+ 	/* run the command through a worker */
+ 	/* XXX FIXME make base/workers.c handle the eventbroker stuff below */
+-	result = wproc_run(WPJOB_SVC_EVTHANDLER, processed_command, event_handler_timeout, mac);
++	result = wproc_run(WPJOB_SVC_EVTHANDLER, processed_command, event_handler_timeout, &kvv);
+ 
+ 	/* check to see if the event handler timed out */
+ 	if(early_timeout == TRUE)
+@@ -399,6 +426,7 @@
+ #endif
+ 
+ 	/* free memory */
++	kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 	my_free(command_output);
+ 	my_free(processed_command);
+ 	my_free(raw_logentry);
+@@ -466,6 +494,7 @@
+ 	int neb_result = OK;
+ #endif
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "run_global_host_event_handler()\n");
+@@ -481,6 +510,9 @@
+ 	if(global_host_event_handler == NULL)
+ 		return ERROR;
+ 
++	if(!kvvec_init(&kvv,0))
++		return ERROR;
++
+ 	log_debug_info(DEBUGL_EVENTHANDLERS, 1, "Running global event handler for host '%s'..\n", hst->name);
+ 
+ #ifdef USE_EVENT_BROKER
+@@ -524,9 +556,11 @@
+ 		}
+ #endif
+ 
++	add_command_environment_to_kvv(&kvv, global_host_event_handler_ptr, mac);
++
+ 	/* run the command through a worker */
+ 	/* XXX FIXME make base/workers.c handle the eventbroker stuff below */
+-	wproc_run(WPJOB_GLOBAL_HOST_EVTHANDLER, processed_command, event_handler_timeout, mac);
++	wproc_run(WPJOB_GLOBAL_HOST_EVTHANDLER, processed_command, event_handler_timeout, &kvv);
+ 
+ 	/* check for a timeout in the execution of the event handler command */
+ 	if(early_timeout == TRUE)
+@@ -543,6 +577,7 @@
+ #endif
+ 
+ 	/* free memory */
++	kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 	my_free(command_output);
+ 	my_free(processed_command);
+ 	my_free(raw_logentry);
+@@ -568,6 +603,7 @@
+ 	int neb_result = OK;
+ #endif
+ 	int macro_options = STRIP_ILLEGAL_MACRO_CHARS | ESCAPE_MACRO_CHARS;
++	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "run_host_event_handler()\n");
+@@ -579,6 +615,9 @@
+ 	if(hst->event_handler == NULL)
+ 		return ERROR;
+ 
++	if(!kvvec_init(&kvv,0))
++		return ERROR;
++
+ 	log_debug_info(DEBUGL_EVENTHANDLERS, 1, "Running event handler for host '%s'..\n", hst->name);
+ 
+ #ifdef USE_EVENT_BROKER
+@@ -622,8 +661,10 @@
+ 		}
+ #endif
+ 
++	add_command_environment_to_kvv(&kvv, hst->event_handler_ptr, mac);
++
+ 	/* run the command through a worker */
+-	result = wproc_run(WPJOB_HOST_EVTHANDLER, processed_command, event_handler_timeout, mac);
++	result = wproc_run(WPJOB_HOST_EVTHANDLER, processed_command, event_handler_timeout, &kvv);
+ 
+ 	/* check to see if the event handler timed out */
+ 	if(early_timeout == TRUE)
+@@ -640,6 +681,7 @@
+ #endif
+ 
+ 	/* free memory */
++	kvvec_free_kvpairs(&kvv, KVVEC_FREE_VALUES);
+ 	my_free(command_output);
+ 	my_free(processed_command);
+ 	my_free(raw_logentry);
+diff -ur nagios-4.0.20130107.original/base/utils.c nagios-4.0.20130107/base/utils.c
+--- nagios-4.0.20130107.original/base/utils.c	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/base/utils.c	2013-05-08 18:21:19.000000000 +0000
+@@ -270,6 +270,23 @@
+ 	va_end(ap);
+ 	}
+ 
++int add_command_environment_to_kvv(struct kvvec *kvv, struct command *check_command, nagios_macros *mac) {
++    char *temp_envvar = NULL;
++    commandenvironment *temp_command_environment;
++	
++    /* Process macros in the command env settings */
++    temp_command_environment=commandenvironment_ary[check_command->id];
++    while(temp_command_environment!=NULL) {
++        process_macros_r(mac, temp_command_environment->env, &temp_envvar, SET_EMPTY_IF_INVALID);
++        kvvec_addkv(kvv, "env", strdup(temp_envvar));
++        free(temp_envvar);
++        temp_command_environment=temp_command_environment->next;
++		}
++
++	return TRUE;
++
++}
++
+ int set_loadctl_options(char *opts, unsigned int len)
+ {
+ 	struct kvvec *kvv;
+diff -ur nagios-4.0.20130107.original/base/workers.c nagios-4.0.20130107/base/workers.c
+--- nagios-4.0.20130107.original/base/workers.c	2012-12-24 15:29:58.000000000 +0000
++++ nagios-4.0.20130107/base/workers.c	2013-05-08 18:21:19.000000000 +0000
+@@ -575,7 +575,7 @@
+        return 0;
+ }
+ 
+-static int wproc_run_job(struct wproc_job *job, nagios_macros *mac);
++static int wproc_run_job(struct wproc_job *job, struct kvvec *inputkvv);
+ static void fo_reassign_wproc_job(void *job_)
+ {
+        struct wproc_job *job = (struct wproc_job *)job_;
+@@ -966,25 +966,20 @@
+  * as well as shipping the command off to a designated
+  * worker
+  */
+-static int wproc_run_job(struct wproc_job *job, nagios_macros *mac)
++static int wproc_run_job(struct wproc_job *job, struct kvvec *inputkvv)
+ {
+ 	static struct kvvec kvv = KVVEC_INITIALIZER;
+ 	struct kvvec_buf *kvvb;
++	struct key_value kv;
+ 	struct wproc_worker *wp;
+ 	int ret, result = OK;
++	int i;
+ 
+ 	if (!job || !job->wp)
+ 		return ERROR;
+ 
+ 	wp = job->wp;
+ 
+-	/*
+-	 * XXX FIXME: add environment macros as
+-	 *  kvvec_addkv(kvv, "env", "NAGIOS_LALAMACRO=VALUE");
+-	 *  kvvec_addkv(kvv, "env", "NAGIOS_LALAMACRO2=VALUE");
+-	 * so workers know to add them to environment. For now,
+-	 * we don't support that though.
+-	 */
+ 	if (!kvvec_init(&kvv, 4))	/* job_id, type, command and timeout */
+ 		return ERROR;
+ 
+@@ -992,6 +987,17 @@
+ 	kvvec_addkv(&kvv, "type", (char *)mkstr("%d", job->type));
+ 	kvvec_addkv(&kvv, "command", job->command);
+ 	kvvec_addkv(&kvv, "timeout", (char *)mkstr("%u", job->timeout));
++	/*
++	 * Add environment macros, based on inputkvv
++	 */
++	for (i = 0; i < inputkvv->kv_pairs; i++) {
++		kv = inputkvv->kv[i];
++		if (!strcmp(kv.key, "env")) {
++			kvvec_addkv(&kvv, "env", kv.value);
++			continue;
++			}
++		}
++
+ 	kvvb = build_kvvec_buf(&kvv);
+ 	ret = write(wp->sd, kvvb->buf, kvvb->bufsize);
+ 	if (ret != (int)kvvb->bufsize) {
+@@ -1026,7 +1032,7 @@
+ 	return oj;
+ }
+ 
+-int wproc_notify(char *cname, char *hname, char *sdesc, char *cmd, nagios_macros *mac)
++int wproc_notify(char *cname, char *hname, char *sdesc, char *cmd, struct kvvec *kvv)
+ {
+ 	struct wproc_job *job;
+ 	wproc_object_job *oj;
+@@ -1036,10 +1042,10 @@
+ 
+ 	job = create_job(WPJOB_NOTIFY, oj, notification_timeout, cmd);
+ 
+-	return wproc_run_job(job, mac);
++	return wproc_run_job(job, kvv);
+ }
+ 
+-int wproc_run_service_job(int jtype, int timeout, service *svc, char *cmd, nagios_macros *mac)
++int wproc_run_service_job(int jtype, int timeout, service *svc, char *cmd, struct kvvec *kvv)
+ {
+ 	struct wproc_job *job;
+ 	wproc_object_job *oj;
+@@ -1049,10 +1055,10 @@
+ 
+ 	job = create_job(jtype, oj, timeout, cmd);
+ 
+-	return wproc_run_job(job, mac);
++	return wproc_run_job(job, kvv);
+ }
+ 
+-int wproc_run_host_job(int jtype, int timeout, host *hst, char *cmd, nagios_macros *mac)
++int wproc_run_host_job(int jtype, int timeout, host *hst, char *cmd, struct kvvec *kvv)
+ {
+ 	struct wproc_job *job;
+ 	wproc_object_job *oj;
+@@ -1062,10 +1068,10 @@
+ 
+ 	job = create_job(jtype, oj, timeout, cmd);
+ 
+-	return wproc_run_job(job, mac);
++	return wproc_run_job(job, kvv);
+ }
+ 
+-int wproc_run_check(check_result *cr, char *cmd, nagios_macros *mac)
++int wproc_run_check(check_result *cr, char *cmd, struct kvvec *kvv)
+ {
+ 	struct wproc_job *job;
+ 	int timeout;
+@@ -1076,15 +1082,15 @@
+ 		timeout = host_check_timeout;
+ 
+ 	job = create_job(WPJOB_CHECK, cr, timeout, cmd);
+-	return wproc_run_job(job, mac);
++	return wproc_run_job(job, kvv);
+ }
+ 
+-int wproc_run(int jtype, char *cmd, int timeout, nagios_macros *mac)
++int wproc_run(int jtype, char *cmd, int timeout, struct kvvec *kvv)
+ {
+ 	struct wproc_job *job;
+ 
+ 	job = create_job(jtype, NULL, timeout, cmd);
+-	return wproc_run_job(job, mac);
++	return wproc_run_job(job, kvv);
+ }
+ 
+ int wproc_run_callback(char *cmd, int timeout,
+diff -ur nagios-4.0.20130107.original/common/macros.c nagios-4.0.20130107/common/macros.c
+--- nagios-4.0.20130107.original/common/macros.c	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/common/macros.c	2013-05-08 18:21:19.000000000 +0000
+@@ -174,7 +174,7 @@
+ 
+ 			/* an error occurred - we couldn't parse the macro, so continue on */
+ 			if(result == ERROR) {
+-				log_debug_info(DEBUGL_MACROS, 0, " WARNING: An error occurred processing macro '%s'!\n", temp_buffer);
++				log_debug_info(DEBUGL_MACROS, 0, " WARNING: An error occurred processing macro '%s'! selected_macros=%s\n", temp_buffer, selected_macro);
+ 				if(free_macro == TRUE)
+ 					my_free(selected_macro);
+ 				}
+@@ -189,7 +189,8 @@
+ 				}
+ 
+ 			/* a non-macro, just some user-defined string between two $s */
+-			else {
++			/* The SET_EMPTY_IF_INVALID option allows this to be empty values, simulating the old envvars behaviour */
++			else if (!(options & SET_EMPTY_IF_INVALID)) {
+ 				log_debug_info(DEBUGL_MACROS, 2, "  Non-macro.  Running output (%lu): '%s'\n", (unsigned long)strlen(*output_buffer), *output_buffer);
+ 
+ 				/* add the plain text to the end of the already processed buffer */
+diff -ur nagios-4.0.20130107.original/common/objects.c nagios-4.0.20130107/common/objects.c
+--- nagios-4.0.20130107.original/common/objects.c	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/common/objects.c	2013-05-08 18:21:19.000000000 +0000
+@@ -68,6 +68,7 @@
+ serviceescalation **serviceescalation_ary = NULL;
+ hostdependency **hostdependency_ary = NULL;
+ servicedependency **servicedependency_ary = NULL;
++commandenvironment **commandenvironment_ary = NULL;
+ 
+ #ifdef NSCORE
+ int __nagios_object_structure_version = CURRENT_OBJECT_STRUCTURE_VERSION;
+@@ -372,6 +373,8 @@
+ 		return ERROR;
+ 	if (mktable(command, COMMAND_SKIPLIST) != OK)
+ 		return ERROR;
++	if (mktable(commandenvironment, COMMANDENVIRONMENT_SKIPLIST) != OK)
++		return ERROR;
+ 	if (mktable(host, HOST_SKIPLIST) != OK)
+ 		return ERROR;
+ 	if (mktable(service, SERVICE_SKIPLIST) != OK)
+@@ -1738,10 +1741,43 @@
+ 	command_ary[new_command->id] = new_command;
+ 	if(new_command->id)
+ 		command_ary[new_command->id - 1]->next = new_command;
++
++#ifndef NSCGI
++	// Reset commandenvironment
++	commandenvironment_ary[new_command->id] = NULL;
++#endif
+ 	return new_command;
+ 	}
+ 
+ 
++commandenvironment *add_command_environment_to_command(command *this_command, char *envstring) {
++	commandenvironment *new_command_environment = NULL;
++
++	if((envstring == NULL || !strcmp(envstring, ""))){
++		logit(NSLOG_CONFIG_ERROR, TRUE, "Error: Env string of command is NULL\n");
++		return NULL;
++		}
++
++	new_command_environment = calloc(1, sizeof(*new_command_environment));
++	if(!new_command_environment)
++		return NULL;
++
++	if((new_command_environment->env = (char *)strdup(envstring)) == NULL) {
++        free(new_command_environment);
++		return NULL;
++        }
++
++	// Add this environment to head of list, indexed by command->id
++	// There will be a linked list of environment values
++	if(commandenvironment_ary[this_command->id]!=NULL){
++		new_command_environment->next = commandenvironment_ary[this_command->id];
++	} else {
++		new_command_environment->next = NULL;
++	}
++	commandenvironment_ary[this_command->id] = new_command_environment;
++
++	return new_command_environment;
++}
+ 
+ /* add a new service escalation to the list in memory */
+ serviceescalation *add_serviceescalation(char *host_name, char *description, int first_notification, int last_notification, double notification_interval, char *escalation_period, int escalation_options) {
+@@ -2388,6 +2424,10 @@
+ 	customvariablesmember *next_customvariablesmember = NULL;
+ 	commandsmember *this_commandsmember = NULL;
+ 	commandsmember *next_commandsmember = NULL;
++#ifndef NSCGI
++	commandenvironment *this_command_environment = NULL;
++	commandenvironment *next_command_environment = NULL;
++#endif
+ 	unsigned int i = 0, x = 0;
+ 
+ 
+@@ -2911,6 +2951,15 @@
+ 	/**** free command memory ****/
+ 	for (i = 0; i < num_objects.commands; i++) {
+ 		command *this_command = command_ary[i];
++
++#ifndef NSCGI
++		next_command_environment = commandenvironment_ary[this_command->id];
++		while((this_command_environment = next_command_environment)!=NULL) {
++			next_command_environment=this_command_environment->next;
++			my_free(this_command_environment->env);
++			my_free(this_command_environment);
++		}
++#endif
+ 		my_free(this_command->name);
+ 		my_free(this_command->command_line);
+ 		my_free(this_command);
+@@ -3147,8 +3196,16 @@
+ 
+ void fcache_command(FILE *fp, command *temp_command)
+ {
+-	fprintf(fp, "define command {\n\tcommand_name\t%s\n\tcommand_line\t%s\n\t}\n\n",
+-		   temp_command->name, temp_command->command_line);
++	commandenvironment *temp_command_environment;
++	fprintf(fp, "define command {\n\tcommand_name\t%s\n\tcommand_line\t%s\n",
++		temp_command->name, temp_command->command_line);
++
++	temp_command_environment = commandenvironment_ary[temp_command->id];
++	while(temp_command_environment!=NULL) {
++		fprintf(fp, "\tenv\t%s\n", temp_command_environment->env);
++		temp_command_environment=temp_command_environment->next;
++		}
++	fprintf(fp, "\t}\n\n");
+ }
+ 
+ void fcache_contactgroup(FILE *fp, contactgroup *temp_contactgroup)
+diff -ur nagios-4.0.20130107.original/include/macros.h nagios-4.0.20130107/include/macros.h
+--- nagios-4.0.20130107.original/include/macros.h	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/include/macros.h	2013-05-08 18:21:19.000000000 +0000
+@@ -225,6 +225,7 @@
+ #define STRIP_ILLEGAL_MACRO_CHARS       1
+ #define ESCAPE_MACRO_CHARS              2
+ #define URL_ENCODE_MACRO_CHARS		4
++#define SET_EMPTY_IF_INVALID        8
+ 
+ 
+ 
+diff -ur nagios-4.0.20130107.original/include/nagios.h nagios-4.0.20130107/include/nagios.h
+--- nagios-4.0.20130107.original/include/nagios.h	2013-05-08 18:21:00.000000000 +0000
++++ nagios-4.0.20130107/include/nagios.h	2013-05-08 18:21:19.000000000 +0000
+@@ -431,6 +431,7 @@
+ 
+ /******************** FUNCTIONS **********************/
+ extern int set_loadctl_options(char *opts, unsigned int len);
++extern int add_command_environment_to_kvv(struct kvvec *kvv, struct command *check_command, nagios_macros *mac);
+ 
+ /* silly helpers useful pretty much all over the place */
+ extern const char *service_state_name(int state);
+diff -ur nagios-4.0.20130107.original/include/objects.h nagios-4.0.20130107/include/objects.h
+--- nagios-4.0.20130107.original/include/objects.h	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/include/objects.h	2013-05-08 18:21:19.000000000 +0000
+@@ -45,7 +45,7 @@
+ 
+ /***************** SKIP LISTS ****************/
+ 
+-#define NUM_OBJECT_SKIPLISTS                   12
++#define NUM_OBJECT_SKIPLISTS                   13
+ #define NUM_HASHED_OBJECT_TYPES                8
+ 
+ #define HOST_SKIPLIST                          0
+@@ -60,6 +60,7 @@
+ #define SERVICEDEPENDENCY_SKIPLIST             9
+ #define HOSTESCALATION_SKIPLIST                10
+ #define SERVICEESCALATION_SKIPLIST             11
++#define COMMANDENVIRONMENT_SKIPLIST            12
+ 
+ /****************** DEFINITIONS *******************/
+ /*#define VOLATILE_FALSE 0 - uses FALSE*/
+@@ -323,6 +324,12 @@
+ 	} customvariablesmember;
+ 
+ 
++/* COMMANDENVIRONMENT structure */
++typedef struct commandenvironment {
++	char    *env;
++	struct commandenvironment *next;
++	} commandenvironment;
++
+ /* COMMAND structure */
+ typedef struct command {
+ 	unsigned int id;
+@@ -759,6 +766,7 @@
+ extern struct hostescalation *hostescalation_list;
+ extern struct serviceescalation *serviceescalation_list;
+ extern struct command **command_ary;
++extern struct commandenvironment **commandenvironment_ary;
+ extern struct timeperiod **timeperiod_ary;
+ extern struct host **host_ary;
+ extern struct service **service_ary;
+@@ -782,6 +790,7 @@
+ struct contact *add_contact(char *name, char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period, int service_notification_options, int host_notification_options, int service_notifications_enabled, int host_notifications_enabled, int can_submit_commands, int retain_status_information, int retain_nonstatus_information, unsigned int minimum_value, int notification_level_start, int notification_level_stop);
+ struct commandsmember *add_service_notification_command_to_contact(contact *, char *);				/* adds a service notification command to a contact definition */
+ struct commandsmember *add_host_notification_command_to_contact(contact *, char *);				/* adds a host notification command to a contact definition */
++struct commandenvironment *add_command_environment_to_command(command *, char *);				/* adds a environment string to a command */
+ struct customvariablesmember *add_custom_variable_to_contact(contact *, char *, char *);                       /* adds a custom variable to a service definition */
+ struct host *add_host(char *name, char *display_name, char *alias, char *address, char *check_period, int initial_state, double check_interval, double retry_interval, int max_attempts, int notification_options, double notification_interval, double first_notification_delay, char *notification_period, int notifications_enabled, char *check_command, int checks_enabled, int accept_passive_checks, char *event_handler, int event_handler_enabled, int flap_detection_enabled, double low_flap_threshold, double high_flap_threshold, int flap_detection_options, int stalking_options, int process_perfdata, int check_freshness, int freshness_threshold, char *notes, char *notes_url, char *action_url, char *icon_image, char *icon_image_alt, char *vrml_image, char *statusmap_image, int x_2d, int y_2d, int have_2d_coords, double x_3d, double y_3d, double z_3d, int have_3d_coords, int should_be_drawn, int retain_status_information, int retain_nonstatus_information, int obsess_over_host, unsigned int hourly_value);
+ struct hostsmember *add_parent_host_to_host(host *, char *);							/* adds a parent host to a host definition */
+diff -ur nagios-4.0.20130107.original/include/workers.h nagios-4.0.20130107/include/workers.h
+--- nagios-4.0.20130107.original/include/workers.h	2012-12-24 15:29:29.000000000 +0000
++++ nagios-4.0.20130107/include/workers.h	2013-05-08 18:21:19.000000000 +0000
+@@ -49,12 +49,12 @@
+ extern void free_worker_memory(int flags);
+ extern int workers_alive(void);
+ extern int init_workers(int desired_workers);
+-extern int wproc_run_check(check_result *cr, char *cmd, nagios_macros *mac);
+-extern int wproc_notify(char *cname, char *hname, char *sdesc, char *cmd, nagios_macros *mac);
+-extern int wproc_run(int job_type, char *cmd, int timeout, nagios_macros *mac);
+-extern int wproc_run_service_job(int jtype, int timeout, service *svc, char *cmd, nagios_macros *mac);
+-extern int wproc_run_host_job(int jtype, int timeout, host *hst, char *cmd, nagios_macros *mac);
+-extern int wproc_run_callback(char *cmt, int timeout, void (*cb)(struct wproc_result *, void *, int), void *data, nagios_macros *mac);
++extern int wproc_run_check(check_result *cr, char *cmd, struct kvvec *kvv);
++extern int wproc_notify(char *cname, char *hname, char *sdesc, char *cmd, struct kvvec *kvv);
++extern int wproc_run(int job_type, char *cmd, int timeout, struct kvvec *kvv);
++extern int wproc_run_service_job(int jtype, int timeout, service *svc, char *cmd, struct kvvec *kvv);
++extern int wproc_run_host_job(int jtype, int timeout, host *hst, char *cmd, struct kvvec *kvv);
++extern int wproc_run_callback(char *cmt, int timeout, void (*cb)(struct wproc_result *, void *, int), void *data, struct kvvec *kvv);
+ 
+ NAGIOS_END_DECL;
+ #endif
+diff -ur nagios-4.0.20130107.original/lib/kvvec.h nagios-4.0.20130107/lib/kvvec.h
+--- nagios-4.0.20130107.original/lib/kvvec.h	2012-12-24 15:29:25.000000000 +0000
++++ nagios-4.0.20130107/lib/kvvec.h	2013-05-08 18:21:19.000000000 +0000
+@@ -144,6 +144,7 @@
+  * @return 0 on success, < 0 on errors
+  */
+ extern int kvvec_destroy(struct kvvec *kvv, int flags);
++void kvvec_free_kvpairs(struct kvvec *kvv, int flags);
+ 
+ /**
+  * Create a linear buffer of all the key/value pairs and
+diff -ur nagios-4.0.20130107.original/lib/runcmd.c nagios-4.0.20130107/lib/runcmd.c
+--- nagios-4.0.20130107.original/lib/runcmd.c	2012-12-24 15:29:25.000000000 +0000
++++ nagios-4.0.20130107/lib/runcmd.c	2013-05-08 18:21:33.000000000 +0000
+@@ -287,6 +287,7 @@
+ 	pid_t pid;
+ 
+ 	int i = 0;
++	int envc = 0;
+ 
+ 	if(!pids)
+ 		runcmd_init();
+@@ -369,8 +370,21 @@
+ 			if(pids[i] > 0)
+ 				close (i);
+ 
++        if ( env != NULL ) {
++           while ( env[envc] != NULL ) {
++               putenv(env[envc]);
++               envc++; /* count number of ENVs */
++           }
++        }
+ 		i = execvp(argv[0], argv);
+ 		fprintf(stderr, "execvp(%s, ...) failed. errno is %d: %s\n", argv[0], errno, strerror(errno));
++
++        /* free memory in child */
++        for ( i = 0; i < envc; i++ ) {
++            free(env[i]);
++        }
++        if ( env != NULL ) free(env);
++
+ 		if (!cmd2strv_errors)
+ 			free(argv[0]);
+ 		else
+diff -ur nagios-4.0.20130107.original/lib/worker.c nagios-4.0.20130107/lib/worker.c
+--- nagios-4.0.20130107.original/lib/worker.c	2013-05-08 18:21:01.000000000 +0000
++++ nagios-4.0.20130107/lib/worker.c	2013-05-08 18:21:33.000000000 +0000
+@@ -440,8 +440,35 @@
+ int start_cmd(child_process *cp)
+ {
+ 	int pfd[2] = {-1, -1}, pfderr[2] = {-1, -1};
++    struct kvvec *kvv = cp->request;
++    int ei = 0;
++    int i;
++    char **env = (char **) malloc( ( kvv->kv_pairs + 1 ) * sizeof( char * ) );
++
++    if ( env == NULL ) {
++		exit_worker(EXIT_FAILURE, "Worker failed to allocate memory for ENV variables");
++    }
++
++    /* populate env in spawned children */
++	for (i = 0; i < kvv->kv_pairs; i++) {
++		struct key_value *kv = &kvv->kv[i];
++		char *key = kv->key;
++		char *value = kv->value;
++
++		if (!strcmp(key, "env")) {
++			// TODO: Should confirm if putenv is available
++            env[ei++] = strdup(value);
++		}
++	}
++    env[ei] = NULL;
++
++	cp->outstd.fd = runcmd_open(cp->cmd, pfd, pfderr, env);
++    // free memory (in parent)
++    for (i = 0; i < ei; i++) {
++        free(env[i]);
++    }
++    free(env);
+ 
+-	cp->outstd.fd = runcmd_open(cp->cmd, pfd, pfderr, NULL);
+ 	if (cp->outstd.fd < 0) {
+ 		return -1;
+ 	}
+diff -ur nagios-4.0.20130107.original/xdata/xodtemplate.c nagios-4.0.20130107/xdata/xodtemplate.c
+--- nagios-4.0.20130107.original/xdata/xodtemplate.c	2013-05-08 18:21:00.000000000 +0000
++++ nagios-4.0.20130107/xdata/xodtemplate.c	2013-05-08 18:21:19.000000000 +0000
+@@ -1321,6 +1321,10 @@
+ 				if((temp_command->command_line = (char *)strdup(value)) == NULL)
+ 					result = ERROR;
+ 				}
++			else if(!strcmp(variable, "env")) {
++				if(xodtemplate_add_commandenvironment(temp_command, value) == NULL)
++					result = ERROR;
++				}
+ 			else if(!strcmp(variable, "register"))
+ 				temp_command->register_object = (atoi(value) > 0) ? TRUE : FALSE;
+ 			else {
+@@ -3602,6 +3606,29 @@
+ 	}
+ 
+ 
++/* adds an envvar to a command definition */
++xodtemplate_commandenvironment *xodtemplate_add_commandenvironment(xodtemplate_command *command, char *env) {
++	xodtemplate_commandenvironment *new_commandenvironment = NULL;
++
++	/* make sure we have the data we need */
++	if(env == NULL || !strcmp(env, ""))
++		return NULL;
++
++	/* allocate memory for a new env */
++	if((new_commandenvironment = malloc(sizeof(xodtemplate_commandenvironment))) == NULL)
++		return NULL;
++	if((new_commandenvironment->env = (char *)strdup(env)) == NULL) {
++		my_free(new_commandenvironment);
++		return NULL;
++		}
++
++	/* add the new member to the head of the member list */
++	new_commandenvironment->next = command->env;
++	command->env = new_commandenvironment;
++
++	return new_commandenvironment;
++	}
++
+ 
+ /* parses a timeperod directive... :-) */
+ int xodtemplate_parse_timeperiod_directive(xodtemplate_timeperiod *tperiod, char *var, char *val) {
+@@ -7023,6 +7050,9 @@
+ 		ocount[i] = (unsigned int)skiplist_num_items(xobject_skiplists[i]);
+ 	}
+ 
++	/* commandenvironments are based on commands */
++	ocount[COMMANDENVIRONMENT_SKIPLIST] = skiplist_num_items(xobject_skiplists[COMMAND_SKIPLIST]);
++
+ 	/* dependencies are handled specially */
+ 	ocount[SERVICEDEPENDENCY_SKIPLIST] = 0;
+ 	ocount[HOSTDEPENDENCY_SKIPLIST] = 0;
+@@ -7355,6 +7385,9 @@
+ /* registers a command definition */
+ int xodtemplate_register_command(xodtemplate_command *this_command) {
+ 	command *new_command = NULL;
++#ifndef NSCGI
++	xodtemplate_commandenvironment *command_environment;
++#endif
+ 
+ 	/* bail out if we shouldn't register this object */
+ 	if(this_command->register_object == FALSE)
+@@ -7369,6 +7402,16 @@
+ 		return ERROR;
+ 		}
+ 
++#ifndef NSCGI
++	/* add all the environment lines */
++	for(command_environment = this_command->env; command_environment!=NULL; command_environment=command_environment->next) {
++		if(add_command_environment_to_command(new_command, command_environment->env)==NULL) {
++			logit(NSLOG_CONFIG_ERROR, TRUE, "Error: Could not add environment '%s' to command (config file '%s', starting on line %d)\n", command_environment->env, xodtemplate_config_file_name(this_command->_config_file), this_command->_start_line);
++			return ERROR;
++			}
++		}
++#endif
++
+ 	return OK;
+ 	}
+ 
+@@ -8511,6 +8554,8 @@
+ 	xodtemplate_daterange *next_daterange = NULL;
+ 	xodtemplate_command *this_command = NULL;
+ 	xodtemplate_command *next_command = NULL;
++	xodtemplate_commandenvironment *this_command_env = NULL;
++	xodtemplate_commandenvironment *next_command_env = NULL;
+ 	xodtemplate_contactgroup *this_contactgroup = NULL;
+ 	xodtemplate_contactgroup *next_contactgroup = NULL;
+ 	xodtemplate_hostgroup *this_hostgroup = NULL;
+@@ -8561,6 +8606,15 @@
+ 			my_free(this_command->command_name);
+ 			my_free(this_command->command_line);
+ 		}
++
++		this_command_env = this_command->env;
++		while(this_command_env != NULL) {
++			next_command_env = this_command_env->next;
++			my_free(this_command_env->env);
++			my_free(this_command_env);
++			this_command_env = next_command_env;
++			}
++
+ 		my_free(this_command);
+ 		}
+ 	xodtemplate_command_list = NULL;
+diff -ur nagios-4.0.20130107.original/xdata/xodtemplate.h nagios-4.0.20130107/xdata/xodtemplate.h
+--- nagios-4.0.20130107.original/xdata/xodtemplate.h	2013-05-08 18:21:00.000000000 +0000
++++ nagios-4.0.20130107/xdata/xodtemplate.h	2013-05-08 18:21:19.000000000 +0000
+@@ -68,6 +68,11 @@
+ 	struct xodtemplate_customvariablesmember_struct *next;
+ 	} xodtemplate_customvariablesmember;
+ 
++/* COMMANDENVIRONMENT structure */
++typedef struct xodtemplate_commandenvironment_struct {
++	char    *env;
++	struct xodtemplate_commandenvironment_struct *next;
++	} xodtemplate_commandenvironment;
+ 
+ /* DATERANGE structure */
+ typedef struct xodtemplate_daterange_struct {
+@@ -116,6 +121,7 @@
+ 
+     char       *command_name;
+     char       *command_line;
++    xodtemplate_commandenvironment *env;
+ 
+     unsigned has_been_resolved : 1;
+     unsigned register_object : 1;
+@@ -793,6 +799,7 @@
+ xodtemplate_customvariablesmember *xodtemplate_add_custom_variable_to_service(xodtemplate_service *, char *, char *);
+ xodtemplate_customvariablesmember *xodtemplate_add_custom_variable_to_contact(xodtemplate_contact *, char *, char *);
+ xodtemplate_customvariablesmember *xodtemplate_add_custom_variable_to_object(xodtemplate_customvariablesmember **, char *, char *);
++xodtemplate_commandenvironment *xodtemplate_add_commandenvironment(xodtemplate_command *, char *);
+ 
+ 
+ int xodtemplate_register_objects(void);

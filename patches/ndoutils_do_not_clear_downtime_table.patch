@@ -1,0 +1,13 @@
+diff -ur ndoutils-1.4b7.original/src/dbhandlers.c ndoutils-1.4b7/src/dbhandlers.c
+--- ndoutils-1.4b7.original/src/dbhandlers.c	2010-07-19 14:33:21.000000000 +0100
++++ ndoutils-1.4b7/src/dbhandlers.c	2010-07-19 22:19:19.000000000 +0100
+@@ -657,7 +657,8 @@
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_CONTACTSTATUS]);
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_TIMEDEVENTQUEUE]);
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_COMMENTS]);
+-		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_SCHEDULEDDOWNTIME]);
++		/* Opsview patch: Leave this as for configdumpend, to minimize time without data */
++		/* ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_SCHEDULEDDOWNTIME]); */
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_RUNTIMEVARIABLES]);
+ 		ndo2db_db_clear_table(idi,ndo2db_db_tablenames[NDO2DB_DBTABLE_CUSTOMVARIABLESTATUS]);
+ 

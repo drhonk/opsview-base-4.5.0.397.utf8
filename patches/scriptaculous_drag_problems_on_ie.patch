@@ -1,0 +1,14 @@
+diff -ur scriptaculous-js-1.7.0.original/lib/prototype.js scriptaculous-js-1.7.0/lib/prototype.js
+--- scriptaculous-js-1.7.0.original/lib/prototype.js	2007-01-19 18:16:36.000000000 +0000
++++ scriptaculous-js-1.7.0/lib/prototype.js	2007-02-15 13:20:57.678461323 +0000
+@@ -2322,6 +2322,10 @@
+     do {
+       valueT += element.offsetTop  || 0;
+       valueL += element.offsetLeft || 0;
++      // Problem when dragging objects in Hostgroup Hierarchy on IE
++      // Patch from http://dev.rubyonrails.org/ticket/5515
++      if (typeof element.offsetParent == 'undefined' || typeof element.offsetParent == 'unknown')
++        break;
+       element = element.offsetParent;
+     } while (element);
+     return [valueL, valueT];

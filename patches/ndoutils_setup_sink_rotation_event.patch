@@ -1,0 +1,35 @@
+diff -ur ndoutils-2-0/src/ndomod.c ndoutils-2-0.setup_sink_rotation_event//src/ndomod.c
+--- ndoutils-2-0/src/ndomod.c	2012-11-30 04:55:13.000000000 +0000
++++ ndoutils-2-0.setup_sink_rotation_event//src/ndomod.c	2012-11-30 04:54:28.000000000 +0000
+@@ -199,8 +199,6 @@
+ 
+ /* performs some initialization stuff */
+ int ndomod_init(void){
+-	char temp_buffer[NDOMOD_MAX_BUFLEN];
+-	time_t current_time;
+ 
+ 	/* initialize some vars (needed for restarts of daemon - why, if the module gets reloaded ???) */
+ 	ndomod_sink_is_open=NDO_FALSE;
+@@ -224,6 +222,14 @@
+ 	if(ndomod_register_callbacks()==NDO_ERROR)
+ 		return NDO_ERROR;
+ 
++	return NDO_OK;
++        }
++
++
++/* This needs to be setup in PROCESS_START because Nagios 4 initialises the event queue after module initialisation */
++int ndomod_setup_sink_file_rotation(void){
++	char temp_buffer[NDOMOD_MAX_BUFLEN];
++	time_t current_time;
+ 	if(ndomod_sink_type==NDO_SINK_FILE){
+ 
+ 		/* make sure we have a rotation command defined... */
+@@ -3317,6 +3324,7 @@
+ 
+ 		/* process has passed pre-launch config verification, so dump original config */
+ 		if(procdata->type==NEBTYPE_PROCESS_START){
++            ndomod_setup_sink_file_rotation();
+ 			ndomod_write_config_files();
+ 			ndomod_write_config(NDOMOD_CONFIG_DUMP_ORIGINAL);
+ 		        }

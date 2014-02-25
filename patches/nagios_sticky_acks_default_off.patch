@@ -1,0 +1,39 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/cmd.c nagios-4.0.20121116/cgi/cmd.c
+--- nagios-4.0.20121116.orig/cgi/cmd.c	2012-11-26 15:51:17.000000000 +0000
++++ nagios-4.0.20121116/cgi/cmd.c	2012-11-27 10:37:59.000000000 +0000
+@@ -950,7 +950,7 @@
+ 			printf("</b></td></tr>\n");
+ 			if(cmd == CMD_ACKNOWLEDGE_HOST_PROBLEM) {
+ 				printf("<tr><td CLASS='optBoxItem'>Sticky Acknowledgement:</td><td><b>");
+-				printf("<INPUT TYPE='checkbox' NAME='sticky_ack' CHECKED>");
++				printf("<INPUT TYPE='checkbox' NAME='sticky_ack'>");
+ 				printf("</b></td></tr>\n");
+ 				printf("<tr><td CLASS='optBoxItem'>Send Notification:</td><td><b>");
+ 				printf("<INPUT TYPE='checkbox' NAME='send_notification' CHECKED>");
+@@ -976,7 +976,7 @@
+ 			printf("<INPUT TYPE='TEXT' NAME='service' VALUE='%s'>", escape_string(service_desc));
+ 			if(cmd == CMD_ACKNOWLEDGE_SVC_PROBLEM) {
+ 				printf("<tr><td CLASS='optBoxItem'>Sticky Acknowledgement:</td><td><b>");
+-				printf("<INPUT TYPE='checkbox' NAME='sticky_ack' CHECKED>");
++				printf("<INPUT TYPE='checkbox' NAME='sticky_ack'>");
+ 				printf("</b></td></tr>\n");
+ 				printf("<tr><td CLASS='optBoxItem'>Send Notification:</td><td><b>");
+ 				printf("<INPUT TYPE='checkbox' NAME='send_notification' CHECKED>");
+@@ -2434,7 +2434,7 @@
+ 
+ 		case CMD_ACKNOWLEDGE_HOST_PROBLEM:
+ 			printf("This command is used to acknowledge a host problem.  When a host problem is acknowledged, future notifications about problems are temporarily disabled until the host changes from its current state.\n");
+-			printf("If you want acknowledgement to disable notifications until the host recovers, check the 'Sticky Acknowledgement' checkbox.\n");
++			printf("If you want this acknowledgement to remain until the host recovers, check the 'Sticky Acknowledgement' checkbox, otherwise any state change will remove the acknowledgement.\n");
+ 			printf("Contacts for this host will receive a notification about the acknowledgement, so they are aware that someone is working on the problem.  Additionally, a comment will also be added to the host.\n");
+ 			printf("Make sure to enter your name and fill in a brief description of what you are doing in the comment field.  If you would like the host comment to remain once the acknowledgement is removed, check\n");
+ 			printf("the 'Persistent Comment' checkbox.  If you do not want an acknowledgement notification sent out to the appropriate contacts, uncheck the 'Send Notification' checkbox.\n");
+@@ -2442,7 +2442,7 @@
+ 
+ 		case CMD_ACKNOWLEDGE_SVC_PROBLEM:
+ 			printf("This command is used to acknowledge a service problem.  When a service problem is acknowledged, future notifications about problems are temporarily disabled until the service changes from its current state.\n");
+-			printf("If you want acknowledgement to disable notifications until the service recovers, check the 'Sticky Acknowledgement' checkbox.\n");
++			printf("If you want this acknowledgement to remain until the service recovers, check the 'Sticky Acknowledgement' checkbox, otherwise any state change will remove the acknowledgement.\n");
+ 			printf("Contacts for this service will receive a notification about the acknowledgement, so they are aware that someone is working on the problem.  Additionally, a comment will also be added to the service.\n");
+ 			printf("Make sure to enter your name and fill in a brief description of what you are doing in the comment field.  If you would like the service comment to remain once the acknowledgement is removed, check\n");
+ 			printf("the 'Persistent Comment' checkbox.  If you do not want an acknowledgement notification sent out to the appropriate contacts, uncheck the 'Send Notification' checkbox.\n");

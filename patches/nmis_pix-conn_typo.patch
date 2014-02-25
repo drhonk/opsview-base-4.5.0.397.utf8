@@ -1,0 +1,21 @@
+diff -ur nmis-4.2.13.original/cgi-bin/nmiscgi.pl nmis-4.2.13/cgi-bin/nmiscgi.pl
+--- nmis-4.2.13.original/cgi-bin/nmiscgi.pl	2008-04-25 20:58:33.678571000 +0200
++++ nmis-4.2.13/cgi-bin/nmiscgi.pl	2008-04-25 21:01:58.610417376 +0200
+@@ -584,7 +584,7 @@
+ 			',ip' 			=> 'IP' ,
+ 			',traffic'		=> 'Traffic' ,
+ 			',mem-proc'		=> 'Memory' ,
+-			',pic-conn'		=> 'Connections' ,
++			',pix-conn'		=> 'Connections' ,
+ 			',a3bandwidth'	=> 'Bandwidth' ,
+ 			',a3traffic'	=> 'Traffic' ,
+ 			',a3errors'		=> 'Errors'
+@@ -812,7 +812,7 @@
+ 					'nmis' =>		"NMIS runtime",
+ 					'traffic' =>	"$node System Traffic",
+ 					'topo' =>		"$node Topology Changes",
+-					'pic-conn' =>	"$node Firewall Connections",
++					'pix-conn' =>	"$node Firewall Connections",
+ 					'a3bandwidth' => "$node System Bandwidth",
+ 					'a3traffic' =>	"$node System Traffic",
+ 					'a3errors' =>	"$node System Errors",

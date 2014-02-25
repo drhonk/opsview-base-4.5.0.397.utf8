@@ -1,0 +1,20 @@
+diff -ur nagios-plugins-1.4.15/tools/build_perl_modules nagios-plugins-1.4.15.noxs/tools/build_perl_modules
+--- nagios-plugins-1.4.15/tools/build_perl_modules	2010-07-27 20:47:16.000000000 +0000
++++ nagios-plugins-1.4.15.noxs/tools/build_perl_modules	2012-07-26 12:02:56.294714659 +0000
+@@ -65,7 +65,15 @@
+ 		unless (-e $dir) {
+ 			system("gunzip -c $tarball | tar -xf -") == 0 or die "Cannot extract $tarball";
+ 			chdir $dir or die "Can't chdir into $dir";
+-			system("perl Makefile.PL PREFIX=$destdir INSTALLDIRS=site LIB=$destdir/lib") == 0 or die "Can't run perl Makefile.PL";
++
++			my $extra_args = "";
++
++			# Hackity hack! Params::Validate has problems compiling xs on Ubuntu12. We disable XS compiling
++			if ($dir =~ /Params-Validate/) {
++				$extra_args = "--pm";
++			}
++
++			system("perl Makefile.PL PREFIX=$destdir INSTALLDIRS=site LIB=$destdir/lib $extra_args") == 0 or die "Can't run perl Makefile.PL";
+ 			system("make") == 0 or die "Can't run make";
+ 			chdir $topdir or die "Can't chdir to top";;
+ 		}

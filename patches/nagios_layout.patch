@@ -1,0 +1,1112 @@
+diff -ur nagios-4.0.20130107.original/cgi/avail.c nagios-4.0.20130107/cgi/avail.c
+--- nagios-4.0.20130107.original/cgi/avail.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/avail.c	2013-05-11 19:16:02.000000000 +0000
+@@ -391,11 +391,10 @@
+ 				break;
+ 			}
+ 		temp_buffer[sizeof(temp_buffer) - 1] = '\x0';
+-		display_info_table(temp_buffer, FALSE, &current_authdata);
+ 
+ 		if(((display_type == DISPLAY_HOST_AVAIL && show_all_hosts == FALSE) || (display_type == DISPLAY_SERVICE_AVAIL && show_all_services == FALSE)) && get_date_parts == FALSE) {
+ 
+-			printf("<TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 CLASS='linkBox'>\n");
++			printf("<TABLE BORDER=0 CLASS='linkBox'>\n");
+ 			printf("<TR><TD CLASS='linkBox'>\n");
+ 
+ 			if(display_type == DISPLAY_HOST_AVAIL && show_all_hosts == FALSE) {
+@@ -3281,7 +3280,7 @@
+ 
+ 	printf("<DIV ALIGN=CENTER>\n");
+ 
+-	printf("<table border=1 cellspacing=0 cellpadding=3 class='logEntries'>\n");
++	printf("<table border=0 class='logEntries'>\n");
+ 	printf("<tr><th class='logEntries'>Event Start Time</th><th class='logEntries'>Event End Time</th><th class='logEntries'>Event Duration</th><th class='logEntries'>Event/State Type</th><th class='logEntries'>Event/State Information</th></tr>\n");
+ 
+ 	/* write all archived state entries */
+diff -ur nagios-4.0.20130107.original/cgi/cgiutils.c nagios-4.0.20130107/cgi/cgiutils.c
+--- nagios-4.0.20130107.original/cgi/cgiutils.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/cgiutils.c	2013-05-11 19:15:53.000000000 +0000
+@@ -1361,47 +1361,8 @@
+  *************** COMMON HTML FUNCTIONS ********************
+  **********************************************************/
+ 
+-void display_info_table(const char *title, int refresh, authdata *current_authdata) {
+-	time_t current_time;
+-	char date_time[MAX_DATETIME_LENGTH];
+-	int result;
+-
+-	/* read program status */
+-	result = read_all_status_data(main_config_file, READ_PROGRAM_STATUS);
+-
+-	printf("<TABLE CLASS='infoBox' BORDER=1 CELLSPACING=0 CELLPADDING=0>\n");
+-	printf("<TR><TD CLASS='infoBox'>\n");
+-	printf("<DIV CLASS='infoBoxTitle'>%s</DIV>\n", title);
+-
+-	time(&current_time);
+-	get_time_string(&current_time, date_time, (int)sizeof(date_time), LONG_DATE_TIME);
+-
+-	printf("Last Updated: %s<BR>\n", date_time);
+-	if(refresh == TRUE)
+-		printf("Updated every %d seconds<br>\n", refresh_rate);
+-
+-	printf("Nagios&reg; Core&trade; %s - <A HREF='http://www.nagios.org' TARGET='_new' CLASS='homepageURL'>www.nagios.org</A><BR>\n", PROGRAM_VERSION);
+-
+-	if(current_authdata != NULL)
+-		printf("Logged in as <i>%s</i><BR>\n", (!strcmp(current_authdata->username, "")) ? "?" : current_authdata->username);
+-
+-	if(nagios_process_state != STATE_OK)
+-		printf("<DIV CLASS='infoBoxBadProcStatus'>Warning: Monitoring process may not be running!<BR>Click <A HREF='%s?type=%d'>here</A> for more info.</DIV>", EXTINFO_CGI, DISPLAY_PROCESS_INFO);
+-
+-	if(result == ERROR)
+-		printf("<DIV CLASS='infoBoxBadProcStatus'>Warning: Could not read program status information!</DIV>");
+-
+-	else {
+-		if(enable_notifications == FALSE)
+-			printf("<DIV CLASS='infoBoxBadProcStatus'>- Notifications are disabled</DIV>");
+-
+-		if(execute_service_checks == FALSE)
+-			printf("<DIV CLASS='infoBoxBadProcStatus'>- Service checks are disabled</DIV>");
+-		}
+-
+-	printf("</TD></TR>\n");
+-	printf("</TABLE>\n");
+-
++void display_info_table(const char *title, int refresh, authdata *current_authdata){
++	int result = read_all_status_data(main_config_file, READ_PROGRAM_STATUS);
+ 	return;
+ 	}
+ 
+diff -ur nagios-4.0.20130107.original/cgi/cmd.c nagios-4.0.20130107/cgi/cmd.c
+--- nagios-4.0.20130107.original/cgi/cmd.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/cmd.c	2013-05-11 19:16:02.000000000 +0000
+@@ -934,7 +934,7 @@
+ 
+ 	printf("<DIV ALIGN=CENTER CLASS='optBoxTitle'>Command Options</DIV>\n");
+ 
+-	printf("<TABLE CELLSPACING=0 CELLPADDING=0 BORDER=1 CLASS='optBox'>\n");
++	printf("<TABLE CELLSPACING=0 CELLPADDING=0 BORDER=0 CLASS='optBox'>\n");
+ 	printf("<TR><TD CLASS='optBoxItem'>\n");
+ 	printf("<form method='post' action='%s'>\n", COMMAND_CGI);
+ 	printf("<TABLE CELLSPACING=0 CELLPADDING=0 CLASS='optBox'>\n");
+@@ -2303,7 +2303,7 @@
+ void show_command_help(cmd) {
+ 
+ 	printf("<DIV ALIGN=CENTER CLASS='descriptionTitle'>Command Description</DIV>\n");
+-	printf("<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=0 CLASS='commandDescription'>\n");
++	printf("<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 CLASS='commandDescription'>\n");
+ 	printf("<TR><TD CLASS='commandDescription'>\n");
+ 
+ 	/* decide what information to print out... */
+diff -ur nagios-4.0.20130107.original/cgi/config.c nagios-4.0.20130107/cgi/config.c
+--- nagios-4.0.20130107.original/cgi/config.c	2013-05-11 19:15:34.000000000 +0000
++++ nagios-4.0.20130107/cgi/config.c	2013-05-11 19:15:53.000000000 +0000
+@@ -159,7 +159,6 @@
+ 
+ 	/* left column of the first row */
+ 	printf("<td align=left valign=top width=50%%>\n");
+-	display_info_table("Configuration", FALSE, &current_authdata);
+ 	printf("</td>\n");
+ 
+ 	/* right hand column of top row */
+diff -ur nagios-4.0.20130107.original/cgi/extinfo.c nagios-4.0.20130107/cgi/extinfo.c
+--- nagios-4.0.20130107.original/cgi/extinfo.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/extinfo.c	2013-05-11 19:16:02.000000000 +0000
+@@ -182,7 +182,7 @@
+ 		printf("<tr>\n");
+ 
+ 		/* left column of the first row */
+-		printf("<td align=left valign=top width=33%%>\n");
++		printf("<td align=left valign=top width=30%%>\n");
+ 
+ 		if(display_type == DISPLAY_HOST_INFO)
+ 			snprintf(temp_buffer, sizeof(temp_buffer) - 1, "Host Information");
+@@ -203,7 +203,6 @@
+ 		else
+ 			snprintf(temp_buffer, sizeof(temp_buffer) - 1, "Nagios Core Process Information");
+ 		temp_buffer[sizeof(temp_buffer) - 1] = '\x0';
+-		display_info_table(temp_buffer, TRUE, &current_authdata);
+ 
+ 		/* find the host */
+ 		if(display_type == DISPLAY_HOST_INFO || display_type == DISPLAY_SERVICE_INFO) {
+@@ -249,7 +248,7 @@
+ 			}
+ 
+ 		if((display_type == DISPLAY_HOST_INFO && temp_host != NULL) || (display_type == DISPLAY_SERVICE_INFO && temp_host != NULL && temp_service != NULL) || (display_type == DISPLAY_HOSTGROUP_INFO && temp_hostgroup != NULL) || (display_type == DISPLAY_SERVICEGROUP_INFO && temp_servicegroup != NULL)) {
+-			printf("<TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 CLASS='linkBox'>\n");
++			printf("<TABLE BORDER=0 CLASS='linkBox'>\n");
+ 			printf("<TR><TD CLASS='linkBox'>\n");
+ 			if(display_type == DISPLAY_SERVICE_INFO)
+ 				printf("<A HREF='%s?type=%d&host=%s'>View Information For This Host</A><br>\n", EXTINFO_CGI, DISPLAY_HOST_INFO, url_encode(host_name));
+@@ -301,57 +300,71 @@
+ 		printf("</td>\n");
+ 
+ 		/* middle column of top row */
+-		printf("<td align=center valign=middle width=33%%>\n");
++		printf("<td align=center valign=middle width=40%%>\n");
+ 
+ 		if((display_type == DISPLAY_HOST_INFO && temp_host != NULL) || (display_type == DISPLAY_SERVICE_INFO && temp_host != NULL && temp_service != NULL) || (display_type == DISPLAY_HOSTGROUP_INFO && temp_hostgroup != NULL) || (display_type == DISPLAY_SERVICEGROUP_INFO && temp_servicegroup != NULL)) {
+ 
++			printf("<table class='infoBox'>");
++
+ 			if(display_type == DISPLAY_HOST_INFO) {
+-				printf("<DIV CLASS='data'>Host</DIV>\n");
+-				printf("<DIV CLASS='dataTitle'>%s</DIV>\n", temp_host->alias);
+-				printf("<DIV CLASS='dataTitle'>(%s)</DIV><BR>\n", temp_host->name);
+-
+-				if(temp_host->parent_hosts != NULL) {
+-					/* print all parent hosts */
+-					printf("<DIV CLASS='data'>Parents:</DIV>\n");
+-					for(temp_parenthost = temp_host->parent_hosts; temp_parenthost != NULL; temp_parenthost = temp_parenthost->next)
+-						printf("<DIV CLASS='dataTitle'><A HREF='%s?host=%s'>%s</A></DIV>\n", STATUS_CGI, url_encode(temp_parenthost->host_name), temp_parenthost->host_name);
+-					printf("<BR>");
++
++				printf("<tr><td align=right class='infoBoxTitle'>Host:</td><td>%s (%s)</td></tr>", temp_host->alias, temp_host->name);
++
++				if (temp_host->parent_hosts != NULL) {
++					printf("<tr><td align=right class='infoBoxTitle'>Parents:</td><td>");
++					found = FALSE;
++					for(temp_parenthost = temp_host->parent_hosts; temp_parenthost != NULL; temp_parenthost = temp_parenthost->next) {
++						if (found == TRUE)
++							printf(", ");
++						printf("<a href='%s?host=%s'>%s</a>", STATUS_CGI, url_encode(temp_parenthost->host_name), temp_parenthost->host_name);
++						found = TRUE;
++						}
++					printf("</td></tr>");
+ 					}
+ 
+-				printf("<DIV CLASS='data'>Member of</DIV><DIV CLASS='dataTitle'>");
++				printf("<tr><td align=right class='infoBoxTitle'>Member of:</td><td>");
++				found = FALSE;
+ 				for(temp_hostgroup = hostgroup_list; temp_hostgroup != NULL; temp_hostgroup = temp_hostgroup->next) {
+-					if(is_host_member_of_hostgroup(temp_hostgroup, temp_host) == TRUE) {
++					if(is_host_member_of_hostgroup(temp_hostgroup, temp_host) == TRUE){
+ 						if(found == TRUE)
+ 							printf(", ");
+-						printf("<A HREF='%s?hostgroup=%s&style=overview'>%s</A>", STATUS_CGI, url_encode(temp_hostgroup->group_name), temp_hostgroup->group_name);
++						printf("<a href='%s?hostgroup=%s&style=overview'>%s</a>", STATUS_CGI, url_encode(temp_hostgroup->group_name), temp_hostgroup->group_name);
+ 						found = TRUE;
+ 						}
+ 					}
+-
+ 				if(found == FALSE)
+ 					printf("No hostgroups");
+-				printf("</DIV><BR>\n");
+-				printf("<DIV CLASS='data'>%s</DIV>\n", temp_host->address);
++				printf("</td></tr>");
++
++				printf("<tr><td align=right class='infoBoxTitle'>Address:</td><td>%s</td></tr>", temp_host->address);
++
+ 				}
+ 			if(display_type == DISPLAY_SERVICE_INFO) {
+-				printf("<DIV CLASS='data'>Service</DIV><DIV CLASS='dataTitle'>%s</DIV><DIV CLASS='data'>On Host</DIV>\n", service_desc);
+-				printf("<DIV CLASS='dataTitle'>%s</DIV>\n", temp_host->alias);
+-				printf("<DIV CLASS='dataTitle'>(<A HREF='%s?type=%d&host=%s'>%s</a>)</DIV><BR>\n", EXTINFO_CGI, DISPLAY_HOST_INFO, url_encode(temp_host->name), temp_host->name);
+-				printf("<DIV CLASS='data'>Member of</DIV><DIV CLASS='dataTitle'>");
+-				for(temp_servicegroup = servicegroup_list; temp_servicegroup != NULL; temp_servicegroup = temp_servicegroup->next) {
++
++				printf("<tr><td align=right class='infoBoxTitle'>Service:</td><td>%s</td></tr>", service_desc);
++
++				printf(
++					"<tr><td align=right class='infoBoxTitle'>On host:</td></td><td>%s (<a href='%s?type=%d&host=%s'>%s</a>)</td></tr>",
++					temp_host->alias, EXTINFO_CGI, DISPLAY_HOST_INFO,
++					url_encode(temp_host->name), temp_host->name
++				);
++
++				printf("<tr><td align=right class='infoBoxTitle'>Member of:</td><td>");
++				found = FALSE;
++				for(temp_servicegroup=servicegroup_list; temp_servicegroup != NULL; temp_servicegroup = temp_servicegroup->next) {
+ 					if(is_service_member_of_servicegroup(temp_servicegroup, temp_service) == TRUE) {
+ 						if(found == TRUE)
+ 							printf(", ");
+-						printf("<A HREF='%s?servicegroup=%s&style=overview'>%s</A>", STATUS_CGI, url_encode(temp_servicegroup->group_name), temp_servicegroup->group_name);
++						printf("<a href='%s?servicegroup=%s&style=overview'>%s</a>", STATUS_CGI, url_encode(temp_servicegroup->group_name), temp_servicegroup->group_name);
+ 						found = TRUE;
+ 						}
+ 					}
+-
+ 				if(found == FALSE)
+-					printf("No servicegroups.");
+-				printf("</DIV><BR>\n");
++					printf("No servicegroups");
++				printf("</td></tr>");
++
++				printf("<tr><td align=right class='infoBoxTitle'>Address:</td><td>%s</td></tr>", temp_host->address);
+ 
+-				printf("<DIV CLASS='data'>%s</DIV>\n", temp_host->address);
+ 				}
+ 			if(display_type == DISPLAY_HOSTGROUP_INFO) {
+ 				printf("<DIV CLASS='data'>Hostgroup</DIV>\n");
+@@ -376,6 +389,7 @@
+ 
+ 			if(display_type == DISPLAY_SERVICE_INFO) {
+ 				if(temp_service->icon_image != NULL) {
++					printf("<tr><td>&nbsp;</td><td>");
+ 					printf("<A HREF='");
+ 					process_macros_r(mac, temp_service->notes_url, &processed_string, 0);
+ 					printf("%s", processed_string);
+@@ -387,37 +401,37 @@
+ 					free(processed_string);
+ 					printf("' border=0 alt='%s' title='%s'></A><BR CLEAR=ALL>", (temp_service->icon_image_alt == NULL) ? "" : temp_service->icon_image_alt, (temp_service->icon_image_alt == NULL) ? "" : temp_service->icon_image_alt);
+ 					}
+-				if(temp_service->icon_image_alt != NULL)
+-					printf("<font size=-1><i>( %s )</i></font>\n", temp_service->icon_image_alt);
++				printf("</td></tr>");
+ 				if(temp_service->notes != NULL) {
+ 					process_macros_r(mac, temp_service->notes, &processed_string, 0);
+-					printf("<p>%s</p>\n", processed_string);
++					printf("<tr><td colspan='2'>%s</td></tr>", processed_string);
+ 					free(processed_string);
+ 					}
+ 				}
+ 
+ 			if(display_type == DISPLAY_HOST_INFO) {
+ 				if(temp_host->icon_image != NULL) {
++					printf("<tr><td>&nbsp;</td><td>");
+ 					printf("<img src='%s", url_logo_images_path);
+ 					process_macros_r(mac, temp_host->icon_image, &processed_string, 0);
+ 					printf("%s", processed_string);
+ 					free(processed_string);
+ 					printf("' border=0 alt='%s' title='%s'><BR CLEAR=ALL>", (temp_host->icon_image_alt == NULL) ? "" : temp_host->icon_image_alt, (temp_host->icon_image_alt == NULL) ? "" : temp_host->icon_image_alt);
+ 					}
+-				if(temp_host->icon_image_alt != NULL)
+-					printf("<font size=-1><i>( %s )</i><font>\n", temp_host->icon_image_alt);
++				printf("</td></tr>");
+ 				if(temp_host->notes != NULL) {
+ 					process_macros_r(mac, temp_host->notes, &processed_string, 0);
+-					printf("<p>%s</p>\n", processed_string);
++					printf("<tr><td colspan='2'>%s</td></tr>", processed_string);
+ 					free(processed_string);
+ 					}
+ 				}
++			printf("</table>");
+ 			}
+ 
+ 		printf("</td>\n");
+ 
+ 		/* right column of top row */
+-		printf("<td align=right valign=bottom width=33%%>\n");
++		printf("<td align=right valign=bottom width=30%%>\n");
+ 
+ 		if(display_type == DISPLAY_HOST_INFO && temp_host != NULL) {
+ 			printf("<TABLE BORDER='0'>\n");
+@@ -1000,7 +1014,7 @@
+ 		printf("<TABLE BORDER=0>\n");
+ 		printf("<TR><TD>\n");
+ 
+-		printf("<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=0>\n");
++		printf("<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
+ 		printf("<TR><TD class='stateInfoTable1'>\n");
+ 		printf("<TABLE BORDER=0>\n");
+ 
+@@ -1114,7 +1128,7 @@
+ 		printf("</TD></TR>\n");
+ 		printf("<TR><TD>\n");
+ 
+-		printf("<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=0>\n");
++		printf("<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
+ 		printf("<TR><TD class='stateInfoTable2'>\n");
+ 		printf("<TABLE BORDER=0>\n");
+ 
+@@ -1147,74 +1161,80 @@
+ 
+ 	printf("<DIV CLASS='commandTitle'>Host Commands</DIV>\n");
+ 
+-	printf("<TABLE BORDER='1' CELLPADDING=0 CELLSPACING=0><TR><TD>\n");
++	printf("<TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0><TR><TD CLASS='stateInfoTable1'>\n");
+ 
+ 	if(nagios_process_state == STATE_OK && is_authorized_for_read_only(&current_authdata) == FALSE) {
+ 
+-		printf("<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 CLASS='command'>\n");
++		printf("<TR><TD>\n");
++
++		printf("<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>\n");
++		printf("<TR><TD class='stateInfoTable1'>\n");
++		printf("<TABLE BORDER=0>\n");
++
+ #ifdef USE_STATUSMAP
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Locate Host On Map' TITLE='Locate Host On Map'></td><td CLASS='command'><a href='%s?host=%s'>Locate host on map</a></td></tr>\n", url_images_path, STATUSMAP_ICON, STATUSMAP_CGI, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Locate Host On Map' TITLE='Locate Host On Map'></td><td CLASS='dataVal'><a href='%s?host=%s'>Locate host on map</a></td></tr>\n", url_images_path, STATUSMAP_ICON, STATUSMAP_CGI, url_encode(host_name));
+ #endif
+ 		if(temp_hoststatus->checks_enabled == TRUE) {
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Disable Active Checks Of This Host' TITLE='Disable Active Checks Of This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Disable active checks of this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_CHECK, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Disable Active Checks Of This Host' TITLE='Disable Active Checks Of This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Disable active checks of this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_CHECK, url_encode(host_name));
+ 			}
+ 		else
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Enable Active Checks Of This Host' TITLE='Enable Active Checks Of This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Enable active checks of this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_CHECK, url_encode(host_name));
+-		printf("<tr CLASS='data'><td><img src='%s%s' border=0 ALT='Re-schedule Next Host Check' TITLE='Re-schedule Next Host Check'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Re-schedule the next check of this host</a></td></tr>\n", url_images_path, DELAY_ICON, COMMAND_CGI, CMD_SCHEDULE_HOST_CHECK, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Enable Active Checks Of This Host' TITLE='Enable Active Checks Of This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Enable active checks of this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_CHECK, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Re-schedule Next Host Check' TITLE='Re-schedule Next Host Check'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Re-schedule the next check of this host</a></td></tr>\n", url_images_path, DELAY_ICON, COMMAND_CGI, CMD_SCHEDULE_HOST_CHECK, url_encode(host_name));
+ 
+ 		if(temp_hoststatus->accept_passive_checks == TRUE) {
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Submit Passive Check Result For This Host' TITLE='Submit Passive Check Result For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Submit passive check result for this host</a></td></tr>\n", url_images_path, PASSIVE_ICON, COMMAND_CGI, CMD_PROCESS_HOST_CHECK_RESULT, url_encode(host_name));
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Stop Accepting Passive Checks For This Host' TITLE='Stop Accepting Passive Checks For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Stop accepting passive checks for this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_PASSIVE_HOST_CHECKS, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Submit Passive Check Result For This Host' TITLE='Submit Passive Check Result For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Submit passive check result for this host</a></td></tr>\n", url_images_path, PASSIVE_ICON, COMMAND_CGI, CMD_PROCESS_HOST_CHECK_RESULT, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Stop Accepting Passive Checks For This Host' TITLE='Stop Accepting Passive Checks For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Stop accepting passive checks for this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_PASSIVE_HOST_CHECKS, url_encode(host_name));
+ 			}
+ 		else
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Start Accepting Passive Checks For This Host' TITLE='Start Accepting Passive Checks For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Start accepting passive checks for this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_PASSIVE_HOST_CHECKS, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Start Accepting Passive Checks For This Host' TITLE='Start Accepting Passive Checks For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Start accepting passive checks for this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_PASSIVE_HOST_CHECKS, url_encode(host_name));
+ 
+ 		if(temp_hoststatus->obsess == TRUE)
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Stop Obsessing Over This Host' TITLE='Stop Obsessing Over This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Stop obsessing over this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_STOP_OBSESSING_OVER_HOST, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Stop Obsessing Over This Host' TITLE='Stop Obsessing Over This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Stop obsessing over this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_STOP_OBSESSING_OVER_HOST, url_encode(host_name));
+ 		else
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Start Obsessing Over This Host' TITLE='Start Obsessing Over This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Start obsessing over this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_START_OBSESSING_OVER_HOST, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Start Obsessing Over This Host' TITLE='Start Obsessing Over This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Start obsessing over this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_START_OBSESSING_OVER_HOST, url_encode(host_name));
+ 
+ 		if(temp_hoststatus->status == SD_HOST_DOWN || temp_hoststatus->status == SD_HOST_UNREACHABLE) {
+ 			if(temp_hoststatus->problem_has_been_acknowledged == FALSE)
+-				printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Acknowledge This Host Problem' TITLE='Acknowledge This Host Problem'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Acknowledge this host problem</a></td></tr>\n", url_images_path, ACKNOWLEDGEMENT_ICON, COMMAND_CGI, CMD_ACKNOWLEDGE_HOST_PROBLEM, url_encode(host_name));
++				printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Acknowledge This Host Problem' TITLE='Acknowledge This Host Problem'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Acknowledge this host problem</a></td></tr>\n", url_images_path, ACKNOWLEDGEMENT_ICON, COMMAND_CGI, CMD_ACKNOWLEDGE_HOST_PROBLEM, url_encode(host_name));
+ 			else
+-				printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Remove Problem Acknowledgement' TITLE='Remove Problem Acknowledgement'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Remove problem acknowledgement</a></td></tr>\n", url_images_path, REMOVE_ACKNOWLEDGEMENT_ICON, COMMAND_CGI, CMD_REMOVE_HOST_ACKNOWLEDGEMENT, url_encode(host_name));
++				printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Remove Problem Acknowledgement' TITLE='Remove Problem Acknowledgement'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Remove problem acknowledgement</a></td></tr>\n", url_images_path, REMOVE_ACKNOWLEDGEMENT_ICON, COMMAND_CGI, CMD_REMOVE_HOST_ACKNOWLEDGEMENT, url_encode(host_name));
+ 			}
+ 
+ 		if(temp_hoststatus->notifications_enabled == TRUE)
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Disable Notifications For This Host' TITLE='Disable Notifications For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Disable notifications for this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_NOTIFICATIONS, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Disable Notifications For This Host' TITLE='Disable Notifications For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Disable notifications for this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_NOTIFICATIONS, url_encode(host_name));
+ 		else
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Enable Notifications For This Host' TITLE='Enable Notifications For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Enable notifications for this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_NOTIFICATIONS, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Enable Notifications For This Host' TITLE='Enable Notifications For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Enable notifications for this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_NOTIFICATIONS, url_encode(host_name));
+ 
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Send Custom Notification' TITLE='Send Custom Notification'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Send custom host notification</a></td></tr>\n", url_images_path, NOTIFICATION_ICON, COMMAND_CGI, CMD_SEND_CUSTOM_HOST_NOTIFICATION, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Send Custom Notification' TITLE='Send Custom Notification'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Send custom host notification</a></td></tr>\n", url_images_path, NOTIFICATION_ICON, COMMAND_CGI, CMD_SEND_CUSTOM_HOST_NOTIFICATION, url_encode(host_name));
+ 
+ 		if(temp_hoststatus->status != SD_HOST_UP)
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Delay Next Host Notification' TITLE='Delay Next Host Notification'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Delay next host notification</a></td></tr>\n", url_images_path, DELAY_ICON, COMMAND_CGI, CMD_DELAY_HOST_NOTIFICATION, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Delay Next Host Notification' TITLE='Delay Next Host Notification'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Delay next host notification</a></td></tr>\n", url_images_path, DELAY_ICON, COMMAND_CGI, CMD_DELAY_HOST_NOTIFICATION, url_encode(host_name));
+ 
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Schedule Downtime For This Host' TITLE='Schedule Downtime For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Schedule downtime for this host</a></td></tr>\n", url_images_path, DOWNTIME_ICON, COMMAND_CGI, CMD_SCHEDULE_HOST_DOWNTIME, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Schedule Downtime For This Host' TITLE='Schedule Downtime For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Schedule downtime for this host</a></td></tr>\n", url_images_path, DOWNTIME_ICON, COMMAND_CGI, CMD_SCHEDULE_HOST_DOWNTIME, url_encode(host_name));
+ 
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Schedule Downtime For All Services On This Host' TITLE='Schedule Downtime For All Services On This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Schedule downtime for all services on this host</a></td></tr>\n", url_images_path, DOWNTIME_ICON, COMMAND_CGI, CMD_SCHEDULE_HOST_SVC_DOWNTIME, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Schedule Downtime For All Services On This Host' TITLE='Schedule Downtime For All Services On This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Schedule downtime for all services on this host</a></td></tr>\n", url_images_path, DOWNTIME_ICON, COMMAND_CGI, CMD_SCHEDULE_HOST_SVC_DOWNTIME, url_encode(host_name));
+ 
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Disable Notifications For All Services On This Host' TITLE='Disable Notifications For All Services On This Host'></td><td CLASS='command' NOWRAP><a href='%s?cmd_typ=%d&host=%s'>Disable notifications for all services on this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_SVC_NOTIFICATIONS, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Disable Notifications For All Services On This Host' TITLE='Disable Notifications For All Services On This Host'></td><td CLASS='dataVal' NOWRAP><a href='%s?cmd_typ=%d&host=%s'>Disable notifications for all services on this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_SVC_NOTIFICATIONS, url_encode(host_name));
+ 
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Enable Notifications For All Services On This Host' TITLE='Enable Notifications For All Services On This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Enable notifications for all services on this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_SVC_NOTIFICATIONS, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Enable Notifications For All Services On This Host' TITLE='Enable Notifications For All Services On This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Enable notifications for all services on this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_SVC_NOTIFICATIONS, url_encode(host_name));
+ 
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Schedule A Check Of All Services On This Host' TITLE='Schedule A Check Of All Services On This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Schedule a check of all services on this host</a></td></tr>\n", url_images_path, DELAY_ICON, COMMAND_CGI, CMD_SCHEDULE_HOST_SVC_CHECKS, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Schedule A Check Of All Services On This Host' TITLE='Schedule A Check Of All Services On This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Schedule a check of all services on this host</a></td></tr>\n", url_images_path, DELAY_ICON, COMMAND_CGI, CMD_SCHEDULE_HOST_SVC_CHECKS, url_encode(host_name));
+ 
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Disable Checks Of All Services On This Host' TITLE='Disable Checks Of All Services On This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Disable checks of all services on this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_SVC_CHECKS, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Disable Checks Of All Services On This Host' TITLE='Disable Checks Of All Services On This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Disable checks of all services on this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_SVC_CHECKS, url_encode(host_name));
+ 
+-		printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Enable Checks Of All Services On This Host' TITLE='Enable Checks Of All Services On This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Enable checks of all services on this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_SVC_CHECKS, url_encode(host_name));
++		printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Enable Checks Of All Services On This Host' TITLE='Enable Checks Of All Services On This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Enable checks of all services on this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_SVC_CHECKS, url_encode(host_name));
+ 
+ 		if(temp_hoststatus->event_handler_enabled == TRUE)
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Disable Event Handler For This Host' TITLE='Disable Event Handler For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Disable event handler for this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_EVENT_HANDLER, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Disable Event Handler For This Host' TITLE='Disable Event Handler For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Disable event handler for this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_EVENT_HANDLER, url_encode(host_name));
+ 		else
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Enable Event Handler For This Host' TITLE='Enable Event Handler For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Enable event handler for this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_EVENT_HANDLER, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Enable Event Handler For This Host' TITLE='Enable Event Handler For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Enable event handler for this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_EVENT_HANDLER, url_encode(host_name));
+ 		if(temp_hoststatus->flap_detection_enabled == TRUE)
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Disable Flap Detection For This Host' TITLE='Disable Flap Detection For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Disable flap detection for this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_FLAP_DETECTION, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Disable Flap Detection For This Host' TITLE='Disable Flap Detection For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Disable flap detection for this host</a></td></tr>\n", url_images_path, DISABLED_ICON, COMMAND_CGI, CMD_DISABLE_HOST_FLAP_DETECTION, url_encode(host_name));
+ 		else
+-			printf("<tr CLASS='command'><td><img src='%s%s' border=0 ALT='Enable Flap Detection For This Host' TITLE='Enable Flap Detection For This Host'></td><td CLASS='command'><a href='%s?cmd_typ=%d&host=%s'>Enable flap detection for this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_FLAP_DETECTION, url_encode(host_name));
++			printf("<tr><td class='dataVar'><img src='%s%s' border=0 ALT='Enable Flap Detection For This Host' TITLE='Enable Flap Detection For This Host'></td><td CLASS='dataVal'><a href='%s?cmd_typ=%d&host=%s'>Enable flap detection for this host</a></td></tr>\n", url_images_path, ENABLED_ICON, COMMAND_CGI, CMD_ENABLE_HOST_FLAP_DETECTION, url_encode(host_name));
+ 
+ 		printf("</TABLE>\n");
++		printf("</td></tr></table></td></tr></table>");
+ 		}
+ 	else if(is_authorized_for_read_only(&current_authdata) == TRUE) {
+ 		printf("<DIV ALIGN=CENTER CLASS='infoMessage'>Your account does not have permissions to execute commands.<br>\n");
+Only in nagios-4.0.20130107/cgi: extinfo.c.orig
+diff -ur nagios-4.0.20130107.original/cgi/histogram.c nagios-4.0.20130107/cgi/histogram.c
+--- nagios-4.0.20130107.original/cgi/histogram.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/histogram.c	2013-05-11 19:16:02.000000000 +0000
+@@ -207,6 +207,8 @@
+ int color_yellow = 0;
+ int color_orange = 0;
+ int color_lightgray = 0;
++int color_mustard = 0;
++int color_cornflour = 0;
+ FILE *image_file = NULL;
+ 
+ int backtrack_archives = 0;
+@@ -329,7 +331,7 @@
+ 
+ 		if(display_type != DISPLAY_NO_HISTOGRAM && input_type == GET_INPUT_NONE) {
+ 
+-			printf("<TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 CLASS='linkBox'>\n");
++			printf("<TABLE BORDER=0 CLASS='linkBox'>\n");
+ 			printf("<TR><TD CLASS='linkBox'>\n");
+ 
+ 			if(display_type == DISPLAY_HOST_HISTOGRAM) {
+@@ -618,12 +620,14 @@
+ 			/* allocate colors used for drawing */
+ 			color_white = gdImageColorAllocate(histogram_image, 255, 255, 255);
+ 			color_black = gdImageColorAllocate(histogram_image, 0, 0, 0);
+-			color_red = gdImageColorAllocate(histogram_image, 255, 0, 0);
++			color_red = gdImageColorAllocate(histogram_image, 255, 85, 85);
+ 			color_darkred = gdImageColorAllocate(histogram_image, 128, 0, 0);
+-			color_green = gdImageColorAllocate(histogram_image, 0, 128, 0);
++			color_green = gdImageColorAllocate(histogram_image, 158, 213, 21);
+ 			color_yellow = gdImageColorAllocate(histogram_image, 176, 178, 20);
+ 			color_orange = gdImageColorAllocate(histogram_image, 255, 100, 25);
+ 			color_lightgray = gdImageColorAllocate(histogram_image, 192, 192, 192);
++			color_mustard = gdImageColorAllocate(histogram_image, 255, 219, 88);
++			color_cornflour = gdImageColorAllocate(histogram_image, 255, 248, 220);
+ 
+ 			/* set transparency index */
+ 			gdImageColorTransparent(histogram_image, color_white);
+@@ -1795,7 +1799,7 @@
+ 				pixel_y = (int)(tsdata[actual_bucket].host_unreachable * y_scaling_factor);
+ 
+ 				if(current_bucket > 0 && !(last_pixel_y == 0 && pixel_y == 0))
+-					draw_line(DRAWING_X_OFFSET + pixel_x - (int)x_scaling_factor, DRAWING_Y_OFFSET - last_pixel_y, DRAWING_X_OFFSET + pixel_x, DRAWING_Y_OFFSET - pixel_y, color_darkred);
++					draw_line(DRAWING_X_OFFSET + pixel_x - (int)x_scaling_factor, DRAWING_Y_OFFSET - last_pixel_y, DRAWING_X_OFFSET + pixel_x, DRAWING_Y_OFFSET - pixel_y, color_cornflour);
+ 
+ 				last_pixel_y = pixel_y;
+ 
+@@ -1864,7 +1868,7 @@
+ 				pixel_y = (int)(tsdata[actual_bucket].service_warning * y_scaling_factor);
+ 
+ 				if(current_bucket > 0 && !(last_pixel_y == 0 && pixel_y == 0))
+-					draw_line(DRAWING_X_OFFSET + pixel_x - (int)x_scaling_factor, DRAWING_Y_OFFSET - last_pixel_y, DRAWING_X_OFFSET + pixel_x, DRAWING_Y_OFFSET - pixel_y, color_yellow);
++					draw_line(DRAWING_X_OFFSET + pixel_x - (int)x_scaling_factor, DRAWING_Y_OFFSET - last_pixel_y, DRAWING_X_OFFSET + pixel_x, DRAWING_Y_OFFSET - pixel_y, color_mustard);
+ 
+ 				last_pixel_y = pixel_y;
+ 
+@@ -1894,7 +1898,7 @@
+ 				pixel_y = (int)(tsdata[actual_bucket].service_unknown * y_scaling_factor);
+ 
+ 				if(current_bucket > 0 && !(last_pixel_y == 0 && pixel_y == 0))
+-					draw_line(DRAWING_X_OFFSET + pixel_x - (int)x_scaling_factor, DRAWING_Y_OFFSET - last_pixel_y, DRAWING_X_OFFSET + pixel_x, DRAWING_Y_OFFSET - pixel_y, color_orange);
++					draw_line(DRAWING_X_OFFSET + pixel_x - (int)x_scaling_factor, DRAWING_Y_OFFSET - last_pixel_y, DRAWING_X_OFFSET + pixel_x, DRAWING_Y_OFFSET - pixel_y, color_cornflour);
+ 
+ 				last_pixel_y = pixel_y;
+ 
+diff -ur nagios-4.0.20130107.original/cgi/history.c nagios-4.0.20130107/cgi/history.c
+--- nagios-4.0.20130107.original/cgi/history.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/history.c	2013-05-11 19:16:02.000000000 +0000
+@@ -142,9 +142,8 @@
+ 		else
+ 			snprintf(temp_buffer, sizeof(temp_buffer) - 1, "Host Alert History");
+ 		temp_buffer[sizeof(temp_buffer) - 1] = '\x0';
+-		display_info_table(temp_buffer, FALSE, &current_authdata);
+ 
+-		printf("<TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 CLASS='linkBox'>\n");
++		printf("<TABLE BORDER=0 CLASS='linkBox'>\n");
+ 		printf("<TR><TD CLASS='linkBox'>\n");
+ 		if(display_type == DISPLAY_HOSTS) {
+ 			printf("<A HREF='%s?host=%s'>View Status Detail For %s</A><BR />\n", STATUS_CGI, (show_all_hosts == TRUE) ? "all" : url_encode(host_name), (show_all_hosts == TRUE) ? "All Hosts" : "This Host");
+diff -ur nagios-4.0.20130107.original/cgi/notifications.c nagios-4.0.20130107/cgi/notifications.c
+--- nagios-4.0.20130107.original/cgi/notifications.c	2012-12-24 15:29:14.000000000 +0000
++++ nagios-4.0.20130107/cgi/notifications.c	2013-05-11 19:16:02.000000000 +0000
+@@ -143,7 +143,7 @@
+ 		display_info_table(temp_buffer, FALSE, &current_authdata);
+ 
+ 		if(query_type == FIND_HOST || query_type == FIND_SERVICE) {
+-			printf("<TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 CLASS='linkBox'>\n");
++			printf("<TABLE BORDER=0 CLASS='linkBox'>\n");
+ 			printf("<TR><TD CLASS='linkBox'>\n");
+ 			if(query_type == FIND_HOST) {
+ 				printf("<A HREF='%s?host=%s'>View Status Detail For %s</A><BR>\n", STATUS_CGI, (find_all == TRUE) ? "all" : url_encode(query_host_name), (find_all == TRUE) ? "All Hosts" : "This Host");
+diff -ur nagios-4.0.20130107.original/cgi/outages.c nagios-4.0.20130107/cgi/outages.c
+--- nagios-4.0.20130107.original/cgi/outages.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/outages.c	2013-05-11 19:15:53.000000000 +0000
+@@ -155,7 +155,6 @@
+ 
+ 		/* left column of the first row */
+ 		printf("<td align=left valign=top width=33%%>\n");
+-		display_info_table("Network Outages", TRUE, &current_authdata);
+ 		printf("</td>\n");
+ 
+ 		/* middle column of top row */
+diff -ur nagios-4.0.20130107.original/cgi/status.c nagios-4.0.20130107/cgi/status.c
+--- nagios-4.0.20130107.original/cgi/status.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/status.c	2013-05-11 19:16:02.000000000 +0000
+@@ -311,16 +311,13 @@
+ 	if(display_header == TRUE) {
+ 
+ 		/* begin top table */
+-		printf("<table class='headertable'>\n");
++		printf("<table>\n");
+ 		printf("<tr>\n");
+ 
+ 		/* left column of the first row */
+ 		printf("<td align=left valign=top width=33%%>\n");
+ 
+-		/* info table */
+-		display_info_table("Current Network Status", TRUE, &current_authdata);
+-
+-		printf("<table class='linkBox'>\n");
++		printf("<table border='0' class='linkBox'>\n");
+ 		printf("<tr><td class='linkBox'>\n");
+ 
+ 		if(display_type == DISPLAY_HOSTS) {
+diff -ur nagios-4.0.20130107.original/cgi/statusmap.c nagios-4.0.20130107/cgi/statusmap.c
+--- nagios-4.0.20130107.original/cgi/statusmap.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/statusmap.c	2013-05-11 19:16:02.000000000 +0000
+@@ -630,7 +630,7 @@
+ 		temp_buffer[sizeof(temp_buffer) - 1] = '\x0';
+ 		display_info_table(temp_buffer, TRUE, &current_authdata);
+ 
+-		printf("<TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 CLASS='linkBox'>\n");
++		printf("<TABLE BORDER=0 CLASS='linkBox'>\n");
+ 		printf("<TR><TD CLASS='linkBox'>\n");
+ 
+ 		if(show_all_hosts == FALSE) {
+diff -ur nagios-4.0.20130107.original/cgi/summary.c nagios-4.0.20130107/cgi/summary.c
+--- nagios-4.0.20130107.original/cgi/summary.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/summary.c	2013-05-11 19:15:53.000000000 +0000
+@@ -274,7 +274,6 @@
+ 
+ 		snprintf(temp_buffer, sizeof(temp_buffer) - 1, "Alert Summary Report");
+ 		temp_buffer[sizeof(temp_buffer) - 1] = '\x0';
+-		display_info_table(temp_buffer, FALSE, &current_authdata);
+ 
+ 		printf("</td>\n");
+ 
+diff -ur nagios-4.0.20130107.original/cgi/tac.c nagios-4.0.20130107/cgi/tac.c
+--- nagios-4.0.20130107.original/cgi/tac.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/tac.c	2013-05-11 19:15:53.000000000 +0000
+@@ -263,7 +263,6 @@
+ 
+ 		/* left column of top table - info box */
+ 		printf("<td align=left valign=top width=33%%>\n");
+-		display_info_table("Tactical Status Overview", TRUE, &current_authdata);
+ 		printf("</td>\n");
+ 
+ 		/* middle column of top table - log file navigation options */
+@@ -934,9 +933,6 @@
+ 
+ 	/* left column */
+ 	printf("<td align=left valign=top width=50%%>\n");
+-
+-	display_info_table("Tactical Monitoring Overview", TRUE, &current_authdata);
+-
+ 	printf("</td>\n");
+ 
+ 
+diff -ur nagios-4.0.20130107.original/cgi/trends.c nagios-4.0.20130107/cgi/trends.c
+--- nagios-4.0.20130107.original/cgi/trends.c	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/cgi/trends.c	2013-05-11 19:16:02.000000000 +0000
+@@ -183,6 +183,8 @@
+ int color_darkgreen = 0;
+ int color_yellow = 0;
+ int color_orange = 0;
++int color_mustard = 0;
++int color_cornflour = 0;
+ FILE *image_file = NULL;
+ 
+ int image_width = 900;
+@@ -373,7 +375,6 @@
+ 		else
+ 			snprintf(temp_buffer, sizeof(temp_buffer) - 1, "Host and Service State Trends");
+ 		temp_buffer[sizeof(temp_buffer) - 1] = '\x0';
+-		display_info_table(temp_buffer, FALSE, &current_authdata);
+ 
+ 		if(timeperiod_type == TIMEPERIOD_NEXTPROBLEM) {
+ 			archived_state *temp_as;
+@@ -440,7 +441,7 @@
+ 
+ 		if(display_type != DISPLAY_NO_TRENDS && input_type == GET_INPUT_NONE) {
+ 
+-			printf("<TABLE BORDER=1 CELLPADDING=0 CELLSPACING=0 CLASS='linkBox'>\n");
++			printf("<TABLE BORDER=0 CLASS='linkBox'>\n");
+ 			printf("<TR><TD CLASS='linkBox'>\n");
+ 
+ 			if(display_type == DISPLAY_HOST_TRENDS) {
+@@ -737,12 +738,14 @@
+ 		/* allocate colors used for drawing */
+ 		color_white = gdImageColorAllocate(trends_image, 255, 255, 255);
+ 		color_black = gdImageColorAllocate(trends_image, 0, 0, 0);
+-		color_red = gdImageColorAllocate(trends_image, 255, 0, 0);
++		color_red = gdImageColorAllocate(trends_image, 255, 85, 85);
+ 		color_darkred = gdImageColorAllocate(trends_image, 128, 0, 0);
+-		color_green = gdImageColorAllocate(trends_image, 0, 210, 0);
++		color_green = gdImageColorAllocate(trends_image, 158, 213, 21);
+ 		color_darkgreen = gdImageColorAllocate(trends_image, 0, 128, 0);
+ 		color_yellow = gdImageColorAllocate(trends_image, 176, 178, 20);
+ 		color_orange = gdImageColorAllocate(trends_image, 255, 100, 25);
++		color_mustard = gdImageColorAllocate(trends_image, 255, 219, 88);
++		color_cornflour = gdImageColorAllocate(trends_image, 255, 248, 220);
+ 
+ 		/* set transparency index */
+ 		gdImageColorTransparent(trends_image, color_white);
+@@ -2158,7 +2161,7 @@
+ 				height = 40;
+ 				break;
+ 			case AS_HOST_UNREACHABLE:
+-				color_to_use = color_darkred;
++				color_to_use = color_cornflour;
+ 				height = 20;
+ 				break;
+ 			case AS_SVC_OK:
+@@ -2166,11 +2169,11 @@
+ 				height = 80;
+ 				break;
+ 			case AS_SVC_WARNING:
+-				color_to_use = color_yellow;
++				color_to_use = color_mustard;
+ 				height = 60;
+ 				break;
+ 			case AS_SVC_UNKNOWN:
+-				color_to_use = color_orange;
++				color_to_use = color_cornflour;
+ 				height = 40;
+ 				break;
+ 			case AS_SVC_CRITICAL:
+@@ -2829,8 +2832,8 @@
+ 		gdImageString(trends_image, gdFontSmall, drawing_x_offset - 10 - (gdFontSmall->w * 4), drawing_y_offset + 25, (unsigned char *)"Down", color_red);
+ 
+ 		get_time_breakdown_string(total_time, time_unreachable, "Unreachable", &temp_buffer[0], sizeof(temp_buffer));
+-		gdImageString(trends_image, gdFontSmall, drawing_x_offset + drawing_width + 20, drawing_y_offset + 45, (unsigned char *)temp_buffer, color_darkred);
+-		gdImageString(trends_image, gdFontSmall, drawing_x_offset - 10 - (gdFontSmall->w * 11), drawing_y_offset + 45, (unsigned char *)"Unreachable", color_darkred);
++		gdImageString(trends_image, gdFontSmall, drawing_x_offset + drawing_width + 20, drawing_y_offset + 45, (unsigned char *)temp_buffer, color_cornflour);
++		gdImageString(trends_image, gdFontSmall, drawing_x_offset - 10 - (gdFontSmall->w * 11), drawing_y_offset + 45, (unsigned char *)"Unreachable", color_cornflour);
+ 
+ 		get_time_breakdown_string(total_time, time_indeterminate, "Indeterminate", &temp_buffer[0], sizeof(temp_buffer));
+ 		gdImageString(trends_image, gdFontSmall, drawing_x_offset + drawing_width + 20, drawing_y_offset + 65, (unsigned char *)temp_buffer, color_black);
+@@ -2846,8 +2849,8 @@
+ 		gdImageString(trends_image, gdFontSmall, drawing_x_offset - 10 - (gdFontSmall->w * 7), drawing_y_offset + 25, (unsigned char *)"Warning", color_yellow);
+ 
+ 		get_time_breakdown_string(total_time, time_unknown, "Unknown", &temp_buffer[0], sizeof(temp_buffer));
+-		gdImageString(trends_image, gdFontSmall, drawing_x_offset + drawing_width + 20, drawing_y_offset + 45, (unsigned char *)temp_buffer, color_orange);
+-		gdImageString(trends_image, gdFontSmall, drawing_x_offset - 10 - (gdFontSmall->w * 7), drawing_y_offset + 45, (unsigned char *)"Unknown", color_orange);
++		gdImageString(trends_image, gdFontSmall, drawing_x_offset + drawing_width + 20, drawing_y_offset + 45, (unsigned char *)temp_buffer, color_cornflour);
++		gdImageString(trends_image, gdFontSmall, drawing_x_offset - 10 - (gdFontSmall->w * 7), drawing_y_offset + 45, (unsigned char *)"Unknown", color_cornflour);
+ 
+ 		get_time_breakdown_string(total_time, time_critical, "Critical", &temp_buffer[0], sizeof(temp_buffer));
+ 		gdImageString(trends_image, gdFontSmall, drawing_x_offset + drawing_width + 20, drawing_y_offset + 65, (unsigned char *)temp_buffer, color_red);
+diff -ur nagios-4.0.20130107.original/html/stylesheets/avail.css nagios-4.0.20130107/html/stylesheets/avail.css
+--- nagios-4.0.20130107.original/html/stylesheets/avail.css	2012-12-24 15:29:20.000000000 +0000
++++ nagios-4.0.20130107/html/stylesheets/avail.css	2013-05-11 19:16:02.000000000 +0000
+@@ -1,5 +1,5 @@
+ 
+-.avail {  background-color: white;  color: black;  font-size: 10pt; }
++.avail {  background-color: white;  color: #3E3E3E;  font-size: 10pt; }
+ 
+ .reportRange {  text-align: center;  font-weight: bold;  font-size: 10pt; }
+ .reportDuration {  text-align: center;  }
+@@ -10,20 +10,20 @@
+ TABLE.data {  font-size: 10pt;  background-color: white;  padding: 2px;border-collapse:separate; }
+ 
+ /* TH.data {  font-size: 10pt;  background-color: white;  text-align: left;  background-color: #999797;  color: #DCE5C1; } */
+-.dataOdd {   background-color: #DBDBDB; }
+-.dataEven {   background-color: #C4C2C2; }
++.dataOdd {   background-color: #EAEAEA; }
++.dataEven {   background-color: #EAEAEA; }
+ 
+ .optionBoxTitle {  text-align: center;  font-weight: bold;  font-size: 10pt; }
+ .optionBox {  font-size: 10pt;  background-color: #EEEEF4;  padding: 2px; }
+ 
+-.hostUP {   text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.hostDOWN {   text-align: left;  background-color: #F83838;  font-weight: bold; }
+-.hostUNREACHABLE {    text-align: left;  background-color: #F83838;  font-weight: bold; }
+-
+-.serviceOK {    text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.serviceWARNING {   text-align: left;  background-color: #FFFF00;  font-weight: bold; }
+-.serviceUNKNOWN {    text-align: left;  background-color: #FF9900;  font-weight: bold; }
+-.serviceCRITICAL {  text-align: left;  background-color: #F83838;  font-weight: bold; }
++.hostUP {   text-align: left;  background-color: #9ED515;  font-weight: bold; }
++.hostDOWN {   text-align: left;  background-color: #FF5555;  font-weight: bold; }
++.hostUNREACHABLE {    text-align: left;  background-color: #FFF8DC;  font-weight: bold; }
++
++.serviceOK {    text-align: left;  background-color: #9ED515;  font-weight: bold; }
++.serviceWARNING {   text-align: left;  background-color: #FFDB58;  font-weight: bold; }
++.serviceUNKNOWN {    text-align: left;  background-color: #FFF8DC;  font-weight: bold; }
++.serviceCRITICAL {  text-align: left;  background-color: #FF5555;  font-weight: bold; }
+ 
+ .optBox { font-size: 10pt;  font-weight: bold; }
+ .optBoxItem {   font-weight: bold;  color: red; }
+@@ -40,19 +40,19 @@
+ .reportSelectItem {  text-align: left;  }
+ 
+ TABLE.logEntries {   background-color: white;  padding: 3px; }
+-TH.logEntries {  font-size: 10pt;  background-color: white;  text-align: left;  background-color: #999797;  color: #DCE5C1; }
+-.logEntriesEven {   background-color: white;  text-align: left;  background-color: #C4C2C2;  color: black; }
+-.logEntriesOdd {   background-color: white;  text-align: left;  background-color: #DBDBDB;  color: black; }
++TH.logEntries {  font-size: 10pt;  background-color: white;  text-align: left;  background-color: #D6D6D6;  color: #3E3E3E; }
++.logEntriesEven {   background-color: white;  text-align: left;  background-color: #EAEAEA;  color: #3E3E3E; }
++.logEntriesOdd {   background-color: white;  text-align: left;  background-color: #EAEAEA;  color: #3E3E3E; }
+ 
+ .logEntriesINDETERMINATE {   background-color: #ACACAC; }
+ 
+-.logEntriesOK {   background-color: #33FF00; }
+-.logEntriesUNKNOWN {   background-color: #FF9900; }
+-.logEntriesWARNING {   background-color: #FFFF00; }
+-.logEntriesCRITICAL {   background-color: #F83838; }
+-.logEntriesUP {   background-color: #33FF00; }
+-.logEntriesDOWN {   background-color: #F83838; }
+-.logEntriesUNREACHABLE {   background-color: #F83838; }
++.logEntriesOK {   background-color: #9ED515; }
++.logEntriesUNKNOWN {   background-color: #FFF8DC; }
++.logEntriesWARNING {   background-color: #FFDB58; }
++.logEntriesCRITICAL {   background-color: #FF5555; }
++.logEntriesUP {   background-color: #9ED515; }
++.logEntriesDOWN {   background-color: #FF5555; }
++.logEntriesUNREACHABLE {   background-color: #FFF8DC; }
+ 
+ 
+ 
+diff -ur nagios-4.0.20130107.original/html/stylesheets/common.css nagios-4.0.20130107/html/stylesheets/common.css
+--- nagios-4.0.20130107.original/html/stylesheets/common.css	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/html/stylesheets/common.css	2013-05-11 19:16:02.000000000 +0000
+@@ -1,9 +1,6 @@
+ 
+ /***************** common to all pages, moved to this stylesheet ********************/
+ 
+-/* default font size for all elements */
+-* {font-size:8pt;}
+-
+ body {
+ 	font-family: verdana,arial,serif;
+ 	font-weight: normal;
+@@ -12,23 +9,23 @@
+ /* most other link color scheme blue/light blue */
+ a:link,a:visited {
+   text-decoration: none;
+-  color: #40529b; /* blue */
+-  /* color: #DEE7C6; pale yellow */ 
++  color: #490A73;
+ }
+ a:hover,a:active {
+   text-decoration: underline;
+-  /* color: #3f5bcd; gold */
+-  color: #8391cd;      /*dark blue */
+-  /*color: #8391cd; */
++  color: #490A73;
+ }
+ 
+-table {border-collapse:collapse;}
+-th {  font-size: 10pt;  text-align: left;  background-color: #999797;  }
++th {  font-size: 10pt;  text-align: left;  background-color: #D6D6D6;  }
+ 
+-.infoBox { border: 1px solid #AAA;  padding: 2px; font-size:8pt; margin-bottom:3px;}
+-.linkBox { padding: 3px; font-size:8pt; border: 1px solid #AAA;}
+-.infoBoxTitle {  font-size: 10pt;  font-weight: bold;  }
+-.infoBoxTitle {   font-size: 10pt;  font-weight: bold; }
++.infoBox { margin-bottom:3px; font-size: 10pt}
++table.linkBox { background-color: #D6D6D6; }
++td.linkBox {
++  background-color: #EAEAEA;
++  font-size: 10pt;
++  padding: 3px;
++}
++.infoBoxTitle { font-weight: bold;  }
+ .infoBoxBadProcStatus { color: red; }
+ a.homepageURL:hover {  color: red; }
+ 
+@@ -37,7 +34,7 @@
+ .errorMessage {  text-align: center;  color: #FF5555;  font-weight: bold;  font-size: 12pt; }
+ .errorDescription {  text-align: center;  font-weight: bold;  font-size: 12pt; }
+ .warningMessage {  text-align: center;  color: #FF5555;  font-weight: bold;  font-size: 10pt; }
+-.infoMessage {  text-align: center;  color: #FF5555;  font-weight: bold; }
++.infoMessage {  text-align: center; font-size: 10pt; font-weight: bold; }
+ 
+ /* nav and option boxes on several pages */ 
+ .navBoxTitle {  font-size: 10pt;  font-weight: bold; }
+@@ -45,8 +42,8 @@
+ .navBoxDate {  font-size: 8pt;  font-weight: bold; }
+ .navBoxFile {  font-size: 8pt;  font-weight: bold;  text-align: center; }
+ /* option boxes */
+-.optBox { font-size: 10pt;  font-weight: bold; }
+-.optBoxItem {  font-size: 8pt;  font-weight: bold;  color: red; }
++.optBox { font-size: 10pt;   padding: 5px; }
++.optBoxItem {  font-size: 8pt; color: #FF5555; }
+ .optBoxTitle {  font-weight: bold;  font-size: 10pt; }
+ .optBoxValue {  font-size: 8pt;  font-style: italic; }
+ 
+diff -ur nagios-4.0.20130107.original/html/stylesheets/extinfo.css nagios-4.0.20130107/html/stylesheets/extinfo.css
+--- nagios-4.0.20130107.original/html/stylesheets/extinfo.css	2012-12-24 15:29:20.000000000 +0000
++++ nagios-4.0.20130107/html/stylesheets/extinfo.css	2013-05-11 19:16:02.000000000 +0000
+@@ -7,16 +7,15 @@
+ DIV.perfTypeTitle { text-align: right;  font-weight: bold;  font-size: 10pt; }
+ /*
+ TABLE.data { font-size: 10pt;  background-color: white;  padding: 2px; border-collapse:separate;}
+-TH.data { font-size: 10pt;  text-align: left;  background-color: #999797;  }
++TH.data { font-size: 10pt;  text-align: left;  background-color: #D6D6D6;  }
+ */
+ 
+-.dataOdd { font-size: 10pt;  background-color: #DBDBDB; }
+-.dataEven { font-size: 10pt;  background-color: #C4C2C2; }
++.dataOdd, .dataEven { font-size: 10pt;  background-color: #000000; }
+ 
+ 
+ .commandTitle { text-align: center;  font-weight: bold;  font-size: 12pt; }
+ 
+-TABLE.command { font-size: 10pt;  background-color: #DBDBDB; padding: 3px; }
++TABLE.command { font-size: 10pt;  background-color: #EAEAEA; padding: 3px; }
+ .command { font-size: 10pt; padding: 2px; }
+ 
+ .commentTitle { text-align: center;  font-weight: bold;  font-size: 12pt; }
+@@ -24,9 +23,8 @@
+ A.commentNav { font-size: 10pt; }
+ 
+ TABLE.comment { font-size: 10pt;  background-color: white;  padding: 2px; border-collapse:separate;}
+-TH.comment { font-size: 10pt;  text-align: left;  background-color: #999797; }
+-.commentOdd { font-size: 9pt;  background-color: #DBDBDB; }
+-.commentEven { font-size: 9pt;  background-color: #C4C2C2; }
++TH.comment { font-size: 10pt;  text-align: left;  background-color: #D6D6D6; }
++.commentOdd, .commentEven { font-size: 9pt;  background-color: #EAEAEA; }
+ DIV.comment,A.comment { font-size: 10pt;  background-color: white;  text-align: center; }
+ 
+ .downtimeTitle { text-align: center;  font-weight: bold;  font-size: 12pt; }
+@@ -34,63 +32,66 @@
+ A.downtimeNav { font-size: 10pt; }
+ 
+ TABLE.downtime { font-size: 10pt;  background-color: white;  padding: 2px; border-collapse:separate;}
+-TH.downtime { font-size: 10pt;   text-align: left;  background-color: #999797; }
++TH.downtime { font-size: 10pt;   text-align: left;  background-color: #D6D6D6; }
+ .downtimeOdd { font-size: 9pt;  background-color: #DBDBDB; }
+ .downtimeEven { font-size: 9pt;  background-color: #C4C2C2; }
+ 
+-.notificationsENABLED { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.notificationsDISABLED { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
++.notificationsENABLED { font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; }
++.notificationsDISABLED { font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; }
+ 
+-.checksENABLED { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.checksDISABLED { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
++.checksENABLED { font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; }
++.checksDISABLED { font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; }
+ 
+-.eventhandlersENABLED { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.eventhandlersDISABLED { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
++.eventhandlersENABLED { font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; }
++.eventhandlersDISABLED { font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; }
+ 
+-.flapdetectionENABLED { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.flapdetectionDISABLED { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
++.flapdetectionENABLED { font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; }
++.flapdetectionDISABLED { font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; }
+ 
+-.notflapping { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; float: left; }
+-.flapping { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
++.notflapping { font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; float: left; }
++.flapping { font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; float: left; }
+ 
+-.downtimeACTIVE { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
+-.downtimeINACTIVE { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; float: left; }
++.downtimeACTIVE { font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; float: left; }
++.downtimeINACTIVE { font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; float: left; }
+ 
+-.processOK { font-size: 10pt;  background-color: #33FF00;  font-weight: bold; }
+-.processUNKNOWN { font-size: 10pt;  background-color: #FF9900;  font-weight: bold; }
++.processOK { font-size: 10pt;  background-color: #9ED515;  font-weight: bold; }
++.processUNKNOWN { font-size: 10pt;  background-color: #FFF8DC;  font-weight: bold; }
+ .processWARNING { font-size: 10pt;  background-color: #FFFF00;  font-weight: bold; }
+-.processCRITICAL { font-size: 10pt;  background-color: #F83838;  font-weight: bold; }
++.processCRITICAL { font-size: 10pt;  background-color: #FF5555;  font-weight: bold; }
+ 
+-.modeACTIVE { font-size: 10pt;  background-color: #33FF00;  font-weight: bold; }
++.modeACTIVE { font-size: 10pt;  background-color: #9ED515;  font-weight: bold; }
+ .modeSTANDBY { font-size: 10pt;  background-color: #FFFF00;  font-weight: bold; }
+ 
+-.hostUP { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; float: left; }
+-.hostDOWN { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
+-.hostUNREACHABLE { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
++.hostUP { font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; float: left; }
++.hostDOWN { font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; float: left; }
++.hostUNREACHABLE { font-size: 10pt;  text-align: left;  background-color: #FFF8DC;  font-weight: bold; float: left; }
+ 
+-.serviceOK { font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; float: left; }
++.serviceOK { font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; float: left; }
+ .serviceWARNING { font-size: 10pt;  text-align: left;  background-color: #FFFF00;  font-weight: bold; float: left; }
+-.serviceUNKNOWN { font-size: 10pt;  text-align: left;  background-color: #FF9900;  font-weight: bold; float: left; }
+-.serviceCRITICAL { font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; float: left; }
++.serviceUNKNOWN { font-size: 10pt;  text-align: left;  background-color: #FFF8DC;  font-weight: bold; float: left; }
++.serviceCRITICAL { font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; float: left; }
+ 
+ .commandPanel { background-color: white; }
+ .commentPanel { background-color: white; }
+ 
+ .stateInfoPanel { background-color: white; }
+ .stateStatisticsPanel { background-color: white; }
+-.stateInfoTable1 { font-size: 10pt;  background-color: #DBDBDB; }
+-.stateInfoTable2 { font-size: 10pt;  background-color: #C4C2C2; }
++.stateInfoTable1 { background-color: #D6D6D6; }
++.stateInfoTable2 { background-color: #D6D6D6; }
+ 
+-.dataVar { font-size: 10pt; }
+-.dataVal { font-size: 10pt; }
++.dataVar, .dataVal {
++	background-color: #EAEAEA;
++	font-size: 10pt;
++	padding: 3px;
++}
+ 
+ .queueTitle { text-align: center;  font-weight: bold;  font-size: 12pt; }
+ 
+ TABLE.queue { font-size: 10pt;  background-color: white;  padding: 2px; border-collapse:separate;}
+-TH.queue { font-size: 10pt;  text-align: left;  background-color: #999797; }
++TH.queue { font-size: 10pt;  text-align: left;  background-color: #D6D6D6; }
+ .queueOdd { font-size: 9pt;  background-color: #DBDBDB; }
+ .queueEven { font-size: 9pt;  background-color: #C4C2C2; }
+-.queueENABLED { font-size: 9pt;  background-color: #33FF00; }
+-.queueDISABLED { font-size: 9pt;  background-color: #F83838; }
++.queueENABLED { font-size: 9pt;  background-color: #9ED515; }
++.queueDISABLED { font-size: 9pt;  background-color: #FF5555; }
+ 
+ 
+diff -ur nagios-4.0.20130107.original/html/stylesheets/notifications.css nagios-4.0.20130107/html/stylesheets/notifications.css
+--- nagios-4.0.20130107.original/html/stylesheets/notifications.css	2012-12-24 15:29:20.000000000 +0000
++++ nagios-4.0.20130107/html/stylesheets/notifications.css	2013-05-11 19:16:02.000000000 +0000
+@@ -5,20 +5,20 @@
+ 
+ 
+ TABLE.notifications {  font-size: 10pt;  background-color: white;  padding: 5px; border-collapse:separate; }
+-TH.notifications {  font-size: 10pt;  text-align: left;  background-color: #999797;   }
+-.notificationsOdd {  background-color: #DBDBDB; }
+-.notificationsEven {  background-color: #C4C2C2; }
++TH.notifications {  font-size: 10pt;  text-align: left;  background-color: #D6D6D6;   }
++.notificationsOdd {  background-color: #EAEAEA; }
++.notificationsEven {  background-color: #EAEAEA; }
+ 
+-.notificationsOK {  background-color: #33FF00; }
+-.notificationsUNKNOWN {  background-color: #FF9900; }
+-.notificationsWARNING {  background-color: #FFFF00; }
+-.notificationsCRITICAL {  background-color: #F83838; }
+-.notificationsACKNOWLEDGEMENT {  background-color: #AAAAAA; }
+-.notificationsCUSTOM {  background-color: #778899; }
++.notificationsOK {  background-color: #9ED515; }
++.notificationsUNKNOWN {  background-color: #FFF8DC; }
++.notificationsWARNING {  background-color: #FFDB58; }
++.notificationsCRITICAL {  background-color: #FF5555; }
++.notificationsACKNOWLEDGEMENT {  background-color: #D6D6D6; }
++.notificationsCUSTOM {  background-color: #D6D6D6; }
+ 
+-.notificationsHOSTUP {  background-color: #33FF00; }
+-.notificationsHOSTDOWN {  background-color: #F83838; }
+-.notificationsHOSTUNREACHABLE {  background-color: #F83838; }
+-.notificationsHOSTACKNOWLEDGEMENT {  background-color: #AAAAAA; }
+-.notificationsHOSTCUSTOM {  background-color: #778899; }
++.notificationsHOSTUP {  background-color: #9ED515; }
++.notificationsHOSTDOWN {  background-color: #FF5555; }
++.notificationsHOSTUNREACHABLE {  background-color: #FFF8DC; }
++.notificationsHOSTACKNOWLEDGEMENT {  background-color: #D6D6D6; }
++.notificationsHOSTCUSTOM {  background-color: #D6D6D6; }
+ 
+diff -ur nagios-4.0.20130107.original/html/stylesheets/outages.css nagios-4.0.20130107/html/stylesheets/outages.css
+--- nagios-4.0.20130107.original/html/stylesheets/outages.css	2012-12-24 15:29:20.000000000 +0000
++++ nagios-4.0.20130107/html/stylesheets/outages.css	2013-05-11 19:16:02.000000000 +0000
+@@ -5,11 +5,11 @@
+ 
+ .dataTitle {  text-align: center;  font-weight: bold;  font-size: 12pt; }
+ TABLE.data {  font-size: 10pt;  background-color: white;  padding: 2px; border-collapse:separate;}
+-TH.data {  font-size: 10pt;   text-align: left;  background-color: #999797;   }
+-.dataOdd {  font-size: 10pt;  background-color: #DBDBDB; }
+-.dataEven {  font-size: 10pt;  background-color: #C4C2C2; }
++TH.data {  font-size: 10pt;   text-align: left;  background-color: #D6D6D6;   }
++.dataOdd {  font-size: 10pt;  background-color: #EAEAEA; }
++.dataEven {  font-size: 10pt;  background-color: #EAEAEA; }
+ 
+-.hostUP {  font-size: 10pt;  text-align: left;  background-color: #33FF00;  font-weight: bold; }
+-.hostDOWN {  font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
+-.hostUNREACHABLE {  font-size: 10pt;  text-align: left;  background-color: #F83838;  font-weight: bold; }
++.hostUP {  font-size: 10pt;  text-align: left;  background-color: #9ED515;  font-weight: bold; }
++.hostDOWN {  font-size: 10pt;  text-align: left;  background-color: #FF5555;  font-weight: bold; }
++.hostUNREACHABLE {  font-size: 10pt;  text-align: left;  background-color: #FFF8DC;  font-weight: bold; }
+ 
+diff -ur nagios-4.0.20130107.original/html/stylesheets/status.css nagios-4.0.20130107/html/stylesheets/status.css
+--- nagios-4.0.20130107.original/html/stylesheets/status.css	2013-05-11 19:15:35.000000000 +0000
++++ nagios-4.0.20130107/html/stylesheets/status.css	2013-05-11 19:16:02.000000000 +0000
+@@ -22,10 +22,10 @@
+ table.status {  background-color: white;  padding: 2px;  border-collapse:separate;} /* border-collapse:separate; */
+ /* table.status tr td {border:1px solid white;} */
+ table.pageTitle {margin-bottom:3px;}
+-th.status {  font-size: 10pt;  text-align: left;  background-color: #999797; }
++th.status {  font-size: 10pt;  text-align: left;  background-color: #D6D6D6; }
+ div.status {  font-size: 10pt;  text-align: center; }
+-.statusOdd {  background-color: #DBDBDB; }
+-.statusEven {  background-color: #C1C0C0; }
++.statusOdd {  background-color: #EAEAEA; }
++.statusEven {  background-color: #EAEAEA; }
+ 
+ /* CSS styles won't inherit correctly as long as there are nested tables */ 
+ /* .statusPENDING {  background-color: #ADACAC; } */
+@@ -40,9 +40,9 @@
+ .statusHOSTDOWN,.statusCRITICAL  {  background-color: #FF5555; }
+ .statusHOSTDOWNACK {  background-color: #FF5555; }
+ .statusHOSTDOWNSCHED {  background-color: #FF5555; }
+-.statusHOSTUNREACHABLE {  background-color: #FF5555; }
+-.statusHOSTUNREACHABLEACK {  background-color: #FF5555; }
+-.statusHOSTUNREACHABLESCHED {  background-color: #FF5555; }
++.statusHOSTUNREACHABLE {  background-color: #FFF8DC; }
++.statusHOSTUNREACHABLEACK {  background-color: #FFF8DC; }
++.statusHOSTUNREACHABLESCHED {  background-color: #FFF8DC; }
+ 
+ 
+ .statusBGUNKNOWN {  background-color: #FFF8DC; }
+@@ -57,9 +57,9 @@
+ .statusBGDOWN {  background-color: #FF5555; }
+ .statusBGDOWNACK {  background-color: #FF5555; }
+ .statusBGDOWNSCHED {  background-color: #FF5555; }
+-.statusBGUNREACHABLE {  background-color: #FF5555; }
+-.statusBGUNREACHABLEACK {  background-color: #FF5555; }
+-.statusBGUNREACHABLESCHED {  background-color: #FF5555; }
++.statusBGUNREACHABLE {  background-color: #FFF8DC; }
++.statusBGUNREACHABLEACK {  background-color: #FFF8DC; }
++.statusBGUNREACHABLESCHED {  background-color: #FFF8DC; }
+ 
+ 
+ div.serviceTotals,div.hostTotals {  text-align: center;  font-weight: bold;  font-size: 10pt;  }
+@@ -85,7 +85,7 @@
+ */
+ .hostTotalsUP {  text-align: center;  background-color: #9ED515; }
+ .hostTotalsDOWN {  text-align: center;  background-color: #FF5555;  font-weight: bold; }
+-.hostTotalsUNREACHABLE {  text-align: center;  background-color: FF5555;  font-weight: bold; }
++.hostTotalsUNREACHABLE {  text-align: center;  background-color: #FFF8DC;  font-weight: bold; }
+ .hostTotalsPENDING {  text-align: center;  background-color: #ADACAC; }
+ .hostTotalsPROBLEMS {  text-align: center;  background-color: #FFDB58;  font-weight: bold; }
+ 
+@@ -97,7 +97,7 @@
+ 
+ .miniStatusUP {  background-color: #9ED515;  text-align: center; }
+ .miniStatusDOWN {  background-color: #FF5555;  text-align: center; }
+-.miniStatusUNREACHABLE {  background-color: #FF5555;  text-align: center; }
++.miniStatusUNREACHABLE {  background-color: #FFF8DC;  text-align: center; }
+ 
+ .hostImportantProblem { text-align: left;   background-color: #FF5555;  color: black; text-decoration: blink; }
+ .hostUnimportantProblem { text-align: left;  background-color: #FF5555;  color: black; }
+diff -ur nagios-4.0.20130107.original/html/stylesheets/summary.css nagios-4.0.20130107/html/stylesheets/summary.css
+--- nagios-4.0.20130107.original/html/stylesheets/summary.css	2012-12-24 15:29:20.000000000 +0000
++++ nagios-4.0.20130107/html/stylesheets/summary.css	2013-05-11 19:16:02.000000000 +0000
+@@ -5,25 +5,25 @@
+ .reportDuration {  text-align: center; }
+ .reportTime {  text-align: center; }
+ 
+-.reportDataEven {  background-color: #B4B5CC;  padding: 2px; }
+-.reportDataOdd {  background-color: #CDCEE9;  padding: 2px; }
++.reportDataEven {  background-color: #EAEAEA;  padding: 2px; }
++.reportDataOdd {  background-color: #EAEAEA;  padding: 2px; }
+ 
+ .dataTitle {  text-align: center;  font-weight: bold;  font-size: 12pt; }
+ .dataSubTitle {  text-align: center;  font-weight: bold;  font-size: 10pt; }
+ 
+ TABLE.data {  font-size: 10pt;  background-color: white;  padding: 2px; border-collapse:separate;}
+-TH.data {  font-size: 10pt; text-align: left;  background-color: #999797;  }
+-.dataOdd {  font-size: 9pt;  background-color: #DBDBDB; }
+-.dataEven {  font-size: 9pt;  background-color: #C4C2C2; }
+-
+-.hostUP {  font-size: 9pt;  text-align: left;  background-color: #33FF00; }
+-.hostDOWN {  font-size: 9pt;  text-align: left;  background-color: #F83838; }
+-.hostUNREACHABLE {  font-size: 9pt;  text-align: left;  background-color: #F83838; }
+-
+-.serviceOK {  font-size: 9pt;  text-align: left;  background-color: #33FF00; }
+-.serviceWARNING {  font-size: 9pt;  text-align: left;  background-color: #FFFF00; }
+-.serviceUNKNOWN {  font-size: 9pt;  text-align: left;  background-color: #FF9900; }
+-.serviceCRITICAL {  font-size: 9pt;  text-align: left;  background-color: #F83838; }
++TH.data {  font-size: 10pt; text-align: left;  background-color: #C1C0C0;  }
++.dataOdd {  font-size: 9pt;  background-color: #EAEAEA; }
++.dataEven {  font-size: 9pt;  background-color: #EAEAEA; }
++
++.hostUP {  font-size: 9pt;  text-align: left;  background-color: #9ED515; }
++.hostDOWN {  font-size: 9pt;  text-align: left;  background-color: #FF5555; }
++.hostUNREACHABLE {  font-size: 9pt;  text-align: left;  background-color: #FFF8DC; }
++
++.serviceOK {  font-size: 9pt;  text-align: left;  background-color: #9ED515; }
++.serviceWARNING {  font-size: 9pt;  text-align: left;  background-color: #FFDB58; }
++.serviceUNKNOWN {  font-size: 9pt;  text-align: left;  background-color: #FFF8DC; }
++.serviceCRITICAL {  font-size: 9pt;  text-align: left;  background-color: #FF5555; }
+ 
+ 
+ .helpfulHint {  text-align: left;  font-style: italic;  text-align: center; }

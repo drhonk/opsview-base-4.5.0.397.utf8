@@ -1,0 +1,17 @@
+diff -ur nagios-4.0.20130107.original//base/utils.c nagios-4.0.20130107/base/utils.c
+--- nagios-4.0.20130107.original//base/utils.c	2013-02-26 17:10:48.000000000 +0000
++++ nagios-4.0.20130107/base/utils.c	2013-02-26 21:31:02.000000000 +0000
+@@ -1639,7 +1639,13 @@
+ 	int is_dst_now = FALSE;
+ 	time_t run_time;
+ 
++	// Opsview patch: Increment current_time by 2 because sometimes the log rotation event occurs 1 second before the actual time
++	// so this routine then returns back the same time again, thus getting multiple calls to the log rotation routine
++	// This started happening somewhere between Nagios 3.2.3 and Nagios 3.4.4.
++	// This is a hack - the event really should not get called earlier than expected
+ 	time(&current_time);
++	current_time=current_time+2;
++
+ 	t = localtime_r(&current_time, &tm_s);
+ 	t->tm_min = 0;
+ 	t->tm_sec = 0;

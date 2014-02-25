@@ -1,0 +1,15 @@
+diff -ru nrpe-2.11.orig/src/nrpe.c nrpe-2.11/src/nrpe.c
+--- nrpe-2.11.orig/src/nrpe.c	Wed Dec 26 19:25:05 2007
++++ nrpe-2.11/src/nrpe.c	Thu Mar  6 19:23:48 2008
+@@ -614,9 +614,9 @@
+ 	else if(!strcmp(varvalue,"cron"))
+ 		log_facility=LOG_CRON;
+ 	else if(!strcmp(varvalue,"authpriv"))
+-		log_facility=LOG_AUTHPRIV;
++		log_facility=LOG_AUTH;
+ 	else if(!strcmp(varvalue,"ftp"))
+-		log_facility=LOG_FTP;
++		log_facility=LOG_DAEMON;
+ 	else if(!strcmp(varvalue,"local0"))
+ 		log_facility=LOG_LOCAL0;
+ 	else if(!strcmp(varvalue,"local1"))

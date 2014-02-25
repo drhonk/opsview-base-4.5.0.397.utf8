@@ -1,0 +1,13 @@
+diff -ur nagios-4.0.20130107.original//base/checks.c nagios-4.0.20130107/base/checks.c
+--- nagios-4.0.20130107.original//base/checks.c	2013-06-10 10:20:21.000000000 +0000
++++ nagios-4.0.20130107/base/checks.c	2013-06-11 00:54:50.000000000 +0000
+@@ -323,6 +324,9 @@
+ 	runchk_result = wproc_run_check(cr, processed_command, &kvv);
+ 	if (runchk_result == ERROR) {
+ 		logit(NSLOG_RUNTIME_ERROR, TRUE, "Unable to run check for service '%s' on host '%s'\n", svc->description, svc->host_name);
++		// Opsview patch: need to decrement this here, as the job has not been setup and thus it cannot be reduced otherwise
++		if(currently_running_service_checks > 0)
++			currently_running_service_checks--;
+ 	}
+ 
+ 	/* free memory */

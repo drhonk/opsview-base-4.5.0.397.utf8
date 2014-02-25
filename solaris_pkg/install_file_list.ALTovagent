@@ -1,0 +1,9 @@
+usr/local/nagios/libexec /usr/local/nagios/libexec
+usr/local/nagios/perl /usr/local/nagios/perl
+usr/local/nagios/var /usr/local/nagios/var
+usr/local/nagios/bin/nrpe /usr/local/nagios/bin/nrpe
+#usr/local/nagios/bin/send_nsca /usr/local/nagios/bin/send_nsca
+usr/local/nagios/etc/nrpe.cfg /usr/local/nagios/etc/nrpe.cfg
+#usr/local/nagios/share/locale /usr/local/nagios/share/locale
+#$TOPDIR/support_files/opsview-agent /etc/init.d/opsview-agent
+$TOPDIR/solaris_pkg/manifest.ALTovagent /var/svc/manifest/application/opsview-agent

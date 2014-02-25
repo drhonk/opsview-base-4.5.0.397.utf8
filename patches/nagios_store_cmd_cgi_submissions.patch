@@ -1,0 +1,71 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/cgiutils.c nagios-4.0.20121116/cgi/cgiutils.c
+--- nagios-4.0.20121116.orig/cgi/cgiutils.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/cgi/cgiutils.c	2012-11-26 15:36:24.000000000 +0000
+@@ -1882,3 +1882,28 @@
+ 
+ 	return;
+ 	}
++
++/* Opsview patch: This is duplicated from base/logging.c, with some checks removed.
++   Required to place username of user submiting query into nagios.log */
++/* write something to the nagios log file */
++int write_to_log(char *buffer) {
++	FILE *fp;
++	time_t log_time;
++
++	fp = fopen(log_file, "a+");
++	if(fp == NULL){
++		return ERROR;
++		}
++
++	time(&log_time);
++
++	/* strip any newlines from the end of the buffer */
++	strip(buffer);
++
++	/* write the buffer to the log file */
++	fprintf(fp, "[%lu] %s\n", log_time,buffer);
++
++	fclose(fp);
++
++	return OK;
++	}
+diff -Bbur nagios-4.0.20121116.orig/cgi/cmd.c nagios-4.0.20121116/cgi/cmd.c
+--- nagios-4.0.20121116.orig/cgi/cmd.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/cgi/cmd.c	2012-11-26 15:40:17.000000000 +0000
+@@ -2217,6 +2217,8 @@
+ 
+ /* write a command entry to the command file */
+ int write_command_to_file(char *cmd) {
++	char buffer[MAX_INPUT_BUFFER];
++	char *p;
+ 	FILE *fp;
+ 	struct stat statbuf;
+ 
+@@ -2259,6 +2261,15 @@
+ 		return ERROR;
+ 		}
+ 
++	sprintf(buffer, "API LOG: %s;", current_authdata.username);
++	p = index(cmd, ']');
++	if (p != NULL)
++		p += 2;
++	else
++		p = &cmd[0];
++	strncat(buffer, p, sizeof(buffer) - strlen(buffer) - 1);
++	write_to_log(buffer);
++
+ 	/* write the command to file */
+ 	fprintf(fp, "%s\n", cmd);
+ 
+diff -Bbur nagios-4.0.20121116.orig/include/cgiutils.h nagios-4.0.20121116/include/cgiutils.h
+--- nagios-4.0.20121116.orig/include/cgiutils.h	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/include/cgiutils.h	2012-11-26 15:40:17.000000000 +0000
+@@ -433,6 +433,7 @@
+ int read_main_config_file(const char *);
+ int read_all_object_configuration_data(const char *, int);
+ int read_all_status_data(const char *, int);
++int write_to_log(char *);
+ 
+ char *unescape_newlines(char *);
+ void sanitize_plugin_output(char *);                            /* strips HTML and bad characters from plugin output */

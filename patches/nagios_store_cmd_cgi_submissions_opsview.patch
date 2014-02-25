@@ -1,0 +1,41 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/cmd.c nagios-4.0.20121116/cgi/cmd.c
+--- nagios-4.0.20121116.orig/cgi/cmd.c	2012-11-26 15:41:44.000000000 +0000
++++ nagios-4.0.20121116/cgi/cmd.c	2012-11-26 15:49:03.000000000 +0000
+@@ -2269,6 +2269,7 @@
+ 		p = &cmd[0];
+ 	strncat(buffer, p, sizeof(buffer) - strlen(buffer) - 1);
+ 	write_to_log(buffer);
++	write_to_opsview_audit_proxy_log(buffer);
+ 
+ 	/* write the command to file */
+ 	fprintf(fp, "%s\n", cmd);
+@@ -2804,3 +2805,29 @@
+ 
+ 	return OK;
+ 	}
++
++/* Opsview patch: This is a log which opsviewd will read from and insert records
++   into auditlog database.
++   This will silently fail for slave which is run in context of nagcmd group and
++   does not have write permission - this is okay */
++int write_to_opsview_audit_proxy_log(char *buffer) {
++	FILE *fp;
++	time_t log_time;
++
++	fp = fopen("/usr/local/nagios/var/opsview_proxy_audit.log", "a+");
++	if(fp == NULL){
++		return ERROR;
++		}
++
++	time(&log_time);
++
++	/* strip any newlines from the end of the buffer */
++	strip(buffer);
++
++	/* write the buffer to the log file */
++	fprintf(fp, "[%lu] %s\n", log_time,buffer);
++
++	fclose(fp);
++
++	return OK;
++	}

@@ -1,0 +1,37 @@
+diff -ur ndoutils-1.4b3.orig/src/ndomod.c ndoutils-1.4b3/src/ndomod.c
+--- ndoutils-1.4b3.orig/src/ndomod.c	2007-04-10 17:21:36.000000000 +0100
++++ ndoutils-1.4b3/src/ndomod.c	2007-12-20 12:52:14.000000000 +0000
+@@ -1774,6 +1774,16 @@
+ 		temp_buffer[sizeof(temp_buffer)-1]='\x0';
+ 		ndo_dbuf_strcat(&dbuf,temp_buffer);
+ 
++		/* Altinity patch:
++		 * On nagios 2 only, if the host state is non-0 then rotation the sink file
++		 * to ensure the runtime db (hence HH) is kept more up to date
++		 */
++#ifdef BUILD_NAGIOS_2X
++		if(hcdata->state != 0) {
++			ndomod_rotate_sink_file(NULL);
++		}
++#endif
++
+ 		break;
+ 
+ 	case NEBCALLBACK_COMMENT_DATA:
+@@ -2157,6 +2157,16 @@
+ 		temp_buffer[sizeof(temp_buffer)-1]='\x0';
+ 		ndo_dbuf_strcat(&dbuf,temp_buffer);
+ 
++		/* Altinity patch:
++		 * On nagios 2 only, if the host state is non-0 then rotation the sink file
++		 * to ensure the runtime db (hence HH) is kept more up to date
++		 */
++#ifdef BUILD_NAGIOS_2X
++		if(temp_host->current_state != 0) {
++			ndomod_rotate_sink_file(NULL);
++		}
++#endif
++
+ 		break;
+ 
+ 	case NEBCALLBACK_SERVICE_STATUS_DATA:

@@ -1,0 +1,39 @@
+diff -ur nmis-4.2.13.orig/bin/nmis.pl nmis-4.2.13/bin/nmis.pl
+--- nmis-4.2.13.orig/bin/nmis.pl	2009-09-24 12:27:22.000000000 +0000
++++ nmis-4.2.13/bin/nmis.pl	2009-09-24 12:27:49.000000000 +0000
+@@ -6733,6 +6733,12 @@
+ 		}
+ 	
+    	    foreach $index ( sort {$a <=> $b} keys %$interfaces) {
++			if( ! $interfaces->{$index}{'Description'} && $NMIS::config{default_ifAlias} ) {
++				$interfaces->{$index}{'Description'} = $NMIS::config{default_ifAlias};
++				if ($debug) {
++					print "\t NOTE: description (ifAlias) is empty, setting to default_ifAlias ($NMIS::config{default_ifAlias})",$/;
++				}
++			}
+ 			if ($debug) { print "\t Checking $index, ifDescr=$interfaces->{$index}{ifDescr}, ifAlias=\"$interfaces->{$index}{'Description'}\"\n"; }
+ 
+ 			### add in anything we find from sysinterface.csv - allows manual updating of interface variables
+diff -ur nmis-4.2.13.orig/conf/nmis.conf nmis-4.2.13/conf/nmis.conf
+--- nmis-4.2.13.orig/conf/nmis.conf	2009-09-24 12:27:22.000000000 +0000
++++ nmis-4.2.13/conf/nmis.conf	2009-09-24 12:28:21.000000000 +0000
+@@ -126,6 +126,10 @@
+ # SNPP Settings
+ snpp_server=snpp.metrocall.com
+ #
++# ifAlias setting - set this to some text to collect from devices where ifAlias is not set
++#default_ifAlias=null
++default_ifAlias=
++#
+ # Trap Server Settings
+ # In the format community@server:port comma seperated list!
+ trap_server=public@127.0.0.1:162,public@127.0.0.1:162
+@@ -294,7 +298,7 @@
+ #### YOU SHOULDN'T HAVE TO CHANGE ANYTHING ELSE ##############################
+ #
+ # Count of all config items for validation always + 1 as NMIS adds 1 internally
+-conf_count=249
++conf_count=250
+ # regex = regular expression
+ # regex for SNMPv2c HC MIBS support, use the sysObjectName here, displayed as SystemName in node summary page.
+ hc_model=6509|cisco7609|cisco7606|jnxProductNameM10i|juniErx1440|juniE320|ellacoya|catalyst35|catalyst37|wsc6006sysID|cisco7204VXR|netscreenISG

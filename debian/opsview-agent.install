@@ -1,0 +1,6 @@
+debian/tmp/usr/local/nagios/libexec /usr/local/nagios
+debian/tmp/usr/local/nagios/perl /usr/local/nagios
+debian/tmp/usr/local/nagios/bin/nrpe /usr/local/nagios/bin
+debian/tmp/usr/local/nagios/bin/send_nsca /usr/local/nagios/bin
+debian/tmp/usr/local/nagios/etc/nrpe.cfg /usr/local/nagios/etc
+debian/tmp/usr/local/nagios/share/locale /usr/local/nagios/share

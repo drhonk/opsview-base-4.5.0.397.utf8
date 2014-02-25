@@ -1,0 +1,113 @@
+diff -ur ndoutils-1.4b3.original/src/dbhandlers.c ndoutils-1.4b3.ton/src/dbhandlers.c
+--- ndoutils-1.4b3.original/src/dbhandlers.c	2008-08-13 23:56:14.000000000 +0100
++++ ndoutils-1.4b3.ton/src/dbhandlers.c	2008-08-14 02:12:56.550373784 +0100
+@@ -3337,6 +3337,7 @@
+ 	char *ptr2=NULL;
+ 	char *ptr3=NULL;
+ 	int has_been_modified=0;
++	int first;
+ 
+ 	if(idi==NULL)
+ 		return NDO_ERROR;
+@@ -3537,6 +3538,12 @@
+ 		free(buf1);
+ 	        }
+ 
++	if(asprintf(&buf1,"INSERT INTO %s (instance_id,host_id,contact_object_id) VALUES "
++		    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_HOSTCONTACTS]
++		   )==-1)
++		buf1=NULL;
++
++	first=1;
+ 	/* save contacts to db */
+ 	mbuf=idi->mbuf[NDO2DB_MBUF_CONTACT];
+ 	for(x=0;x<mbuf.used_lines;x++){
+@@ -3547,24 +3554,22 @@
+ 		/* get the object id of the member */
+ 		result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_CONTACT,mbuf.buffer[x],NULL,&member_id);
+ 
+-		if(asprintf(&buf,"instance_id='%d', host_id='%lu', contact_object_id='%lu'"
++		buf=buf1;	/* Save this pointer for later free'ing */
++		if(asprintf(&buf1,"%s%s(%d,%lu,%lu)"
++			    ,buf1
++			    ,(first==1?"":",")
+ 			    ,idi->dbinfo.instance_id
+ 			    ,host_id
+ 			    ,member_id
+ 			   )==-1)
+-			buf=NULL;
+-	
+-		if(asprintf(&buf1,"INSERT INTO %s SET %s ON DUPLICATE KEY UPDATE %s"
+-			    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_HOSTCONTACTS]
+-			    ,buf
+-			    ,buf
+-			   )==-1)
+ 			buf1=NULL;
+-
+-		result=ndo2db_db_query(idi,buf1);
+ 		free(buf);
+-		free(buf1);
++		first=0;
++
+ 	        }
++	if(first==0)
++		result=ndo2db_db_query(idi,buf1);
++	free(buf1);
+ 
+ 	/* save custom variables to db */
+ 	mbuf=idi->mbuf[NDO2DB_MBUF_CUSTOMVARIABLE];
+@@ -3764,6 +3769,7 @@
+ 	char *ptr2=NULL;
+ 	char *ptr3=NULL;
+ 	int has_been_modified=0;
++	int first=0;
+ 
+ 	if(idi==NULL)
+ 		return NDO_ERROR;
+@@ -3923,6 +3929,12 @@
+ 	for(x=0;x<9;x++)
+ 		free(es[x]);
+ 
++	if(asprintf(&buf1,"INSERT INTO %s (instance_id,service_id,contact_object_id) VALUES "
++		    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_SERVICECONTACTS]
++		   )==-1)
++		buf1=NULL;
++
++	first=1;
+ 	/* save contacts to db */
+ 	mbuf=idi->mbuf[NDO2DB_MBUF_CONTACT];
+ 	for(x=0;x<mbuf.used_lines;x++){
+@@ -3933,24 +3945,22 @@
+ 		/* get the object id of the member */
+ 		result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_CONTACT,mbuf.buffer[x],NULL,&member_id);
+ 
+-		if(asprintf(&buf,"instance_id='%d', service_id='%lu', contact_object_id='%lu'"
++		buf=buf1;
++		if(asprintf(&buf1,"%s%s(%d,%lu,%lu)"
++			    ,buf1
++			    ,(first==1?"":",")
+ 			    ,idi->dbinfo.instance_id
+ 			    ,service_id
+ 			    ,member_id
+ 			   )==-1)
+-			buf=NULL;
+-	
+-		if(asprintf(&buf1,"INSERT INTO %s SET %s ON DUPLICATE KEY UPDATE %s"
+-			    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_SERVICECONTACTS]
+-			    ,buf
+-			    ,buf
+-			   )==-1)
+ 			buf1=NULL;
+-
+-		result=ndo2db_db_query(idi,buf1);
+ 		free(buf);
+-		free(buf1);
++		first=0;
++
+ 	        }
++	if (first==0)
++		result=ndo2db_db_query(idi,buf1);
++	free(buf1);
+ 
+ 	/* save custom variables to db */
+ 	mbuf=idi->mbuf[NDO2DB_MBUF_CUSTOMVARIABLE];

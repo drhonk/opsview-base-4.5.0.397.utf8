@@ -1,0 +1,41 @@
+diff -ur nagios-4.0.20130107.original/base/utils.c nagios-4.0.20130107/base/utils.c
+--- nagios-4.0.20130107.original/base/utils.c	2013-03-22 15:54:58.000000000 +0000
++++ nagios-4.0.20130107/base/utils.c	2013-03-22 18:23:03.000000000 +0000
+@@ -2256,8 +2256,36 @@
+ 				cr.exited_ok = atoi(val);
+ 			else if(!strcmp(var, "return_code"))
+ 				cr.return_code = atoi(val);
+-			else if(!strcmp(var, "output"))
++			else if(!strcmp(var, "output")) {
+ 				cr.output = (char *)strdup(val);
++
++				// Opsview patch: The checkresults dir is only for NRD type data now
++				// We convert \n to actual linefeeds, because the subsequent parse_check_result
++				// expects linefeeds in the stream. We also convert \\ to a single backslash
++				// This is mirrored with the output from SERVICEOUTPUT on a slave system. 
++				// There was a change somewhere in Nagios 4
++				register int x,y;
++				char *buf = cr.output;
++				for(x=0,y=0;buf[x]!='\x0';x++){
++					if(buf[x]=='\\'){
++						if(buf[x+1]=='n')
++							buf[y++]='\n';
++						else if (buf[x+1]=='\\')
++							buf[y++]='\\';
++						else if (buf[x+1]=='t')
++							buf[y++]='\t';
++						else if (buf[x+1]=='r')
++							buf[y++]='\r';
++						else
++							buf[y++]=buf[x+1];
++						x++;
++						}
++					else
++						buf[y++]=buf[x];
++					}
++				buf[y]='\x0';
++				}
++
+ 			}
+ 		}
+ 

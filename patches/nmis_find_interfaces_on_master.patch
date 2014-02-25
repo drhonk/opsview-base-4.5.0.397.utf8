@@ -1,0 +1,35 @@
+diff -ur nmis-4.2.13.original/bin/nmis.pl nmis-4.2.13/bin/nmis.pl
+--- nmis-4.2.13.original/bin/nmis.pl	2008-01-22 15:11:44.659559000 +0000
++++ nmis-4.2.13/bin/nmis.pl	2008-01-22 15:13:25.866173704 +0000
+@@ -820,7 +820,7 @@
+ if ($type eq 'update' and $NMIS::config{master} eq 'true' and !$node_search) { &runMaster }
+ 
+ # if an update, concatencate all the node interface.dat files in <nmis_var>/interface.csv
+-elsif ( $type eq "update" ) { &createInterfaceInfo; &createNBARPDInfo; }
++if ( $type eq "update" ) { &createInterfaceInfo; &createNBARPDInfo; }
+ 
+ 
+ # normal exit
+diff -ur nmis-4.2.13.original/cgi-bin/nmiscgi.pl nmis-4.2.13/cgi-bin/nmiscgi.pl
+--- nmis-4.2.13.original/cgi-bin/nmiscgi.pl	2008-01-22 15:11:44.637562000 +0000
++++ nmis-4.2.13/cgi-bin/nmiscgi.pl	2008-01-22 15:15:33.724736248 +0000
+@@ -3246,12 +3246,16 @@
+ 				$NMIS::interfaceInfo{$intHash}{ifSpeed} = convertIfSpeed($NMIS::interfaceInfo{$intHash}{ifSpeed});
+ 
+ 				rowStart;
+-				printCell("<a href=\"$this_script?file=$conf&amp;type=summary&amp;node=$NMIS::interfaceInfo{$intHash}{node}\">$NMIS::interfaceInfo{$intHash}{node}</a>");
++				my $found_node = $NMIS::interfaceInfo{$intHash}{node};
++				my $href = "$this_script/cgi-nmis/nmiscgi.pl?file=$conf&amp;node=$found_node";
++				if ( exists $NMIS::nodeTable{$found_node}{slave2} ) {
++					$href = "http://".$NMIS::slaveTable{$NMIS::nodeTable{$found_node}{slave2}}{Host}."/cgi-nmis/nmiscgi.pl?file=$conf&amp;node=$found_node";
++				}
++				printCell("<a href=\"$href&amp;type=summary\">$found_node</a>");
+ 
+ 				### AS 16 July - Fixed bad link for interfaces
+ 				if ( $NMIS::interfaceInfo{$intHash}{collect} eq "true" ) {
+-					$tmpurl="$this_script?file=$conf&amp;node=$NMIS::interfaceInfo{$intHash}{node}&amp;type=graph&amp;graphtype=$NMIS::config{portstats}&amp;glamount=$glamount&amp;glunits=$glunits&amp;intf=$NMIS::interfaceInfo{$intHash}{ifIndex}";
+-					#printCell("<a href=\"$this_script?file=$conf&amp;type=interface&amp;node=$NMIS::interfaceInfo{$intHash}{node}&amp;interface=$NMIS::interfaceInfo{$intHash}{ifDescr}\"></a>","#FFFFFF",1,"center");
++					$tmpurl="$href&amp;type=graph&amp;graphtype=$NMIS::config{portstats}&amp;glamount=$glamount&amp;glunits=$glunits&amp;intf=$NMIS::interfaceInfo{$intHash}{ifIndex}";
+ 					printCell("<a href=\"$tmpurl\" target=ViewWindow onMouseOver=\"window.status='Drill into $NMIS::interfaceInfo{$intHash}{ifDescr}.';return true\" onClick=\"viewdoc('$tmpurl',$win_width,$win_height)\">$NMIS::interfaceInfo{$intHash}{ifDescr}</a>","#FFFFFF",1,"center");
+ 				}
+ 				else { 	printCell("$NMIS::interfaceInfo{$intHash}{ifDescr}","#FFFFFF",1,"center"); }

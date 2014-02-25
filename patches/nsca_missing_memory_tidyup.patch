@@ -1,0 +1,11 @@
+diff -ur nsca-2.9.1.new/src/nsca.c nsca-2.9.1/src/nsca.c
+--- nsca-2.9.1.new/src/nsca.c	2013-07-24 15:11:08.000000000 +0000
++++ nsca-2.9.1/src/nsca.c	2013-07-24 16:28:57.000000000 +0000
+@@ -1055,6 +1055,7 @@
+         /* open the command file if we're aggregating writes */
+         if(aggregate_writes==TRUE){
+                 if(open_command_file()==ERROR){
++                        encrypt_cleanup(decryption_method,CI);
+                         close(sock);
+ 			if(mode==MULTI_PROCESS_DAEMON)
+ 				do_exit(STATE_CRITICAL);

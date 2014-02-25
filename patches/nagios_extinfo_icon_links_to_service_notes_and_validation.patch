@@ -1,0 +1,21 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/extinfo.c nagios-4.0.20121116/cgi/extinfo.c
+--- nagios-4.0.20121116.orig/cgi/extinfo.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/cgi/extinfo.c	2012-11-26 14:58:21.000000000 +0000
+@@ -374,11 +374,16 @@
+ 
+ 			if(display_type == DISPLAY_SERVICE_INFO) {
+ 				if(temp_service->icon_image != NULL) {
++					printf("<A HREF='");
++					process_macros_r(mac, temp_service->notes_url, &processed_string, 0);
++					printf("%s", processed_string);
++					free(processed_string);
++					printf("'>");
+ 					printf("<img src='%s", url_logo_images_path);
+ 					process_macros_r(mac, temp_service->icon_image, &processed_string, 0);
+ 					printf("%s", processed_string);
+ 					free(processed_string);
+-					printf("' border=0 alt='%s' title='%s'><BR CLEAR=ALL>", (temp_service->icon_image_alt == NULL) ? "" : temp_service->icon_image_alt, (temp_service->icon_image_alt == NULL) ? "" : temp_service->icon_image_alt);
++					printf("' border=0 alt='%s' title='%s'></A><BR CLEAR=ALL>", (temp_service->icon_image_alt == NULL) ? "" : temp_service->icon_image_alt, (temp_service->icon_image_alt == NULL) ? "" : temp_service->icon_image_alt);
+ 					}
+ 				if(temp_service->icon_image_alt != NULL)
+ 					printf("<font size=-1><i>( %s )</i></font>\n", temp_service->icon_image_alt);

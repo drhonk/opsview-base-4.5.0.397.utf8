@@ -1,0 +1,22 @@
+diff -ur ndoutils-1.4b3.original/src/ndo2db.c ndoutils-1.4b3/src/ndo2db.c
+--- ndoutils-1.4b3.original/src/ndo2db.c	2008-03-04 15:31:49.000000000 +0100
++++ ndoutils-1.4b3/src/ndo2db.c	2008-03-07 17:48:26.322042016 +0100
+@@ -65,6 +65,7 @@
+ int main(int argc, char **argv){
+ 	int db_supported=NDO_FALSE;
+ 	int result=NDO_OK;
++	struct sigaction sa;
+ 
+ #ifdef DEBUG_MEMORY
+ 	mtrace();
+@@ -132,7 +133,9 @@
+ 	signal(SIGINT,ndo2db_parent_sighandler);
+ 	signal(SIGSEGV,ndo2db_parent_sighandler);
+ 	signal(SIGFPE,ndo2db_parent_sighandler);
+-	signal(SIGCHLD,ndo2db_parent_sighandler);
++	sa.sa_handler=ndo2db_parent_sighandler;
++	sa.sa_flags=SA_NOCLDSTOP|SA_RESTART;
++	sigaction(SIGCHLD,&sa,NULL);
+ 
+ 	/* drop privileges */
+ 	ndo2db_drop_privileges(ndo2db_user,ndo2db_group);

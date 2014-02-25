@@ -1,0 +1,20 @@
+--- nagiosgraph-0.8.2.original/show.cgi	2006-08-03 14:06:25.000000000 +0100
++++ nagiosgraph-0.8.2/show.cgi	2006-08-17 16:20:28.365684572 +0100
+@@ -181,7 +181,7 @@
+     @style = ( -style => {-src => "$Config{stylesheet}"} );
+   }
+   print header, start_html(-id=>"nagiosgraph", -title => "nagiosgraph: $host-$service",
+-    -meta => { -http_equiv => "Refresh", -content => "300" },
++    -head => meta({ -http_equiv => "Refresh", -content => "300" }),
+     @style
+     );
+   page($host,$service,$geom,$rrdopts,@db);
+@@ -261,7 +261,7 @@
+     if ( @db ) {
+       for my $g ( @db ) {
+         my $arg = join '&', "host=$h", "service=$s", "db=$g", "graph=$t",
+-                            "geom=$d", "rrdopts=$o";
++                            "geom=$d", "rrdopts=$o", "time=".time;	# Time is to force ajax reload
+ 	$arg .= "&fixedscale" if ($fixedscale);
+         my @gl = split ',', $g;
+         my $ds = shift @gl;

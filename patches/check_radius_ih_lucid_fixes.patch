@@ -1,0 +1,20 @@
+diff -ur check_radius_ih-1.1.orig/check_radius_ih.c check_radius_ih-1.1/check_radius_ih.c
+--- check_radius_ih-1.1.orig/check_radius_ih.c	2006-07-13 09:58:14.000000000 +0100
++++ check_radius_ih-1.1/check_radius_ih.c	2010-04-07 09:17:31.868834578 +0100
+@@ -38,6 +38,7 @@
+ #include <unistd.h>
+ #include <ctype.h>
+ #include <regex.h>
++#include <limits.h>
+ 
+ #include "md5.h"
+ 
+@@ -558,7 +559,7 @@
+ 		}
+         	regfree(&regex);					
+ 	}
+-	memset(buffer,MAX_BUFFER,0);
++	memset(buffer,0,MAX_BUFFER);
+ }
+ 
+ /*

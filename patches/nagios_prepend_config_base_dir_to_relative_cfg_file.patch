@@ -1,0 +1,63 @@
+diff -ur nagios-2.8.original/sample-config/nagios.cfg.in nagios-2.8/sample-config/nagios.cfg.in
+--- nagios-2.8.original/sample-config/nagios.cfg.in	2006-12-22 01:43:20.000000000 +0000
++++ nagios-2.8/sample-config/nagios.cfg.in	2007-06-05 23:27:21.879238424 +0100
+@@ -29,6 +29,9 @@
+ # Nagios will read and process all the config files you define.
+ # This can be very useful if you want to keep command definitions 
+ # separate from host and contact definitions...
++#
++# You can specify cfg_file as a relative path. The base directory of
++# the nagios.cfg specified at nagios startup will be prefixed to cfg_file
+ 
+ # Command definitions
+ cfg_file=@sysconfdir@/commands.cfg
+diff -ur nagios-2.8.original/xdata/xodtemplate.c nagios-2.8/xdata/xodtemplate.c
+--- nagios-2.8.original/xdata/xodtemplate.c	2007-06-05 23:26:49.390156980 +0100
++++ nagios-2.8/xdata/xodtemplate.c	2007-06-05 23:28:28.777115180 +0100
+@@ -66,6 +66,8 @@
+ 
+ #include "xodtemplate.h"
+ 
++/* Required for dirname() */
++#include <libgen.h>
+ 
+ #ifdef NSCORE
+ extern int use_regexp_matches;
+@@ -106,6 +108,7 @@
+ int xodtemplate_read_config_data(char *main_config_file,int options,int cache,int dump_objects){
+ #ifdef NSCORE
+ 	char config_file[MAX_FILENAME_LENGTH];
++	char config_base_dir[MAX_FILENAME_LENGTH];
+ 	char *input=NULL;
+ 	char *temp_ptr;
+ #endif
+@@ -158,6 +161,10 @@
+ 
+ #ifdef NSCORE
+ 
++	strncpy(config_file,main_config_file,sizeof(config_file)-1);
++	config_file[sizeof(config_file)-1]='\x0';
++	strncpy(config_base_dir,(char *)dirname(config_file),sizeof(config_base_dir)-1);
++
+ 	/* daemon reads all config files/dirs specified in the main config file */
+ 	/* read in all lines from the main config file */
+ 	while(1){
+@@ -188,8 +195,16 @@
+ 			if(temp_ptr==NULL)
+ 				continue;
+ 
+-			strncpy(config_file,temp_ptr,sizeof(config_file)-1);
+-			config_file[sizeof(config_file)-1]='\x0';
++			/* Prepend config_base_dir if relative */
++			if (temp_ptr[0] != '/') {
++				strncpy(config_file,config_base_dir,sizeof(config_file)-1);
++				strncat(config_file,"/",1);
++				strncat(config_file,temp_ptr,sizeof(config_file)-strlen(config_base_dir)-1);
++				config_file[sizeof(config_file)-1]='\x0';
++			} else {
++				strncpy(config_file,temp_ptr,sizeof(config_file)-1);
++				config_file[sizeof(config_file)-1]='\x0';
++			}
+ 
+ 			/* process the config file... */
+ 			result=xodtemplate_process_config_file(config_file,options);

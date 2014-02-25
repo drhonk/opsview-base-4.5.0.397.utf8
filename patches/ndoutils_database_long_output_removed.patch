@@ -1,0 +1,203 @@
+diff -ur ndoutils-2-0/src/dbhandlers.c ndoutils-2-0.with_long_output_removed//src/dbhandlers.c
+--- ndoutils-2-0/src/dbhandlers.c	2012-11-30 05:20:10.000000000 +0000
++++ ndoutils-2-0.with_long_output_removed//src/dbhandlers.c	2012-11-30 05:08:33.000000000 +0000
+@@ -1037,13 +1037,13 @@
+ 
+ 	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_COMMANDLINE]);
+ 	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[2]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
++	es[2]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
+ 
+ 	ts[0]=ndo2db_db_timet_to_sql(idi,start_time.tv_sec);
+ 	ts[1]=ndo2db_db_timet_to_sql(idi,end_time.tv_sec);
+ 
+ 	/* save entry to db */
+-	if(asprintf(&buf,"instance_id='%lu', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', command_line='%s', timeout='%d', early_timeout='%d', execution_time='%lf', return_code='%d', output='%s', long_output='%s'"
++	if(asprintf(&buf,"instance_id='%lu', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', command_line='%s', timeout='%d', early_timeout='%d', execution_time='%lf', return_code='%d', output='%s'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,ts[0]
+ 		    ,start_time.tv_usec
+@@ -1055,7 +1055,6 @@
+ 		    ,execution_time
+ 		    ,return_code
+ 		    ,es[1]
+-		    ,es[2]
+ 		   )==-1)
+ 		buf=NULL;
+ 
+@@ -1121,7 +1120,7 @@
+ 	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_COMMANDARGS]);
+ 	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_COMMANDLINE]);
+ 	es[2]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
++	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
+ 
+ 	ts[0]=ndo2db_db_timet_to_sql(idi,start_time.tv_sec);
+ 	ts[1]=ndo2db_db_timet_to_sql(idi,end_time.tv_sec);
+@@ -1136,7 +1135,7 @@
+ 	result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_COMMAND,idi->buffered_input[NDO_DATA_COMMANDNAME],NULL,&command_id);
+ 
+ 	/* save entry to db */
+-	if(asprintf(&buf,"instance_id='%lu', eventhandler_type='%d', object_id='%lu', state='%d', state_type='%d', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', command_object_id='%lu', command_args='%s', command_line='%s', timeout='%d', early_timeout='%d', execution_time='%lf', return_code='%d', output='%s', long_output='%s'"
++	if(asprintf(&buf,"instance_id='%lu', eventhandler_type='%d', object_id='%lu', state='%d', state_type='%d', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', command_object_id='%lu', command_args='%s', command_line='%s', timeout='%d', early_timeout='%d', execution_time='%lf', return_code='%d', output='%s'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,eventhandler_type
+ 		    ,object_id
+@@ -1154,7 +1153,6 @@
+ 		    ,execution_time
+ 		    ,return_code
+ 		    ,es[2]
+-		    ,es[3]
+ 		   )==-1)
+ 		buf=NULL;
+ 
+@@ -1216,7 +1214,7 @@
+ 	result=ndo2db_convert_string_to_timeval(idi->buffered_input[NDO_DATA_ENDTIME],&end_time);
+ 
+ 	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
++	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+ 
+ 	ts[0]=ndo2db_db_timet_to_sql(idi,start_time.tv_sec);
+ 	ts[1]=ndo2db_db_timet_to_sql(idi,end_time.tv_sec);
+@@ -1228,7 +1226,7 @@
+ 		result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_HOST,idi->buffered_input[NDO_DATA_HOST],NULL,&object_id);
+ 
+ 	/* save entry to db */
+-	if(asprintf(&buf,"instance_id='%lu', notification_type='%d', notification_reason='%d', notification_number='%d', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', object_id='%lu', state='%d', output='%s', long_output='%s', escalated='%d', contacts_notified='%d'"
++	if(asprintf(&buf,"instance_id='%lu', notification_type='%d', notification_reason='%d', notification_number='%d', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', object_id='%lu', state='%d', output='%s', escalated='%d', contacts_notified='%d'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,notification_type
+ 		    ,notification_reason
+@@ -1240,7 +1238,6 @@
+ 		    ,object_id
+ 		    ,state
+ 		    ,es[0]
+-		    ,es[1]
+ 		    ,escalated
+ 		    ,contacts_notified
+ 		   )==-1)
+@@ -1484,7 +1481,7 @@
+ 	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_COMMANDARGS]);
+ 	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_COMMANDLINE]);
+ 	es[2]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
++	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
+ 	es[4]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_PERFDATA]);
+ 
+ 	ts[0]=ndo2db_db_timet_to_sql(idi,start_time.tv_sec);
+@@ -1500,7 +1497,7 @@
+ 		command_id=0L;
+ 
+ 	/* save entry to db */
+-	if(asprintf(&buf1,"instance_id='%lu', service_object_id='%lu', check_type='%d', current_check_attempt='%d', max_check_attempts='%d', state='%d', state_type='%d', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', timeout='%d', early_timeout='%d', execution_time='%lf', latency='%lf', return_code='%d', output='%s', long_output='%s', perfdata='%s'"
++	if(asprintf(&buf1,"instance_id='%lu', service_object_id='%lu', check_type='%d', current_check_attempt='%d', max_check_attempts='%d', state='%d', state_type='%d', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', timeout='%d', early_timeout='%d', execution_time='%lf', latency='%lf', return_code='%d', output='%s', perfdata='%s'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,object_id
+ 		    ,check_type
+@@ -1518,7 +1515,6 @@
+ 		    ,latency
+ 		    ,return_code
+ 		    ,es[2]
+-		    ,es[3]
+ 		    ,es[4]
+ 		   )==-1)
+ 		buf1=NULL;
+@@ -1607,7 +1603,7 @@
+ 	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_COMMANDARGS]);
+ 	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_COMMANDLINE]);
+ 	es[2]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
++	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
+ 	es[4]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_PERFDATA]);
+ 
+ 	ts[0]=ndo2db_db_timet_to_sql(idi,start_time.tv_sec);
+@@ -1629,7 +1625,7 @@
+ 		is_raw_check=0;
+ 
+ 	/* save entry to db */
+-	if(asprintf(&buf1,"instance_id='%lu', host_object_id='%lu', check_type='%d', is_raw_check='%d', current_check_attempt='%d', max_check_attempts='%d', state='%d', state_type='%d', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', timeout='%d', early_timeout='%d', execution_time='%lf', latency='%lf', return_code='%d', output='%s', long_output='%s', perfdata='%s'"
++	if(asprintf(&buf1,"instance_id='%lu', host_object_id='%lu', check_type='%d', is_raw_check='%d', current_check_attempt='%d', max_check_attempts='%d', state='%d', state_type='%d', start_time=%s, start_time_usec='%lu', end_time=%s, end_time_usec='%lu', timeout='%d', early_timeout='%d', execution_time='%lf', latency='%lf', return_code='%d', output='%s', perfdata='%s'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,object_id
+ 		    ,check_type
+@@ -1648,7 +1644,6 @@
+ 		    ,latency
+ 		    ,return_code
+ 		    ,es[2]
+-		    ,es[3]
+ 		    ,es[4]
+ 		   )==-1)
+ 		buf1=NULL;
+@@ -2332,7 +2327,7 @@
+ 	result=ndo2db_convert_string_to_double(idi->buffered_input[NDO_DATA_RETRYCHECKINTERVAL],&retry_check_interval);
+ 
+ 	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
++	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
+ 	es[2]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_PERFDATA]);
+ 	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_EVENTHANDLER]);
+ 	es[4]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_CHECKCOMMAND]);
+@@ -2353,12 +2348,11 @@
+ 	result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_TIMEPERIOD,idi->buffered_input[NDO_DATA_HOSTCHECKPERIOD],NULL,&check_timeperiod_object_id);
+ 
+ 	/* generate query string */
+-	if(asprintf(&buf1,"instance_id='%lu', host_object_id='%lu', status_update_time=%s, output='%s', long_output='%s', perfdata='%s', current_state='%d', has_been_checked='%d', should_be_scheduled='%d', current_check_attempt='%d', max_check_attempts='%d', last_check=%s, next_check=%s, check_type='%d', last_state_change=%s, last_hard_state_change=%s, last_hard_state='%d', last_time_up=%s, last_time_down=%s, last_time_unreachable=%s, state_type='%d', last_notification=%s, next_notification=%s, no_more_notifications='%d', notifications_enabled='%d', problem_has_been_acknowledged='%d', acknowledgement_type='%d', current_notification_number='%d', passive_checks_enabled='%d', active_checks_enabled='%d', event_handler_enabled='%d', flap_detection_enabled='%d', is_flapping='%d', percent_state_change='%lf', latency='%lf', execution_time='%lf', scheduled_downtime_depth='%d', failure_prediction_enabled='%d', process_performance_data='%d', obsess_over_host='%d', modified_host_attributes='%lu', event_handler='%s', check_command='%s', normal_check_interval='%lf', retry_check_interval='%lf', check_timeperiod_object_id='%lu'"
++	if(asprintf(&buf1,"instance_id='%lu', host_object_id='%lu', status_update_time=%s, output='%s', perfdata='%s', current_state='%d', has_been_checked='%d', should_be_scheduled='%d', current_check_attempt='%d', max_check_attempts='%d', last_check=%s, next_check=%s, check_type='%d', last_state_change=%s, last_hard_state_change=%s, last_hard_state='%d', last_time_up=%s, last_time_down=%s, last_time_unreachable=%s, state_type='%d', last_notification=%s, next_notification=%s, no_more_notifications='%d', notifications_enabled='%d', problem_has_been_acknowledged='%d', acknowledgement_type='%d', current_notification_number='%d', passive_checks_enabled='%d', active_checks_enabled='%d', event_handler_enabled='%d', flap_detection_enabled='%d', is_flapping='%d', percent_state_change='%lf', latency='%lf', execution_time='%lf', scheduled_downtime_depth='%d', failure_prediction_enabled='%d', process_performance_data='%d', obsess_over_host='%d', modified_host_attributes='%lu', event_handler='%s', check_command='%s', normal_check_interval='%lf', retry_check_interval='%lf', check_timeperiod_object_id='%lu'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,object_id
+ 		    ,ts[0]
+ 		    ,es[0]
+-		    ,es[1]
+ 		    ,es[2]
+ 		    ,current_state
+ 		    ,has_been_checked
+@@ -2532,7 +2526,7 @@
+ 	result=ndo2db_convert_string_to_double(idi->buffered_input[NDO_DATA_RETRYCHECKINTERVAL],&retry_check_interval);
+ 
+ 	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
++	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
+ 	es[2]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_PERFDATA]);
+ 	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_EVENTHANDLER]);
+ 	es[4]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_CHECKCOMMAND]);
+@@ -2554,12 +2548,11 @@
+ 	result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_TIMEPERIOD,idi->buffered_input[NDO_DATA_SERVICECHECKPERIOD],NULL,&check_timeperiod_object_id);
+ 
+ 	/* generate query string */
+-	if(asprintf(&buf1,"instance_id='%lu', service_object_id='%lu', status_update_time=%s, output='%s', long_output='%s', perfdata='%s', current_state='%d', has_been_checked='%d', should_be_scheduled='%d', current_check_attempt='%d', max_check_attempts='%d', last_check=%s, next_check=%s, check_type='%d', last_state_change=%s, last_hard_state_change=%s, last_hard_state='%d', last_time_ok=%s, last_time_warning=%s, last_time_unknown=%s, last_time_critical=%s, state_type='%d', last_notification=%s, next_notification=%s, no_more_notifications='%d', notifications_enabled='%d', problem_has_been_acknowledged='%d', acknowledgement_type='%d', current_notification_number='%d', passive_checks_enabled='%d', active_checks_enabled='%d', event_handler_enabled='%d', flap_detection_enabled='%d', is_flapping='%d', percent_state_change='%lf', latency='%lf', execution_time='%lf', scheduled_downtime_depth='%d', failure_prediction_enabled='%d', process_performance_data='%d', obsess_over_service='%d', modified_service_attributes='%lu', event_handler='%s', check_command='%s', normal_check_interval='%lf', retry_check_interval='%lf', check_timeperiod_object_id='%lu'"
++	if(asprintf(&buf1,"instance_id='%lu', service_object_id='%lu', status_update_time=%s, output='%s', perfdata='%s', current_state='%d', has_been_checked='%d', should_be_scheduled='%d', current_check_attempt='%d', max_check_attempts='%d', last_check=%s, next_check=%s, check_type='%d', last_state_change=%s, last_hard_state_change=%s, last_hard_state='%d', last_time_ok=%s, last_time_warning=%s, last_time_unknown=%s, last_time_critical=%s, state_type='%d', last_notification=%s, next_notification=%s, no_more_notifications='%d', notifications_enabled='%d', problem_has_been_acknowledged='%d', acknowledgement_type='%d', current_notification_number='%d', passive_checks_enabled='%d', active_checks_enabled='%d', event_handler_enabled='%d', flap_detection_enabled='%d', is_flapping='%d', percent_state_change='%lf', latency='%lf', execution_time='%lf', scheduled_downtime_depth='%d', failure_prediction_enabled='%d', process_performance_data='%d', obsess_over_service='%d', modified_service_attributes='%lu', event_handler='%s', check_command='%s', normal_check_interval='%lf', retry_check_interval='%lf', check_timeperiod_object_id='%lu'"
+ 		    ,idi->dbinfo.instance_id
+ 		    ,object_id
+ 		    ,ts[0]
+ 		    ,es[0]
+-		    ,es[1]
+ 		    ,es[2]
+ 		    ,current_state
+ 		    ,has_been_checked
+@@ -2948,7 +2941,7 @@
+ 	result=ndo2db_convert_string_to_int(idi->buffered_input[NDO_DATA_LASTSTATE],&last_state);
+ 
+ 	es[0]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_OUTPUT]);
+-	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
++	es[1]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_LONGOUTPUT]);
+ 
+ 	ts[0]=ndo2db_db_timet_to_sql(idi,tstamp.tv_sec);
+ 
+@@ -2959,7 +2952,7 @@
+ 		result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_HOST,idi->buffered_input[NDO_DATA_HOST],NULL,&object_id);
+ 
+ 	/* save entry to db */
+-	if(asprintf(&buf,"INSERT INTO %s SET instance_id='%lu', state_time=%s, state_time_usec='%lu', object_id='%lu', state_change='%d', state='%d', state_type='%d', current_check_attempt='%d', max_check_attempts='%d', last_state='%d', last_hard_state='%d', output='%s', long_output='%s'"
++	if(asprintf(&buf,"INSERT INTO %s SET instance_id='%lu', state_time=%s, state_time_usec='%lu', object_id='%lu', state_change='%d', state='%d', state_type='%d', current_check_attempt='%d', max_check_attempts='%d', last_state='%d', last_hard_state='%d', output='%s'"
+ 		    ,ndo2db_db_tablenames[NDO2DB_DBTABLE_STATEHISTORY]
+ 		    ,idi->dbinfo.instance_id
+ 		    ,ts[0]
+@@ -2973,7 +2966,6 @@
+ 		    ,last_state
+ 		    ,last_hard_state
+ 		    ,es[0]
+-		    ,es[1]
+ 		   )==-1)
+ 		buf=NULL;
+ 

@@ -1,0 +1,19 @@
+diff -ur nmis-4.2.13.orig/bin/nmis.pl nmis-4.2.13/bin/nmis.pl
+--- nmis-4.2.13.orig/bin/nmis.pl	2011-01-25 18:42:42.000000000 +0000
++++ nmis-4.2.13/bin/nmis.pl	2011-02-14 11:51:22.000000000 +0000
+@@ -6859,6 +6859,15 @@
+ 						$interfaces->{$index}{nocollect} = "ifType not ethernet|propVirtual"; # reason
+                         print "\t collect=false: ifType not 'ethernet|propVirtual'\n" if $debug; }
+ 				}
++                #Ellacoya, Chris Coates 2011
++                elsif ( $NMIS::systemTable{nodeModel} =~ /EllacoyaE30/ ) {
++                    if ($interfaces->{$index}{Description} eq "" )
++                    {
++                        $interfaces->{$index}{collect} = "false";
++                        $interfaces->{$index}{nocollect} = "no Description (ifAlias)"; # reason
++                        print "\t collect=false: no Description (ifAlias)\n" if $debug;
++                    }
++                }
+ 				# Foundry Mike McHenry 2005
+ 				elsif ( $NMIS::systemTable{nodeModel} =~ /FoundrySwitch/i ) {
+ 					if (

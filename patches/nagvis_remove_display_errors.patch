@@ -1,0 +1,15 @@
+diff '--exclude=.*.sw?' -urN nagvis-1.4.4/nagvis/includes/defines/global.php nagvis-1.4.4-patched/nagvis/includes/defines/global.php
+--- nagvis-1.4.4/nagvis/includes/defines/global.php	2009-10-15 17:41:24.000000000 +0100
++++ nagvis-1.4.4-patched/nagvis/includes/defines/global.php	2012-05-14 13:42:33.000000000 +0100
+@@ -29,8 +29,9 @@
+ // Start the user session (This is needed by some caching mechanism)
+ @session_start();
+ 
+-// Set PHP error handling to standard level
+-error_reporting(E_ALL ^ E_STRICT);
++// Opsview patch: Remove unnecessary error messages
++error_reporting(E_ALL ^ E_STRICT ^ ( defined("E_DEPRECATED") ? E_DEPRECATED : 0 ));
++ini_set('display_errors', 0);
+ 
+ /**
+  * Sets the path where we will look for files when they

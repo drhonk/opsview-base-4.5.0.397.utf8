@@ -1,0 +1,45 @@
+
+##################### Added by james.peel@opsview.com, 10/10/06 ###############################
+
+ # Service type: single windows disk
+ # perfdata:C:\ Used Space=6.48Gb;7.26;7.69;0.00;8.54
+ # servicedescr:Drive C Space
+ # output:C:\ - total: 8.54 Gb - used: 6.48 Gb (76%) - free 2.06 Gb (24%)
+ # output: Used: 6009 MB (8%) Free: 63442 MB (91%)
+/output:Used: ([-.0-9]+) MB \((\d+)%\) Free: ([-.0-9]+) MB \((\d+)%\)/
+and push @s, [ "bytes",
+              ["bytesused", GAUGE, $1 ],
+              [ "pctused", GAUGE, $2 ],
+              [ "bytesfree", GAUGE, $3 ],
+              [ "pctfree", GAUGE, $4 ] ];
+
+
+ # Service type: windows CPU load
+ # output: NOW: Mean:0.000000% Variance: 0.000000% CUMULATIVE: Mean:0.000000% Variance: 0.000000% 
+/output:NOW: Mean:([-.0-9]+)% Variance: ([-.0-9]+)% CUMULATIVE: Mean:([-.0-9]+)% Variance: ([-.0-9]+)%/
+and push @s, [ "load", 
+             ["mean", GAUGE, $1 ] ];
+
+ # Service type: windows disk queue
+ # output: CurrentDiskQueueLength: 0
+/output:CurrentDiskQueueLength: (\d+)/
+and push @s, [ "queue",
+             [ "queue", GAUGE, $1 ] ];
+
+ # Service type: windows memory
+ # output:Mem: 568 MB (27%) / 2047 MB (72%) Paged Mem: 408 MB (10%) / 3947 MB (89%) 
+/output:Mem: ([-.0-9]+) MB \((\d+)%\) \/ ([-.0-9]+) MB \((\d+)%\) Paged Mem: ([-.0-9]+) MB \((\d+)%\) \/ ([-.0-9]+) MB \((\d+)%\)/
+and push @s, [ "memory",
+             [ "mbused", GAUGE, $1 ],
+             [ "pcused", GAUGE, $2 ] ];
+
+ # Service type: unix memory from Opsview check_memory plugin
+ # output: Memory: total 1536 MB, active 104 MB, inactive 167 MB, wired: 123 MB, free: 1143 MB (74%) 
+/output:Memory: total ([-.0-9]+) MB, active ([-.0-9]+) MB, inactive ([-.0-9]+) MB, wired: ([-.0-9]+) MB, free: ([-.0-9]+) MB \((\d+)%\)/
+and push @s, [ "memory",
+             [ "total", GAUGE, $1 ],
+             [ "active", GAUGE, $2 ],
+             [ "inactive", GAUGE, $3 ],
+             [ "wired", GAUGE, $4 ],
+             [ "free", GAUGE, $5 ] ];
+

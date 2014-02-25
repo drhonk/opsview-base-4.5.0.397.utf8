@@ -1,0 +1,15 @@
+--- jquery.sparkline.uncompressed.2.1.js.orig	2013-01-10 16:03:45.000000000 +0000
++++ jquery.sparkline.uncompressed.2.1.js	2013-01-10 16:06:01.000000000 +0000
+@@ -1440,6 +1440,12 @@
+                 xvalues = this.options.get('xvalues');
+             }
+ 
++            // Special case where all values are null
++            if (yminmax.length < 1) {
++                this.innerHTML = '';
++                return;
++            }
++
+             this.maxy = this.maxyorg = Math.max.apply(Math, yminmax);
+             this.miny = this.minyorg = Math.min.apply(Math, yminmax);
+ 

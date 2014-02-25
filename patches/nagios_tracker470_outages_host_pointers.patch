@@ -1,0 +1,34 @@
+diff -ur nagios-4.0.20130912.original/cgi/outages.c nagios-4.0.20130912/cgi/outages.c
+--- nagios-4.0.20130912.original/cgi/outages.c	2013-10-14 08:27:38.000000000 +0000
++++ nagios-4.0.20130912/cgi/outages.c	2013-10-14 09:17:16.000000000 +0000
+@@ -108,6 +108,30 @@
+ 	/* get authentication information */
+ 	get_authentication_information(&current_authdata);
+ 
++/* Copied over from statusmap.c - not the best fix, but will do for now */
++{
++        host *temp_host = NULL;
++        host *temp_host2 = NULL;
++        hostsmember *temp_hostsmember = NULL;
++
++        for(temp_host = host_list; temp_host != NULL; temp_host = temp_host->next) {
++                /* check all parent parent host */
++                for(temp_hostsmember = temp_host->parent_hosts; temp_hostsmember != NULL; temp_hostsmember = temp_hostsmember->next) {
++        
++                        if((temp_host2 = find_host(temp_hostsmember->host_name)) == NULL) {
++                                continue; //logit(NSLOG_VERIFICATION_ERROR, TRUE, "Error: '%s' is not a valid parent for host '%s'!", temp_hostsmember->host_name, temp_host->name);
++                        }
++        
++                        /* save the parent host pointer for later */
++                        temp_hostsmember->host_ptr = temp_host2;
++
++                        /* add a reverse (child) link to make searches faster later on */
++                        if (add_child_link_to_host(temp_host2, temp_host) == NULL){
++                                }//printf("add_child_link_to_host returned NULL!!<br/>\n");
++                }
++        }
++}
++
+ 	if(display_header == TRUE) {
+ 
+ 		/* begin top table */

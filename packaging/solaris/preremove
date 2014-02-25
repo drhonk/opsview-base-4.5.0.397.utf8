@@ -1,0 +1,9 @@
+#!/bin/sh
+# NRPE postinstall
+
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+/etc/init.d/nrpe stop
+/usr/bin/pkill -9 nrpe
+
+exit 0

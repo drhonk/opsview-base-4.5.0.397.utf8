@@ -1,0 +1,354 @@
+diff -ur nagios-4.0.20121116.original//base/checks.c nagios-4.0.20121116/base/checks.c
+--- nagios-4.0.20121116.original//base/checks.c	2012-11-16 12:38:07.000000000 +0000
++++ nagios-4.0.20121116/base/checks.c	2012-11-21 13:55:24.000000000 +0000
+@@ -72,6 +72,7 @@
+ 	time_t current_time = 0L;
+ 	time_t preferred_time = 0L;
+ 	time_t next_valid_time = 0L;
++	time_t alt_next_valid_time=0L;
+ 	int time_is_valid = TRUE;
+ 
+ 	if(svc == NULL)
+@@ -108,6 +109,14 @@
+ 			/* make sure we rescheduled the next service check at a valid time */
+ 			get_next_valid_time(preferred_time, &next_valid_time, svc->check_period_ptr);
+ 
++			/* Opsview patch */
++			/* check if the alternate time comes sooner */
++			if(svc->check_timeperiod_command_ptr!=NULL && svc->check_timeperiod_command_ptr->check_period_ptr!=NULL) {
++				get_next_valid_time(preferred_time,&alt_next_valid_time,svc->check_timeperiod_command_ptr->check_period_ptr);
++				if(alt_next_valid_time<next_valid_time)
++					next_valid_time=alt_next_valid_time;
++			}
++
+ 			/*
+ 			 * If we really can't reschedule the service properly, we
+ 			 * just push the check to preferred_time and try again then.
+@@ -151,6 +160,7 @@
+ 	char *raw_command = NULL;
+ 	char *processed_command = NULL;
+ 	struct timeval start_time, end_time;
++	time_t current_time=0L;
+ 	host *temp_host = NULL;
+ 	double old_latency = 0.0;
+ 	check_result *cr;
+@@ -216,7 +226,13 @@
+ 	grab_service_macros_r(&mac, svc);
+ 
+ 	/* get the raw command line */
+-	get_raw_command_line_r(&mac, svc->check_command_ptr, svc->check_command, &raw_command, macro_options);
++	/* Opsview patch: Change command based on timeperiod */
++	if(svc->check_timeperiod_command_ptr!=NULL && time(&current_time) && check_time_against_period((unsigned long)current_time,svc->check_timeperiod_command_ptr->check_period_ptr)!=ERROR) {
++		get_raw_command_line_r(&mac,svc->check_timeperiod_command_ptr->check_command_ptr,svc->check_timeperiod_command_ptr->service_check_command,&raw_command,macro_options);
++	} else {
++		/* get the raw command line */
++		get_raw_command_line_r(&mac,svc->check_command_ptr,svc->check_command,&raw_command,macro_options);
++	}
+ 	if(raw_command == NULL) {
+ 		clear_volatile_macros_r(&mac);
+ 		log_debug_info(DEBUGL_CHECKS, 0, "Raw check command for service '%s' on host '%s' was NULL - aborting.\n", svc->description, svc->host_name);
+@@ -1225,13 +1241,19 @@
+ 
+ 		/* make sure this is a valid time to check the service */
+ 		if(check_time_against_period((unsigned long)current_time, svc->check_period_ptr) == ERROR) {
+-			preferred_time = current_time;
+-			if(time_is_valid)
+-				*time_is_valid = FALSE;
+-			perform_check = FALSE;
+-
+-			log_debug_info(DEBUGL_CHECKS, 2, "This is not a valid time for this service to be actively checked.\n");
+-			}
++			/* Opsview patch: Also check if alternative time is suitable */
++			/* Note: indentation incorrect, to simplify patching */
++			/* Start if alternative timeperiod check */
++			if(svc->check_timeperiod_command_ptr==NULL || check_time_against_period((unsigned long)current_time, svc->check_timeperiod_command_ptr->check_period_ptr) == ERROR) {
++
++                preferred_time = current_time;
++                if(time_is_valid)
++                    *time_is_valid = FALSE;
++                perform_check = FALSE;
++
++                log_debug_info(DEBUGL_CHECKS, 2, "This is not a valid time for this service to be actively checked.\n");
++			} /* End if alternative timeperiod check */
++        }
+ 
+ 		/* check service dependencies for execution */
+ 		if(check_service_dependencies(svc, EXECUTION_DEPENDENCY) == DEPENDENCIES_FAILED) {
+diff -ur nagios-4.0.20121116.original//base/config.c nagios-4.0.20121116/base/config.c
+--- nagios-4.0.20121116.original//base/config.c	2012-11-16 12:38:07.000000000 +0000
++++ nagios-4.0.20121116/base/config.c	2012-11-21 13:55:24.000000000 +0000
+@@ -1460,6 +1460,9 @@
+ 	int total_objects = 0;
+ 	int warnings = 0;
+ 	int errors = 0;
++	char *temp_ptr = NULL;
++	char *buf = NULL;
++	char *temp_command_name = "";
+ 
+ 
+ #ifdef TEST
+@@ -1530,6 +1533,48 @@
+ 			logit(NSLOG_VERIFICATION_WARNING, TRUE, "Warning: Service '%s' on host '%s' has no notification time period defined!", temp_service->description, temp_service->host_name);
+ 			warnings++;
+ 			}
++		/* verify the check_timeperiod_command */
++		if(temp_service->service_check_timeperiod_command!=NULL && strcmp(temp_service->service_check_timeperiod_command,"")){
++			buf=(char *)strdup(temp_service->service_check_timeperiod_command);
++			temp_ptr=strtok(buf,",");
++			if(temp_ptr==NULL) {
++				logit(NSLOG_VERIFICATION_ERROR,TRUE,"Error: Invalid timeperiod in check_timeperiod_command for service '%s' for host '%s'",temp_service->description,temp_service->host_name);
++				errors++;
++				goto BREAK;
++			}
++		        temp_timeperiod=find_timeperiod(temp_ptr);
++			if(temp_timeperiod==NULL){
++				logit(NSLOG_VERIFICATION_ERROR,TRUE,"Error: Time period '%s' specified for check_timeperiod_command for service '%s' on host '%s' is not defined anywhere!",temp_ptr,temp_service->description,temp_service->host_name);
++				errors++;
++			        }
++			/* save the pointer to the check timeperiod for later */
++			temp_service->check_timeperiod_command_ptr->check_period_ptr=temp_timeperiod;
++
++			temp_ptr=strtok(NULL, "\n");
++			if(temp_ptr==NULL) {
++				logit(NSLOG_VERIFICATION_ERROR,TRUE,"Error: Invalid command in check_timeperiod_command for service '%s' for host '%s'",temp_service->description,temp_service->host_name);
++				errors++;
++			}
++			/* check the service check_command */
++			buf=(char *)strdup(temp_ptr);
++
++			/* get the command name, leave any arguments behind */
++			temp_command_name=my_strtok(buf,"!");
++
++			temp_command=find_command(temp_command_name);
++			if(temp_command==NULL){
++				logit(NSLOG_VERIFICATION_ERROR,TRUE,"Error: Service check command '%s' specified in service '%s' for host '%s' not defined anywhere!",temp_command_name,temp_service->description,temp_service->host_name);
++				errors++;
++				}
++
++			my_free(buf);
++
++			/* Save command for later */
++			temp_service->check_timeperiod_command_ptr->check_command_ptr=temp_command;
++			/* Also save pointer to the service_check_command */
++			temp_service->check_timeperiod_command_ptr->service_check_command=(char *)strdup(temp_ptr);
++			}
++BREAK:
+ 
+ 		/* check parent services */
+ 		for(sm = temp_service->parents; sm; sm = sm->next) {
+diff -ur nagios-4.0.20121116.original//common/objects.c nagios-4.0.20121116/common/objects.c
+--- nagios-4.0.20121116.original//common/objects.c	2012-11-16 12:38:07.000000000 +0000
++++ nagios-4.0.20121116/common/objects.c	2012-11-21 13:56:14.000000000 +0000
+@@ -1479,7 +1479,7 @@
+ 
+ 
+ /* add a new service to the list in memory */
+-service *add_service(char *host_name, char *description, char *display_name, char *check_period, int initial_state, int max_attempts, int parallelize, int accept_passive_checks, double check_interval, double retry_interval, double notification_interval, double first_notification_delay, char *notification_period, int notification_options, int notifications_enabled, int is_volatile, char *event_handler, int event_handler_enabled, char *check_command, int checks_enabled, int flap_detection_enabled, double low_flap_threshold, double high_flap_threshold, int flap_detection_options, int stalking_options, int process_perfdata, int check_freshness, int freshness_threshold, char *notes, char *notes_url, char *action_url, char *icon_image, char *icon_image_alt, int retain_status_information, int retain_nonstatus_information, int obsess, unsigned int hourly_value) {
++service *add_service(char *host_name, char *description, char *display_name, char *check_period, int initial_state, int max_attempts, int parallelize, int accept_passive_checks, double check_interval, double retry_interval, double notification_interval, double first_notification_delay, char *notification_period, int notification_options, int notifications_enabled, int is_volatile, char *event_handler, int event_handler_enabled, char *check_command, int checks_enabled, int flap_detection_enabled, double low_flap_threshold, double high_flap_threshold, int flap_detection_options, int stalking_options, int process_perfdata, int check_freshness, int freshness_threshold, char *notes, char *notes_url, char *action_url, char *icon_image, char *icon_image_alt, int retain_status_information, int retain_nonstatus_information, int obsess, unsigned int hourly_value, char *check_timeperiod_command) {
+ 	host *h;
+ 	timeperiod *cp = NULL, *np = NULL;
+ 	service *new_service = NULL;
+@@ -1529,10 +1529,12 @@
+ 	new_service->host_ptr = h;
+ #endif
+ 	new_service->check_period = cp ? cp->name : NULL;
++	new_service->service_check_timeperiod_command = NULL;
+ 	new_service->notification_period = np ? np->name : NULL;
+ 	new_service->host_name = h->name;
+ 	if((new_service->description = (char *)strdup(description)) == NULL)
+ 		result = ERROR;
++
+ 	if(display_name) {
+ 		if((new_service->display_name = (char *)strdup(display_name)) == NULL)
+ 			result = ERROR;
+@@ -1601,7 +1603,17 @@
+ 	new_service->state_type = HARD_STATE;
+ 	new_service->should_be_scheduled = TRUE;
+ 	new_service->check_options = CHECK_OPTION_NONE;
++	new_service->check_timeperiod_command_ptr=NULL;
++#endif
++
++	/* Opsview patch */
++	if (check_timeperiod_command){
++		if((new_service->service_check_timeperiod_command=(char *)strdup(check_timeperiod_command))==NULL)
++			result=ERROR;
++#ifdef NSCORE
++		new_service->check_timeperiod_command_ptr=(commandtimeperiod *)malloc(sizeof(commandtimeperiod));
+ #endif
++	}
+ 
+ 	/* add new service to hash table */
+ 	if(result == OK) {
+@@ -1631,6 +1643,7 @@
+ 		my_free(new_service->event_handler);
+ 		my_free(new_service->check_command);
+ 		my_free(new_service->description);
++		my_free(new_service->service_check_timeperiod_command);
+ 		if(display_name)
+ 			my_free(new_service->display_name);
+ 		return NULL;
+@@ -2858,7 +2871,12 @@
+ 			my_free(this_service->display_name);
+ 		my_free(this_service->description);
+ 		my_free(this_service->check_command);
++		my_free(this_service->service_check_timeperiod_command);
+ #ifdef NSCORE
++		if(this_service->check_timeperiod_command_ptr!=NULL) {
++			my_free(this_service->check_timeperiod_command_ptr->service_check_command);
++			my_free(this_service->check_timeperiod_command_ptr);
++		}
+ 		my_free(this_service->plugin_output);
+ 		my_free(this_service->long_plugin_output);
+ 		my_free(this_service->perf_data);
+@@ -3350,6 +3350,8 @@
+ 		fprintf(fp, "\tcheck_period\t%s\n", temp_service->check_period);
+ 	if(temp_service->check_command)
+ 		fprintf(fp, "\tcheck_command\t%s\n", temp_service->check_command);
++	if(temp_service->service_check_timeperiod_command)
++		fprintf(fp, "\tcheck_timeperiod_command\t%s\n", temp_service->service_check_timeperiod_command);
+ 	if(temp_service->event_handler)
+ 		fprintf(fp, "\tevent_handler\t%s\n", temp_service->event_handler);
+ 	fcache_contactlist(fp, "\tcontacts\t", temp_service->contacts);
+diff -ur nagios-4.0.20121116.original//include/objects.h nagios-4.0.20121116/include/objects.h
+--- nagios-4.0.20121116.original//include/objects.h	2012-11-16 12:38:06.000000000 +0000
++++ nagios-4.0.20121116/include/objects.h	2012-11-21 13:55:24.000000000 +0000
+@@ -403,6 +403,13 @@
+ 	} hostgroup;
+ 
+ 
++/* COMMAND_TIMEPERIOD structure */
++typedef struct commandtimeperiod_struct {
++	timeperiod 	*check_period_ptr;
++	command 	*check_command_ptr;
++	char		*service_check_command;
++	} commandtimeperiod;
++
+ /* HOST structure */
+ struct host {
+ 	unsigned int id;
+@@ -549,6 +556,8 @@
+ 	char	*host_name;
+ 	char	*description;
+ 	char    *display_name;
++	//char    *service_check_command; // This has been renamed in Nagios 4 to check_command
++	char	*service_check_timeperiod_command;
+ 	struct servicesmember *parents;
+ 	struct servicesmember *children;
+ 	char    *check_command;
+@@ -640,6 +649,7 @@
+ 	struct host *host_ptr;
+ 	struct command *event_handler_ptr;
+ 	char *event_handler_args;
++	commandtimeperiod *check_timeperiod_command_ptr;
+ 	struct command *check_command_ptr;
+ 	char *check_command_args;
+ 	struct timeperiod *check_period_ptr;
+@@ -779,7 +789,7 @@
+ struct contactgroup *add_contactgroup(char *, char *);								/* adds a contactgroup definition */
+ struct contactsmember *add_contact_to_contactgroup(contactgroup *, char *);					/* adds a contact to a contact group definition */
+ struct command *add_command(char *, char *);									/* adds a command definition */
+-struct service *add_service(char *host_name, char *description, char *display_name, char *check_period, int initial_state, int max_attempts, int parallelize, int accept_passive_checks, double check_interval, double retry_interval, double notification_interval, double first_notification_delay, char *notification_period, int notification_options, int notifications_enabled, int is_volatile, char *event_handler, int event_handler_enabled, char *check_command, int checks_enabled, int flap_detection_enabled, double low_flap_threshold, double high_flap_threshold, int flap_detection_options, int stalking_options, int process_perfdata, int check_freshness, int freshness_threshold, char *notes, char *notes_url, char *action_url, char *icon_image, char *icon_image_alt, int retain_status_information, int retain_nonstatus_information, int obsess_over_service, unsigned int hourly_value);
++struct service *add_service(char *host_name, char *description, char *display_name, char *check_period, int initial_state, int max_attempts, int parallelize, int accept_passive_checks, double check_interval, double retry_interval, double notification_interval, double first_notification_delay, char *notification_period, int notification_options, int notifications_enabled, int is_volatile, char *event_handler, int event_handler_enabled, char *check_command, int checks_enabled, int flap_detection_enabled, double low_flap_threshold, double high_flap_threshold, int flap_detection_options, int stalking_options, int process_perfdata, int check_freshness, int freshness_threshold, char *notes, char *notes_url, char *action_url, char *icon_image, char *icon_image_alt, int retain_status_information, int retain_nonstatus_information, int obsess_over_service, unsigned int hourly_value, char *check_timeperiod_command);
+ struct contactgroupsmember *add_contactgroup_to_service(service *, char *);					/* adds a contact group to a service definition */
+ struct contactsmember *add_contact_to_service(service *, char *);                                              /* adds a contact to a host definition */
+ struct serviceescalation *add_serviceescalation(char *host_name, char *description, int first_notification, int last_notification, double notification_interval, char *escalation_period, int escalation_options);
+diff -ur nagios-4.0.20121116.original//xdata/xodtemplate.c nagios-4.0.20121116/xdata/xodtemplate.c
+--- nagios-4.0.20121116.original//xdata/xodtemplate.c	2012-11-16 12:37:52.000000000 +0000
++++ nagios-4.0.20121116/xdata/xodtemplate.c	2012-11-21 13:55:24.000000000 +0000
+@@ -1006,6 +1006,8 @@
+ 			new_service->process_perf_data = TRUE;
+ 			new_service->retain_status_information = TRUE;
+ 			new_service->retain_nonstatus_information = TRUE;
++			new_service->check_timeperiod_command = NULL;
++			new_service->have_check_timeperiod_command = FALSE;
+ 
+ 			/* true service, so is not from host group */
+ 			new_service->is_from_hostgroup = 0;
+@@ -2688,6 +2690,13 @@
+ 					}
+ 				temp_service->have_check_command = TRUE;
+ 				}
++			else if(!strcmp(variable,"check_timeperiod_command")){
++				if(strcmp(value,XODTEMPLATE_NULL)){
++					if((temp_service->check_timeperiod_command=(char *)strdup(value))==NULL)
++						result=ERROR;
++					}
++				temp_service->have_check_timeperiod_command=TRUE;
++				}
+ 			else if(!strcmp(variable, "check_period")) {
+ 				if(strcmp(value, XODTEMPLATE_NULL)) {
+ 					if((temp_service->check_period = (char *)strdup(value)) == NULL)
+@@ -4400,6 +4409,8 @@
+ 	new_service->is_copy = TRUE;
+ 	new_service->id = xodcount.services++;
+ 	new_service->host_name = host_name;
++	new_service->check_timeperiod_command = NULL;
++	new_service->have_check_timeperiod_command = temp_service->have_check_timeperiod_command;
+ 
+ 	/* tag service apply on host group */
+ 	new_service->is_from_hostgroup = from_hg;
+@@ -4411,12 +4422,15 @@
+ 		error = TRUE;
+ 	if(temp_service->contacts != NULL && (new_service->contacts = (char *)strdup(temp_service->contacts)) == NULL)
+ 		error = TRUE;
++	if(temp_service->check_timeperiod_command != NULL && (new_service->check_timeperiod_command = (char *)strdup(temp_service->check_timeperiod_command)) == NULL)
++		error = TRUE;
+ 
+ 	if(error == TRUE) {
+ 		my_free(new_service->service_groups);
+ 		my_free(new_service->contact_groups);
+ 		my_free(new_service->contacts);
+ 		my_free(new_service);
++		my_free(new_service->check_timeperiod_command);
+ 		return ERROR;
+ 		}
+ 
+@@ -5653,6 +5667,12 @@
+ 				this_service->have_check_command = FALSE;
+ 				}
+ 			}
++		if(this_service->have_check_timeperiod_command == FALSE && template_service->have_check_timeperiod_command == TRUE){
++			if(this_service->check_timeperiod_command == NULL && template_service->check_timeperiod_command != NULL)
++				this_service->check_timeperiod_command = (char *)strdup(template_service->check_timeperiod_command);
++			this_service->have_check_timeperiod_command = TRUE;
++			}
++
+ 		xod_inherit_str(this_service, template_service, check_command);
+ 
+ 		xod_inherit_str(this_service, template_service, check_period);
+@@ -7474,7 +7494,7 @@
+ 		return OK;
+ 
+ 	/* add the service */
+-	new_service = add_service(this_service->host_name, this_service->service_description, this_service->display_name, this_service->check_period, this_service->initial_state, this_service->max_check_attempts, this_service->parallelize_check, this_service->passive_checks_enabled, this_service->check_interval, this_service->retry_interval, this_service->notification_interval, this_service->first_notification_delay, this_service->notification_period, this_service->notification_options, this_service->notifications_enabled, this_service->is_volatile, this_service->event_handler, this_service->event_handler_enabled, this_service->check_command, this_service->active_checks_enabled, this_service->flap_detection_enabled, this_service->low_flap_threshold, this_service->high_flap_threshold, this_service->flap_detection_options, this_service->stalking_options, this_service->process_perf_data, this_service->check_freshness, this_service->freshness_threshold, this_service->notes, this_service->notes_url, this_service->action_url, this_service->icon_image, this_service->icon_image_alt, this_service->retain_status_information, this_service->retain_nonstatus_information, this_service->obsess, this_service->hourly_value);
++	new_service = add_service(this_service->host_name, this_service->service_description, this_service->display_name, this_service->check_period, this_service->initial_state, this_service->max_check_attempts, this_service->parallelize_check, this_service->passive_checks_enabled, this_service->check_interval, this_service->retry_interval, this_service->notification_interval, this_service->first_notification_delay, this_service->notification_period, this_service->notification_options, this_service->notifications_enabled, this_service->is_volatile, this_service->event_handler, this_service->event_handler_enabled, this_service->check_command, this_service->active_checks_enabled, this_service->flap_detection_enabled, this_service->low_flap_threshold, this_service->high_flap_threshold, this_service->flap_detection_options, this_service->stalking_options, this_service->process_perf_data, this_service->check_freshness, this_service->freshness_threshold, this_service->notes, this_service->notes_url, this_service->action_url, this_service->icon_image, this_service->icon_image_alt, this_service->retain_status_information, this_service->retain_nonstatus_information, this_service->obsess, this_service->hourly_value, this_service->check_timeperiod_command);
+ 
+ 	/* return with an error if we couldn't add the service */
+ 	if(new_service == NULL) {
+@@ -8498,6 +8518,7 @@
+ 			my_free(this_service->hostgroup_name);
+ 			my_free(this_service->service_description);
+ 			my_free(this_service->check_command);
++			my_free(this_service->check_timeperiod_command);
+ 			my_free(this_service->check_period);
+ 			my_free(this_service->event_handler);
+ 			my_free(this_service->notification_period);
+diff -ur nagios-4.0.20121116.original//xdata/xodtemplate.h nagios-4.0.20121116/xdata/xodtemplate.h
+--- nagios-4.0.20121116.original//xdata/xodtemplate.h	2012-11-16 12:37:52.000000000 +0000
++++ nagios-4.0.20121116/xdata/xodtemplate.h	2012-11-21 13:55:24.000000000 +0000
+@@ -356,6 +356,7 @@
+     char       *hostgroup_name;
+     char       *service_groups;
+     char       *check_command;
++    char       *check_timeperiod_command;
+     int        initial_state;
+     int        max_check_attempts;
+     double     check_interval;
+@@ -391,6 +392,7 @@
+     char       *icon_image_alt;
+     int        retain_status_information;
+     int        retain_nonstatus_information;
++    unsigned        have_check_timeperiod_command : 1;
+     xodtemplate_customvariablesmember *custom_variables;
+ 
+     /* these can't be bitfields */

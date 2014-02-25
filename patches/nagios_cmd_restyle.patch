@@ -1,0 +1,40 @@
+diff -Bbur nagios-4.0.20121116.orig/html/stylesheets/cmd.css nagios-4.0.20121116/html/stylesheets/cmd.css
+--- nagios-4.0.20121116.orig/html/stylesheets/cmd.css	2012-11-30 17:26:32.000000000 +0000
++++ nagios-4.0.20121116/html/stylesheets/cmd.css	2012-11-30 17:29:27.000000000 +0000
+@@ -1,14 +1,14 @@
+ 
+ .cmd { }
+ 
+-.cmdType {  font-size: 10pt;  font-weight: bold;  text-align: center;  color: red; }
++.cmdType {  font-size: 10pt;  font-weight: bold;  text-align: center;  color: #FF5555; }
+ 
+-.commandDescription {   text-align: center;  background-color: #DBDBDB;  padding: 5px; }
++.commandDescription {   text-align: center;  background-color: #D6D6D6;  padding: 5px; }
+ .descriptionTitle {  font-size: 10pt;  text-align: center;  font-weight: bold; }
+ 
+-.optBox {   text-align: left;  padding: 5px;  background-color: #C4C2C2; }
++.optBox {   text-align: left;  padding: 5px;  background-color: #D6D6D6; }
+ .optBoxTitle {  font-size: 10pt;  text-align: center;  font-weight: bold; }
+-.optBoxItem {  font-size: 10pt;  text-align: left;  background-color: #C4C2C2; }
+-.optBoxRequiredItem {  font-size: 10pt;  text-align: left;  color: red;  background-color: #C4C2C2; }
++.optBoxItem {  font-size: 10pt;  text-align: left;  background-color: #D6D6D6; }
++.optBoxRequiredItem {  font-size: 10pt;  text-align: left;  color: #FF5555 }
+ 
+ 
+diff -Bbur nagios-4.0.20121116.orig/html/stylesheets/common.css nagios-4.0.20121116/html/stylesheets/common.css
+--- nagios-4.0.20121116.orig/html/stylesheets/common.css	2012-11-30 17:26:32.000000000 +0000
++++ nagios-4.0.20121116/html/stylesheets/common.css	2012-11-30 17:31:05.000000000 +0000
+@@ -34,10 +34,10 @@
+ 
+ 
+ /* feedback messages */
+-.errorMessage {  text-align: center;  color: red;  font-weight: bold;  font-size: 12pt; }
++.errorMessage {  text-align: center;  color: #FF5555;  font-weight: bold;  font-size: 12pt; }
+ .errorDescription {  text-align: center;  font-weight: bold;  font-size: 12pt; }
+-.warningMessage {  text-align: center;  color: red;  font-weight: bold;  font-size: 10pt; }
+-.infoMessage {  text-align: center;  color: red;  font-weight: bold; }
++.warningMessage {  text-align: center;  color: #FF5555;  font-weight: bold;  font-size: 10pt; }
++.infoMessage {  text-align: center;  color: #FF5555;  font-weight: bold; }
+ 
+ /* nav and option boxes on several pages */ 
+ .navBoxTitle {  font-size: 10pt;  font-weight: bold; }

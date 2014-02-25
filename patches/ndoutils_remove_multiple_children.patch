@@ -1,0 +1,20 @@
+diff -ur ndoutils-1.4b3.original/src/ndo2db.c ndoutils-1.4b3/src/ndo2db.c
+--- ndoutils-1.4b3.original/src/ndo2db.c	2008-03-04 12:24:00.301756000 +0000
++++ ndoutils-1.4b3/src/ndo2db.c	2008-03-04 12:49:18.499017960 +0000
+@@ -595,10 +595,15 @@
+ 
+ 
+ void ndo2db_parent_sighandler(int sig){
++	pid_t childpid=-1;
+ 
+ 	/* cleanup children that exit, so we don't have zombies */
+ 	if(sig==SIGCHLD){
+-		waitpid(-1,NULL,WNOHANG);
++		/* Altinity patch: Remove multiple children */
++		while((childpid = waitpid(-1,NULL,WNOHANG)) > 0) {
++			}
++		if (childpid == -1 && errno != ECHILD)
++			fprintf(stderr, "Got error from waitpid(). Errno=%d", errno);
+ 		return;
+ 	        }
+ 

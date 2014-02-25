@@ -1,0 +1,25 @@
+diff -ur nagvis-1.4rc1.original/nagvis/includes/classes/GlobalHeaderMenu.php nagvis-1.4rc1/nagvis/includes/classes/GlobalHeaderMenu.php
+--- nagvis-1.4rc1.original/nagvis/includes/classes/GlobalHeaderMenu.php	2008-11-28 05:42:14.000000000 +0800
++++ nagvis-1.4rc1/nagvis/includes/classes/GlobalHeaderMenu.php	2009-01-30 01:19:32.000000000 +0800
+@@ -78,7 +78,9 @@
+ 			'[lang_rotation_start]',
+ 			'[lang_rotation_stop]',
+ 			'[lang_refresh_start]',
+-			'[lang_refresh_stop]');
++			'[lang_refresh_stop]',
++			'[opsview_base]',
++			);
+ 		
+ 		$arrVals = Array($this->pathHtmlBase, 
+ 			$this->CORE->MAINCFG->getValue('paths','htmlheadertemplates'), 
+@@ -95,7 +97,9 @@
+ 			$this->CORE->LANG->getText('rotationStart'),
+ 			$this->CORE->LANG->getText('rotationStop'),
+ 			$this->CORE->LANG->getText('refreshStart'),
+-			$this->CORE->LANG->getText('refreshStop'));
++			$this->CORE->LANG->getText('refreshStop'),
++			$this->CORE->MAINCFG->getValue('paths','opsviewbase'),
++			);
+ 		
+ 		// Replace some special macros
+ 		if(get_class($this->OBJPAGE) == 'NagVisMapCfg') {

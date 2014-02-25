@@ -1,0 +1,27 @@
+--- ndoutils-1.3.1.original/src/Makefile	2006-06-22 14:31:43.000000000 +0100
++++ ndoutils-1.3.1/src/Makefile	2006-06-20 17:22:35.000000000 +0100
+@@ -79,6 +80,24 @@
+ dbhandlers-3x.o: dbhandlers.c $(SRC_INCLUDE)/dbhandlers.h
+ 	$(CC) $(CFLAGS) -D BUILD_NAGIOS_3X -c -o $@ dbhandlers.c
+ 
++altinity_distributed_commands.o: altinity_distributed_commands.c
++	$(CC) $(MOD_CFLAGS) $(CFLAGS) $(CFLAGS_4X) -D BUILD_NAGIOS_4X -o $@ altinity_distributed_commands.c $(COMMON_OBJS) $(MOD_LDFLAGS) $(LDFLAGS) $(LIBS) $(OTHERLIBS)
++
++altinity_set_initial_state.o: altinity_set_initial_state.c
++	$(CC) $(MOD_CFLAGS) $(CFLAGS) $(CFLAGS_4X) -D BUILD_NAGIOS_4X -o $@ altinity_set_initial_state.c $(COMMON_OBJS) $(MOD_LDFLAGS) $(LDFLAGS) $(LIBS) $(OTHERLIBS)
++
++opsview_distributed_notifications.o: opsview_distributed_notifications.c
++	$(CC) $(MOD_CFLAGS) $(CFLAGS) $(CFLAGS_4X) -D BUILD_NAGIOS_4X -o $@ opsview_distributed_notifications.c $(COMMON_OBJS) $(MOD_LDFLAGS) $(LDFLAGS) $(LIBS) $(OTHERLIBS)
++
++opsview_notificationprofiles.o: opsview_notificationprofiles.c
++	$(CC) $(MOD_CFLAGS) $(CFLAGS) $(CFLAGS_4X) -D BUILD_NAGIOS_4X -o $@ opsview_notificationprofiles.c $(COMMON_OBJS) $(MOD_LDFLAGS) $(LDFLAGS) $(LIBS) $(OTHERLIBS)
++
++test_distributed_notifications: opsview_distributed_notifications.o test_distributed_notifications.c
++	$(CC) $(CFLAGS) $(CFLAGS_4X) -D BUILD_NAGIOS_4X -o $@ test_distributed_notifications.c ./opsview_distributed_notifications.o ../../$(NAGIOS)/tap/src/tap.o $(SOCKETLIBS) -lm
++
++test_notificationprofiles: opsview_notificationprofiles.o test_notificationprofiles.c
++	$(CC) $(CFLAGS) $(CFLAGS_4X) -D BUILD_NAGIOS_4X -o $@ test_notificationprofiles.c ./opsview_notificationprofiles.o ../../$(NAGIOS)/tap/src/tap.o $(SOCKETLIBS) -lm
++
+ clean:
+ 	rm -f core file2sock log2ndo ndo2db-2x ndo2db-3x sockdebug *.o
+ 	rm -f *~ */*~

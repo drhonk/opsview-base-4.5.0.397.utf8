@@ -1,0 +1,38 @@
+diff -ur nagios-3.2.0/base/nebmods.c nagios-3.2.0.sorted/base/nebmods.c
+--- nagios-3.2.0/base/nebmods.c	2008-11-30 17:22:58.000000000 +0000
++++ nagios-3.2.0.sorted/base/nebmods.c	2010-03-23 23:27:26.438316770 +0000
+@@ -84,7 +84,7 @@
+ 
+ /* add a new module to module list */
+ int neb_add_module(char *filename,char *args,int should_be_loaded){
+-	nebmodule *new_module=NULL;
++	nebmodule *new_module=NULL,*temp_module=NULL;
+ 	int x=OK;
+ 
+ 	if(filename==NULL)
+@@ -105,13 +105,22 @@
+ 	new_module->module_handle=NULL;
+ 	new_module->init_func=NULL;
+ 	new_module->deinit_func=NULL;
++ 	new_module->next=NULL;
+ #ifdef HAVE_PTHREAD_H
+ 	new_module->thread_id=(pthread_t)NULL;
+ #endif
+ 
+-	/* add module to head of list */
+-	new_module->next=neb_module_list;
+-	neb_module_list=new_module;
++	/* add module to end of list */
++	if(neb_module_list==NULL) {
++		neb_module_list=new_module;
++		} 
++	else {
++		temp_module=neb_module_list;
++		while(temp_module->next) {
++			temp_module=temp_module->next;
++			}
++		temp_module->next=new_module;
++		}
+ 
+ 	log_debug_info(DEBUGL_EVENTBROKER,0,"Added module: name='%s', args='%s', should_be_loaded='%d'\n",filename,args,should_be_loaded);
+ 

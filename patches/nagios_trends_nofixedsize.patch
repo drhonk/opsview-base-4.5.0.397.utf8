@@ -1,0 +1,19 @@
+--- trends.c	2009-07-03 16:07:15.000000000 +0000
++++ /tmp/trends2.c	2010-10-27 14:42:04.000000000 +0000
+@@ -731,7 +731,6 @@
+ 		/* print URL to image */
+ 		if(mode==CREATE_HTML){
+ 
+-			printf("<BR><BR>\n");
+ 			printf("<DIV ALIGN=CENTER>\n");
+ 			printf("<IMG SRC='%s?createimage&t1=%lu&t2=%lu",TRENDS_CGI,(unsigned long)t1,(unsigned long)t2);
+ 			printf("&assumeinitialstates=%s",(assume_initial_states==TRUE)?"yes":"no");
+@@ -746,7 +745,7 @@
+ 			if(backtrack_archives>0)
+ 				printf("&backtrack=%d",backtrack_archives);
+ 			printf("&zoom=%d",zoom_factor);
+-			printf("' BORDER=0 name='trendsimage' useMap='#trendsmap' width=900>\n");
++			printf("' BORDER=0 name='trendsimage' useMap='#trendsmap'>\n");
+ 			printf("</DIV>\n");
+ 		        }
+ 

@@ -1,0 +1,19 @@
+diff -Bbur nagios-4.0.20121116.orig/cgi/status.c nagios-4.0.20121116/cgi/status.c
+--- nagios-4.0.20121116.orig/cgi/status.c	2012-11-26 16:14:21.000000000 +0000
++++ nagios-4.0.20121116/cgi/status.c	2012-11-26 16:33:51.000000000 +0000
+@@ -1736,9 +1736,13 @@
+ 					printf("</a>");
+ 					printf("</td>\n");
+ 					}
+-				if(temp_host->icon_image != NULL) {
++			if(temp_service->icon_image != NULL && temp_service->notes_url != NULL){
+ 					printf("<td align=center valign=center>");
+-					printf("<a href='%s?type=%d&host=%s'>", EXTINFO_CGI, DISPLAY_HOST_INFO, url_encode(temp_status->host_name));
++					printf("<A HREF='");
++					process_macros_r(mac, temp_service->notes_url, &processed_string, 0);
++					printf("%s", processed_string);
++					free(processed_string);
++					printf("'>");
+ 					printf("<IMG SRC='%s", url_logo_images_path);
+ 					process_macros_r(mac, temp_host->icon_image, &processed_string, 0);
+ 					printf("%s", processed_string);

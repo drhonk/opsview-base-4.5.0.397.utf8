@@ -1,0 +1,23 @@
+--- nagios-3.0.2.original/base/checks.c	2008-04-13 20:34:26.000000000 +0200
++++ nagios-3.0.2/base/checks.c	2008-06-20 16:27:29.376843584 +0200
+@@ -1292,6 +1292,12 @@
+ 
+ 			log_debug_info(DEBUGL_CHECKS,1,"Host is currently UP, so we'll recheck its state to make sure...\n");
+ 
++			/* Altinity patch
++			   WARNING: indentation is not correct here, due to keeping patch light
++			   We only check the host if the service is an active check.
++			   If the service has just received a passive check, then we assume the host is still okay
++			*/
++			if(temp_service->check_type == SERVICE_CHECK_ACTIVE) {
+ 			/* 08/04/07 EG launch an async (parallel) host check (possibly cached) unless aggressive host checking is enabled */
+ 			/* previous logic was to simply run a sync (serial) host check */
+ 			if(use_aggressive_host_checking==TRUE)
+@@ -1324,6 +1330,7 @@
+ 					update_check_stats(ACTIVE_CACHED_HOST_CHECK_STATS,current_time);
+ 					}
+ 				}
++				} /* End Altinity patch */
+ 			}
+ 
+ 		/* else the host is either down or unreachable, so recheck it if necessary */

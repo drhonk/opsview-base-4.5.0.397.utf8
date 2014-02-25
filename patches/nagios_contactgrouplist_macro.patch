@@ -1,0 +1,126 @@
+diff -ur nagios-4.0.20130107.orig/base/notifications.c nagios-4.0.20130107/base/notifications.c
+--- nagios-4.0.20130107.orig/base/notifications.c	2013-05-23 02:11:59.000000000 +0000
++++ nagios-4.0.20130107/base/notifications.c	2013-05-23 03:03:39.000000000 +0000
+@@ -64,6 +64,10 @@
+ 	int increment_notification_number = FALSE;
+ 	nagios_macros mac;
+ 	int neb_result;
++	contactgroupsmember *temp_contactgroupmember = NULL;
++	char *buf = NULL;
++	char *temp_buf = NULL;
++	int first;
+ 
+ 	log_debug_info(DEBUGL_FUNCTIONS, 0, "service_notification()\n");
+ 
+@@ -208,6 +212,22 @@
+ 		/* set the notification id macro */
+ 		asprintf(&mac.x[MACRO_SERVICENOTIFICATIONID], "%lu", svc->current_notification_id);
+ 
++		// Opsview patch: Set the contactgroup names this service belongs to.
++		first = 1;
++		asprintf( &buf, "" );
++		for ( temp_contactgroupmember = svc->contact_groups;
++			temp_contactgroupmember != NULL;
++			temp_contactgroupmember = temp_contactgroupmember->next ) {
++			temp_buf = buf; // Save this pointer for later freeing
++			asprintf( &buf, "%s%s%s", buf, ( first == 1 ? "" : "," ),
++					temp_contactgroupmember->group_name );
++			if (first == 1)
++				first = 0;
++			my_free(temp_buf);
++		}
++		mac.x[MACRO_CONTACTGROUPLIST] = (char *)strdup(buf);
++		my_free(buf);
++
+ 		/* notify each contact (duplicates have been removed) */
+ 		for(temp_notification = notification_list; temp_notification != NULL; temp_notification = temp_notification->next) {
+ 
+@@ -238,6 +258,7 @@
+ 		my_free(mac.x[MACRO_SERVICEACKAUTHORALIAS]);
+ 		my_free(mac.x[MACRO_SERVICEACKAUTHOR]);
+ 		my_free(mac.x[MACRO_SERVICEACKCOMMENT]);
++		my_free(mac.x[MACRO_CONTACTGROUPLIST]);
+ 
+ 		/* this gets set in add_notification() */
+ 		my_free(mac.x[MACRO_NOTIFICATIONRECIPIENTS]);
+@@ -1037,6 +1058,10 @@
+ 	int increment_notification_number = FALSE;
+ 	nagios_macros mac;
+ 	int neb_result;
++	contactgroupsmember *temp_contactgroupmember = NULL;
++	char *buf = NULL;
++	char *temp_buf = NULL;
++	int first;
+ 
+ 	/* get the current time */
+ 	time(&current_time);
+@@ -1172,6 +1197,22 @@
+ 		/* set the notification id macro */
+ 		asprintf(&mac.x[MACRO_HOSTNOTIFICATIONID], "%lu", hst->current_notification_id);
+ 
++		// Opsview patch: Set the contactgroup names this host belongs to.
++		first = 1;
++		asprintf( &buf, "" );
++		for ( temp_contactgroupmember = hst->contact_groups;
++			  temp_contactgroupmember != NULL;
++			  temp_contactgroupmember = temp_contactgroupmember->next ) {
++			temp_buf = buf; // Save this pointer for later freeing
++			asprintf( &buf, "%s%s%s", buf, ( first == 1 ? "" : "," ),
++					temp_contactgroupmember->group_name );
++			if (first == 1)
++				first = 0;
++			my_free(temp_buf);
++		}
++		mac.x[MACRO_CONTACTGROUPLIST] = (char *)strdup(buf);
++		my_free(buf);
++
+ 		/* notify each contact (duplicates have been removed) */
+ 		for(temp_notification = notification_list; temp_notification != NULL; temp_notification = temp_notification->next) {
+ 
+@@ -1205,6 +1246,7 @@
+ 		my_free(mac.x[MACRO_HOSTACKAUTHORALIAS]);
+ 		my_free(mac.x[MACRO_HOSTACKAUTHOR]);
+ 		my_free(mac.x[MACRO_HOSTACKCOMMENT]);
++		my_free(mac.x[MACRO_CONTACTGROUPLIST]);
+ 		/* this gets set in add_notification() */
+ 		my_free(mac.x[MACRO_NOTIFICATIONRECIPIENTS]);
+ 
+diff -ur nagios-4.0.20130107.orig/common/macros.c nagios-4.0.20130107/common/macros.c
+--- nagios-4.0.20130107.orig/common/macros.c	2012-12-24 15:29:43.000000000 +0000
++++ nagios-4.0.20130107/common/macros.c	2013-05-23 03:02:20.000000000 +0000
+@@ -1033,6 +1033,7 @@
+ 		case MACRO_NOTIFICATIONAUTHORNAME:
+ 		case MACRO_NOTIFICATIONAUTHORALIAS:
+ 		case MACRO_NOTIFICATIONCOMMENT:
++		case MACRO_CONTACTGROUPLIST:                // Opsview patch
+ 
+ 			/* notification macros have already been pre-computed */
+ 			*output = mac->x[macro_type];
+@@ -2730,6 +2731,7 @@
+ 	add_macrox_name(HOSTVALUE);
+ 	add_macrox_name(SERVICEVALUE);
+ 	add_macrox_name(PROBLEMVALUE);
++	add_macrox_name(CONTACTGROUPLIST);
+ 
+ 	return OK;
+ 	}
+diff -ur nagios-4.0.20130107.orig/include/macros.h nagios-4.0.20130107/include/macros.h
+--- nagios-4.0.20130107.orig/include/macros.h	2012-12-24 15:29:29.000000000 +0000
++++ nagios-4.0.20130107/include/macros.h	2013-05-23 03:02:20.000000000 +0000
+@@ -38,7 +38,7 @@
+ 
+ #define MAX_USER_MACROS				256	/* maximum number of $USERx$ macros */
+ 
+-#define MACRO_X_COUNT				156	/* size of macro_x[] array */
++#define MACRO_X_COUNT				157	/* size of macro_x[] array */
+ 
+ NAGIOS_BEGIN_DECL
+ 
+@@ -217,6 +217,7 @@
+ #define MACRO_HOSTVALUE                         153
+ #define MACRO_SERVICEVALUE                      154
+ #define MACRO_PROBLEMVALUE                      155
++#define MACRO_CONTACTGROUPLIST                  156
+ 
+ 
+ /************* MACRO CLEANING OPTIONS *****************/

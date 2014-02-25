@@ -1,0 +1,529 @@
+diff -ur nagios-2.9.orig/common/objects.c nagios-2.9/common/objects.c
+--- nagios-2.9.orig/common/objects.c	2007-05-14 14:45:38.000000000 +0100
++++ nagios-2.9/common/objects.c	2007-05-14 16:02:53.000000000 +0100
+@@ -2091,7 +2091,7 @@
+ 
+ 
+ /* add a new contact to the list in memory */
+-contact *add_contact(char *name,char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period,int notify_service_ok,int notify_service_critical,int notify_service_warning, int notify_service_unknown, int notify_service_flapping, int notify_host_up, int notify_host_down, int notify_host_unreachable, int notify_host_flapping, int can_submit_commands, int notification_level){
++contact *add_contact(char *name,char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period,char *notificationprofile,int notify_service_ok,int notify_service_critical,int notify_service_warning, int notify_service_unknown, int notify_service_flapping, int notify_host_up, int notify_host_down, int notify_host_unreachable, int notify_host_flapping, int can_submit_commands, int notification_level){
+ 	contact *temp_contact;
+ 	contact *new_contact;
+ 	int x;
+diff -ur nagios-2.9.orig/include/common.h nagios-2.9/include/common.h
+--- nagios-2.9.orig/include/common.h	2007-04-10 16:08:32.000000000 +0100
++++ nagios-2.9/include/common.h	2007-05-16 12:59:52.000000000 +0100
+@@ -355,8 +355,9 @@
+ #define READ_HOSTEXTINFO                4096
+ #define READ_SERVICEEXTINFO             8192
+ #define READ_SERVICEGROUPS              16384
++#define READ_NOTIFICATIONPROFILE        32768
+ 
+-#define READ_ALL_OBJECT_DATA            READ_HOSTS | READ_HOSTGROUPS | READ_CONTACTS | READ_CONTACTGROUPS | READ_SERVICES | READ_COMMANDS | READ_TIMEPERIODS | READ_SERVICEESCALATIONS | READ_SERVICEDEPENDENCIES | READ_HOSTDEPENDENCIES | READ_HOSTESCALATIONS | READ_HOSTEXTINFO | READ_SERVICEEXTINFO | READ_SERVICEGROUPS
++#define READ_ALL_OBJECT_DATA            READ_HOSTS | READ_HOSTGROUPS | READ_CONTACTS | READ_CONTACTGROUPS | READ_SERVICES | READ_COMMANDS | READ_TIMEPERIODS | READ_SERVICEESCALATIONS | READ_SERVICEDEPENDENCIES | READ_HOSTDEPENDENCIES | READ_HOSTESCALATIONS | READ_HOSTEXTINFO | READ_SERVICEEXTINFO | READ_SERVICEGROUPS | READ_NOTIFICATIONPROFILE
+ 
+ 
+ /************************** DATE/TIME TYPES *****************************/
+diff -ur nagios-2.9.orig/include/objects.h nagios-2.9/include/objects.h
+--- nagios-2.9.orig/include/objects.h	2007-05-14 14:45:38.000000000 +0100
++++ nagios-2.9/include/objects.h	2007-05-14 16:13:44.000000000 +0100
+@@ -61,6 +61,7 @@
+ #define TIMEPERIOD_HASHSLOTS                   64
+ #define CONTACT_HASHSLOTS                      128
+ #define CONTACTGROUP_HASHSLOTS                 64
++#define NOTIFICATIONPROFILE_HASHSLOTS          64
+ #define HOSTGROUP_HASHSLOTS                    128
+ #define SERVICEGROUP_HASHSLOTS                 128
+ #define HOSTEXTINFO_HASHSLOTS                  1024
+@@ -109,6 +110,11 @@
+ 	struct	contactgroup_struct *nexthash;
+ 	}contactgroup;
+ 
++/* NOTIFICATIONPROFILEMEMBER structure */
++typedef struct notificationprofilemember_struct{
++	char *profile_name;
++	struct notificationprofilemember_struct *next;
++	}notificationprofilemember;
+ 
+ /* CONTACTGROUPSMEMBER structure */
+ typedef struct contactgroupsmember_struct{
+@@ -116,7 +122,6 @@
+ 	struct contactgroupsmember_struct *next;
+         }contactgroupsmember;
+ 
+-
+ /* HOSTSMEMBER structure */
+ typedef struct hostsmember_struct{
+ 	char *host_name;
+@@ -252,6 +257,29 @@
+ 	}commandsmember;
+ 
+ 
++/* NOTIFICATIONPROFILE strcture */
++typedef struct notificationprofile_struct{
++	char	*name;
++	contactgroupsmember *contact_groups;
++	notificationprofilemember *notification_profiles;
++	commandsmember *host_notification_commands;
++	commandsmember *service_notification_commands;	
++	int     notify_on_service_unknown;
++	int     notify_on_service_warning;
++	int     notify_on_service_critical;
++	int     notify_on_service_recovery;
++	int     notify_on_service_flapping;
++	int 	notify_on_host_down;
++	int	notify_on_host_unreachable;
++	int	notify_on_host_recovery;
++	int     notify_on_host_flapping;
++	char	*host_notification_period;
++	char	*service_notification_period;
++	struct	notificationprofile_struct *next;
++	struct	notificationprofile_struct *nexthash;
++	}notificationprofile;
++
++
+ /* CONTACT structure */
+ typedef struct contact_struct{
+ 	char	*name;
+@@ -537,9 +565,10 @@
+ int read_object_config_data(char *,int,int,int);    /* reads all external configuration data of specific types */
+ 
+ /**** Object Creation Functions ****/
+-contact *add_contact(char *,char *,char *,char *,char **,char *,char *,int,int,int,int,int,int,int,int,int,int,int);	/* adds a contact definition */
++contact *add_contact(char *,char *,char *,char *,char **,char *,char *,char *,int,int,int,int,int,int,int,int,int,int,int);	/* adds a contact definition */
+ commandsmember *add_service_notification_command_to_contact(contact *,char *);				/* adds a service notification command to a contact definition */
+ commandsmember *add_host_notification_command_to_contact(contact *,char *);				/* adds a host notification command to a contact definition */
++notificationprofilemember *add_notificationprofile_to_contact(contact *,char *);		        /* adds a notificationprofile to a contact definition */
+ host *add_host(char *,char *,char *,char *,int,int,int,int,int,int,int,char *,int,char *,int,int,char *,int,int,double,double,int,int,int,int,int,char *,int,int,int,int,int);	/* adds a host definition */
+ hostsmember *add_parent_host_to_host(host *,char *);							/* adds a parent host to a host definition */
+ contactgroupsmember *add_contactgroup_to_host(host *,char *);					        /* adds a contactgroup to a host definition */
+@@ -551,6 +580,7 @@
+ servicegroupmember *add_service_to_servicegroup(servicegroup *,char *,char *);                          /* adds a service to a servicegroup definition */
+ contactgroup *add_contactgroup(char *,char *);								/* adds a contactgroup definition */
+ contactgroupmember *add_contact_to_contactgroup(contactgroup *,char *);					/* adds a contact to a contact group definition */
++notificationprofilemember *add_contact_to_notiticationprofile(notificationprofile *,char *);		/* adds a contact to a notification profile definition */
+ command *add_command(char *,char *);									/* adds a command definition */
+ service *add_service(char *,char *,char *,int,int,int,int,int,int,char *,int,int,int,int,int,int,int,char *,int,char *,char *,int,int,double,double,int,int,int,int,int,int,char *,int,int,int,int,int);	/* adds a service definition */
+ contactgroupsmember *add_contactgroup_to_service(service *,char *);					/* adds a contact group to a service definition */
+@@ -560,6 +590,7 @@
+ hostdependency *add_host_dependency(char *,char *,int,int,int,int,int,int);                             /* adds a host dependency definition */
+ hostescalation *add_hostescalation(char *,int,int,int,char *,int,int,int);                              /* adds a host escalation definition */
+ contactgroupsmember *add_contactgroup_to_hostescalation(hostescalation *,char *);                       /* adds a contact group to a host escalation definition */
++contactgroupsmember *add_contactgroup_to_notificationprofile(notificationprofile *,char *);             /* adds a contact group to a notification profile definition */
+ hostextinfo *add_hostextinfo(char *,char *,char *,char *,char *,char *,char *,char *,int,int,double,double,double,int,int); /* adds an extended host info definition */
+ serviceextinfo *add_serviceextinfo(char *,char *,char *,char *,char *,char *,char *);                          /* add an extended service info definition */
+ 
+@@ -571,6 +602,7 @@
+ int add_timeperiod_to_hashlist(timeperiod *);
+ int add_contact_to_hashlist(contact *);
+ int add_contactgroup_to_hashlist(contactgroup *);
++int add_notificationprofile_to_hashlist(notificationprofile *);
+ int add_hostgroup_to_hashlist(hostgroup *);
+ int add_servicegroup_to_hashlist(servicegroup *);
+ int add_hostdependency_to_hashlist(hostdependency *);
+@@ -588,6 +620,7 @@
+ servicegroup * find_servicegroup(char *);					                /* finds a servicegroup object */
+ contact * find_contact(char *);							                /* finds a contact object */
+ contactgroup * find_contactgroup(char *);					                /* finds a contactgroup object */
++notificationprofile * find_notificationprofile(char *);				                /* finds a notificationprofile object */
+ contactgroupmember *find_contactgroupmember(char *,contactgroup *);	                        /* finds a contactgroup member object */
+ command * find_command(char *);							                /* finds a command object */
+ service * find_service(char *,char *);								/* finds a service object */
+diff -ur nagios-2.9.orig/xdata/xodtemplate.c nagios-2.9/xdata/xodtemplate.c
+--- nagios-2.9.orig/xdata/xodtemplate.c	2007-05-14 14:45:38.000000000 +0100
++++ nagios-2.9/xdata/xodtemplate.c	2007-05-16 14:32:46.000000000 +0100
+@@ -87,6 +87,7 @@
+ xodtemplate_hostescalation *xodtemplate_hostescalation_list=NULL;
+ xodtemplate_hostextinfo *xodtemplate_hostextinfo_list=NULL;
+ xodtemplate_serviceextinfo *xodtemplate_serviceextinfo_list=NULL;
++xodtemplate_notificationprofile *xodtemplate_notificationprofile_list=NULL;
+ 
+ void *xodtemplate_current_object=NULL;
+ int xodtemplate_current_object_type=XODTEMPLATE_NONE;
+@@ -142,6 +143,7 @@
+ 	xodtemplate_hostescalation_list=NULL;
+ 	xodtemplate_hostextinfo_list=NULL;
+ 	xodtemplate_serviceextinfo_list=NULL;
++	xodtemplate_notificationprofile_list=NULL;
+ 
+ 	xodtemplate_current_object=NULL;
+ 	xodtemplate_current_object_type=XODTEMPLATE_NONE;
+@@ -624,7 +626,7 @@
+ 			        }
+ 
+ 			/* check validity of object type */
+-			if(strcmp(input,"timeperiod") && strcmp(input,"command") && strcmp(input,"contact") && strcmp(input,"contactgroup") && strcmp(input,"host") && strcmp(input,"hostgroup") && strcmp(input,"servicegroup") && strcmp(input,"service") && strcmp(input,"servicedependency") && strcmp(input,"serviceescalation") && strcmp(input,"hostgroupescalation") && strcmp(input,"hostdependency") && strcmp(input,"hostescalation") && strcmp(input,"hostextinfo") && strcmp(input,"serviceextinfo")){
++			if(strcmp(input,"timeperiod") && strcmp(input,"command") && strcmp(input,"contact") && strcmp(input,"contactgroup") && strcmp(input,"host") && strcmp(input,"hostgroup") && strcmp(input,"servicegroup") && strcmp(input,"service") && strcmp(input,"servicedependency") && strcmp(input,"serviceescalation") && strcmp(input,"hostgroupescalation") && strcmp(input,"hostdependency") && strcmp(input,"hostescalation") && strcmp(input,"hostextinfo") && strcmp(input,"serviceextinfo") && strcmp(input,"notificationprofile")){
+ #ifdef NSCORE
+ 				snprintf(temp_buffer,sizeof(temp_buffer)-1,"Error: Invalid object definition type '%s' in file '%s' on line %d.\n",input,filename,current_line);
+ 				temp_buffer[sizeof(temp_buffer)-1]='\x0';
+@@ -796,6 +798,7 @@
+ 	xodtemplate_hostescalation *new_hostescalation;
+ 	xodtemplate_hostextinfo *new_hostextinfo;
+ 	xodtemplate_serviceextinfo *new_serviceextinfo;
++	xodtemplate_notificationprofile *new_notificationprofile;
+ 	int x;
+ 
+ #ifdef DEBUG0
+@@ -830,6 +833,8 @@
+ 		xodtemplate_current_object_type=XODTEMPLATE_HOSTEXTINFO;
+ 	else if(!strcmp(input,"serviceextinfo"))
+ 		xodtemplate_current_object_type=XODTEMPLATE_SERVICEEXTINFO;
++	else if(!strcmp(input,"notificationprofile"))
++		xodtemplate_current_object_type=XODTEMPLATE_NOTIFICATIONPROFILE;
+ 	else
+ 		return ERROR;
+ 
+@@ -892,6 +897,10 @@
+ 		if(!(options & READ_SERVICEEXTINFO))
+ 			return OK;
+ 		break;
++	case XODTEMPLATE_NOTIFICATIONPROFILE:
++		if(!(options & READ_NOTIFICATIONPROFILE))
++			return OK;
++		break;
+ 	default:
+ 		return ERROR;
+ 		break;
+@@ -1522,6 +1531,42 @@
+ 		xodtemplate_current_object=xodtemplate_serviceextinfo_list;
+ 		break;
+ 
++	case XODTEMPLATE_NOTIFICATIONPROFILE:
++
++		/* allocate memory */
++		new_notificationprofile=(xodtemplate_notificationprofile *)malloc(sizeof(xodtemplate_notificationprofile));
++		if(new_notificationprofile==NULL){
++#ifdef DEBUG1
++			printf("Error: Could not allocate memory for notification profile\n");
++#endif
++			return ERROR;
++		        }
++		new_notificationprofile->profile_name=NULL;
++		new_notificationprofile->contactgroups=NULL;
++		new_notificationprofile->host_notification_period=NULL;
++		new_notificationprofile->host_notification_commands=NULL;
++		new_notificationprofile->service_notification_period=NULL;
++		new_notificationprofile->service_notification_commands=NULL;
++		new_notificationprofile->notify_on_host_down=FALSE;
++		new_notificationprofile->notify_on_host_unreachable=FALSE;
++		new_notificationprofile->notify_on_host_recovery=FALSE;
++		new_notificationprofile->notify_on_host_flapping=FALSE;
++		new_notificationprofile->notify_on_service_unknown=FALSE;
++		new_notificationprofile->notify_on_service_warning=FALSE;
++		new_notificationprofile->notify_on_service_critical=FALSE;
++		new_notificationprofile->notify_on_service_recovery=FALSE;
++		new_notificationprofile->notify_on_service_flapping=FALSE;
++		new_notificationprofile->has_been_resolved=FALSE;
++		new_notificationprofile->register_object=FALSE;
++
++		/* add new extended service info to head of list in memory */
++		new_notificationprofile->next=xodtemplate_notificationprofile_list;
++		xodtemplate_notificationprofile_list=new_notificationprofile;
++
++		/* update current object pointer */
++		xodtemplate_current_object=xodtemplate_notificationprofile_list;
++		break;
++
+ 	default:
+ 		return ERROR;
+ 		break;
+@@ -1556,6 +1601,7 @@
+ 	xodtemplate_hostescalation *temp_hostescalation;
+ 	xodtemplate_hostextinfo *temp_hostextinfo;
+ 	xodtemplate_serviceextinfo *temp_serviceextinfo;
++	xodtemplate_notificationprofile *temp_notificationprofile;
+ 	register int x;
+ 	register int y;
+ 	register int len;
+@@ -1626,6 +1672,10 @@
+ 		if(!(options & READ_SERVICEEXTINFO))
+ 			return OK;
+ 		break;
++	case XODTEMPLATE_NOTIFICATIONPROFILE:
++		if(!(options & READ_NOTIFICATIONPROFILE))
++			return OK;
++		break;
+ 	default:
+ 		return ERROR;
+ 		break;
+@@ -2597,6 +2647,15 @@
+ 			        }
+ 			temp_contact->have_service_notification_options=TRUE;
+ 		        }
++		else if(!strcmp(variable,"notificationprofiles")){
++			temp_contact->notificationprofiles=strdup(value);
++			if(temp_contact->notificationprofiles==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for contact notificationprofiles.\n");
++#endif
++				return ERROR;
++			        }
++		        }
+ 		else if(!strcmp(variable,"register"))
+ 			temp_contact->register_object=(atoi(value)>0)?TRUE:FALSE;
+ 		else{
+@@ -3712,6 +3771,170 @@
+ 
+ 		break;
+ 
++	case XODTEMPLATE_NOTIFICATIONPROFILE:
++		
++		temp_notificationprofile=xodtemplate_notificationprofile_list;
++
++		if(!strcmp(variable,"use")){
++			temp_notificationprofile->template=strdup(value);
++			if(temp_notificationprofile->template==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile template.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"profile_name")){
++
++#ifdef NSCORE
++			/* check for duplicates */
++			if(xodtemplate_find_notificationprofile(value)!=NULL){
++				snprintf(temp_buffer,sizeof(temp_buffer)-1,"Warning: Duplicate definition found for notification profile '%s' (config file '%s', starting on line %d)\n",value,xodtemplate_config_file_name(temp_notificationprofile->_config_file),temp_notificationprofile->_start_line);
++				temp_buffer[sizeof(temp_buffer)-1]='\x0';
++				write_to_logs_and_console(temp_buffer,NSLOG_CONFIG_WARNING,TRUE);
++			        }
++#endif
++
++			temp_notificationprofile->profile_name=strdup(value);
++			if(temp_notificationprofile->profile_name==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile profile_name.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"contactgroups")){
++			temp_notificationprofile->contactgroups=strdup(value);
++			if(temp_notificationprofile->contactgroups==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile contactgroups.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"host_notification_period") || !strcmp(variable,"host_notification_period")){
++			temp_notificationprofile->host_notification_period=strdup(value);
++			if(temp_notificationprofile->host_notification_period==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile host_notification_period.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"host_notification_commands")){
++			temp_notificationprofile->host_notification_commands=strdup(value);
++			if(temp_notificationprofile->host_notification_commands==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile host_notification_commands.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"service_notification_period")){
++			temp_notificationprofile->service_notification_period=strdup(value);
++			if(temp_notificationprofile->service_notification_period==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile service_notification_period.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"service_notification_commands")){
++			temp_notificationprofile->service_notification_commands=strdup(value);
++			if(temp_notificationprofile->service_notification_commands==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile service_notification_commands.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"host_notification_options")){
++			for(temp_ptr=strtok(value,", ");temp_ptr;temp_ptr=strtok(NULL,", ")){
++				if(!strcmp(temp_ptr,"d") || !strcmp(temp_ptr,"down"))
++					temp_notificationprofile->notify_on_host_down=TRUE;
++				else if(!strcmp(temp_ptr,"u") || !strcmp(temp_ptr,"unreachable"))
++					temp_notificationprofile->notify_on_host_unreachable=TRUE;
++				else if(!strcmp(temp_ptr,"r") || !strcmp(temp_ptr,"recovery"))
++					temp_notificationprofile->notify_on_host_recovery=TRUE;
++				else if(!strcmp(temp_ptr,"f") || !strcmp(temp_ptr,"flapping"))
++					temp_notificationprofile->notify_on_host_flapping=TRUE;
++				else if(!strcmp(temp_ptr,"n") || !strcmp(temp_ptr,"none")){
++					temp_notificationprofile->notify_on_host_down=FALSE;
++					temp_notificationprofile->notify_on_host_unreachable=FALSE;
++					temp_notificationprofile->notify_on_host_recovery=FALSE;
++					temp_notificationprofile->notify_on_host_flapping=FALSE;
++				        }
++				else{
++#ifdef NSCORE
++					snprintf(temp_buffer,sizeof(temp_buffer)-1,"Error: Invalid host notification option '%s' in notificationprofile definition (config file '%s', starting on line %d).\n",temp_ptr,xodtemplate_config_file_name(temp_notificationprofile->_config_file),temp_notificationprofile->_start_line);
++					temp_buffer[sizeof(temp_buffer)-1]='\x0';
++					write_to_logs_and_console(temp_buffer,NSLOG_CONFIG_ERROR,TRUE);
++#endif
++					return ERROR;
++				        }
++			        }
++			temp_notificationprofile->have_host_notification_options=TRUE;
++		        }
++		else if(!strcmp(variable,"service_notification_options")){
++			for(temp_ptr=strtok(value,", ");temp_ptr;temp_ptr=strtok(NULL,", ")){
++				if(!strcmp(temp_ptr,"u") || !strcmp(temp_ptr,"unknown"))
++					temp_notificationprofile->notify_on_service_unknown=TRUE;
++				else if(!strcmp(temp_ptr,"w") || !strcmp(temp_ptr,"warning"))
++					temp_notificationprofile->notify_on_service_warning=TRUE;
++				else if(!strcmp(temp_ptr,"c") || !strcmp(temp_ptr,"critical"))
++					temp_notificationprofile->notify_on_service_critical=TRUE;
++				else if(!strcmp(temp_ptr,"r") || !strcmp(temp_ptr,"recovery"))
++					temp_notificationprofile->notify_on_service_recovery=TRUE;
++				else if(!strcmp(temp_ptr,"f") || !strcmp(temp_ptr,"flapping"))
++					temp_notificationprofile->notify_on_service_flapping=TRUE;
++				else if(!strcmp(temp_ptr,"n") || !strcmp(temp_ptr,"none")){
++					temp_notificationprofile->notify_on_service_unknown=FALSE;
++					temp_notificationprofile->notify_on_service_warning=FALSE;
++					temp_notificationprofile->notify_on_service_critical=FALSE;
++					temp_notificationprofile->notify_on_service_recovery=FALSE;
++					temp_notificationprofile->notify_on_service_flapping=FALSE;
++				        }
++				else{
++#ifdef NSCORE
++					snprintf(temp_buffer,sizeof(temp_buffer)-1,"Error: Invalid service notification option '%s' in notificationprofile definition (config file '%s', starting on line %d).\n",temp_ptr,xodtemplate_config_file_name(temp_notificationprofile->_config_file),temp_notificationprofile->_start_line);
++					temp_buffer[sizeof(temp_buffer)-1]='\x0';
++					write_to_logs_and_console(temp_buffer,NSLOG_CONFIG_ERROR,TRUE);
++#endif
++					return ERROR;
++				        }
++			        }
++			temp_notificationprofile->have_service_notification_options=TRUE;
++		        }
++		else if(!strcmp(variable,"host_notification_period")){
++			temp_notificationprofile->host_notification_period=strdup(value);
++			if(temp_notificationprofile->host_notification_period==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile host_notification_period.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"service_notification_period")){
++			temp_notificationprofile->service_notification_period=strdup(value);
++			if(temp_notificationprofile->service_notification_period==NULL){
++#ifdef DEBUG1
++				printf("Error: Could not allocate memory for notification profile service_notification_period.\n");
++#endif
++				return ERROR;
++			        }
++		        }
++		else if(!strcmp(variable,"register"))
++			temp_notificationprofile->register_object=(atoi(value)>0)?TRUE:FALSE;
++		else{
++#ifdef NSCORE
++			snprintf(temp_buffer,sizeof(temp_buffer)-1,"Error: Invalid notificationprofile object directive '%s'.\n",variable);
++			temp_buffer[sizeof(temp_buffer)-1]='\x0';
++			write_to_logs_and_console(temp_buffer,NSLOG_CONFIG_ERROR,TRUE);
++#endif
++			return ERROR;
++		        }
++
++		break;
+ 	default:
+ 		return ERROR;
+ 		break;
+@@ -7055,6 +7278,23 @@
+ 	return temp_contactgroup;
+         }
+ 
++/* finds a specific notificationprofile object */
++xodtemplate_notificationprofile *xodtemplate_find_notificationprofile(char *name){
++	xodtemplate_notificationprofile *temp_notificationprofile;
++
++	if(name==NULL)
++		return NULL;
++
++	for(temp_notificationprofile=xodtemplate_notificationprofile_list;temp_notificationprofile!=NULL;temp_notificationprofile=temp_notificationprofile->next){
++		if(temp_notificationprofile->profile_name==NULL)
++			continue;
++		if(!strcmp(temp_notificationprofile->profile_name,name))
++			break;
++	        }
++
++	return temp_notificationprofile;
++        }
++
+ 
+ /* finds a specific contactgroup object by its REAL name, not its TEMPLATE name */
+ xodtemplate_contactgroup *xodtemplate_find_real_contactgroup(char *name){
+@@ -8021,7 +8261,7 @@
+ 		return OK;
+ 
+ 	/* add the contact */
+-	new_contact=add_contact(this_contact->contact_name,this_contact->alias,this_contact->email,this_contact->pager,this_contact->address,this_contact->service_notification_period,this_contact->host_notification_period,this_contact->notify_on_service_recovery,this_contact->notify_on_service_critical,this_contact->notify_on_service_warning,this_contact->notify_on_service_unknown,this_contact->notify_on_service_flapping,this_contact->notify_on_host_recovery,this_contact->notify_on_host_down,this_contact->notify_on_host_unreachable,this_contact->notify_on_host_flapping,this_contact->can_submit_commands,this_contact->notification_level);
++	new_contact=add_contact(this_contact->contact_name,this_contact->alias,this_contact->email,this_contact->pager,this_contact->address,this_contact->service_notification_period,this_contact->host_notification_period,this_contact->notificationprofiles,this_contact->notify_on_service_recovery,this_contact->notify_on_service_critical,this_contact->notify_on_service_warning,this_contact->notify_on_service_unknown,this_contact->notify_on_service_flapping,this_contact->notify_on_host_recovery,this_contact->notify_on_host_down,this_contact->notify_on_host_unreachable,this_contact->notify_on_host_flapping,this_contact->can_submit_commands,this_contact->notification_level);
+ 
+ 	/* return with an error if we couldn't add the contact */
+ 	if(new_contact==NULL){
+diff -ur nagios-2.9.orig/xdata/xodtemplate.h nagios-2.9/xdata/xodtemplate.h
+--- nagios-2.9.orig/xdata/xodtemplate.h	2007-05-14 14:45:38.000000000 +0100
++++ nagios-2.9/xdata/xodtemplate.h	2007-05-16 14:32:24.000000000 +0100
+@@ -50,6 +50,7 @@
+ #define XODTEMPLATE_HOSTEXTINFO         13
+ #define XODTEMPLATE_SERVICEEXTINFO      14
+ #define XODTEMPLATE_SERVICEGROUP        15
++#define XODTEMPLATE_NOTIFICATIONPROFILE 16
+ 
+ 
+ 
+@@ -124,6 +125,7 @@
+ 
+ 	int       has_been_resolved;
+ 	int       register_object;
++	char      *notificationprofiles;
+ 	struct xodtemplate_contact_struct *next;
+         }xodtemplate_contact;
+ 
+@@ -144,6 +146,32 @@
+ 	struct xodtemplate_contactgroup_struct *next;
+         }xodtemplate_contactgroup;
+ 
++/* NOTIFICATIONPROFILE TEMPLATE STRUCTURE */
++typedef struct xodtemplate_notificationprofile_struct{
++	char    *template;
++	char	*profile_name;
++	int     _config_file;
++	int     _start_line;
++	char	*contactgroups;
++	char    *host_notification_period;
++	char    *host_notification_commands;
++	char    *service_notification_period;
++	char    *service_notification_commands;
++	int     notify_on_host_down;
++        int     notify_on_host_unreachable;
++        int     notify_on_host_recovery;
++        int     notify_on_host_flapping;
++	int     notify_on_service_unknown;
++        int     notify_on_service_warning;
++        int     notify_on_service_critical;
++        int     notify_on_service_recovery;
++        int     notify_on_service_flapping;
++	int     have_host_notification_options;
++	int     have_service_notification_options;
++	int     has_been_resolved;
++	int     register_object;
++	struct	xodtemplate_notificationprofile_struct *next;
++	}xodtemplate_notificationprofile;
+ 
+ /* HOST TEMPLATE STRUCTURE */
+ typedef struct xodtemplate_host_struct{
+@@ -653,6 +681,7 @@
+ xodtemplate_hostescalation *xodtemplate_find_hostescalation(char *);
+ xodtemplate_hostextinfo *xodtemplate_find_hostextinfo(char *);
+ xodtemplate_serviceextinfo *xodtemplate_find_serviceextinfo(char *);
++xodtemplate_notificationprofile *xodtemplate_find_notificationprofile(char *name);
+ #endif
+ 
+ int xodtemplate_register_timeperiod(xodtemplate_timeperiod *);

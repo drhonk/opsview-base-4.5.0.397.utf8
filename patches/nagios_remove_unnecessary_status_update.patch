@@ -1,0 +1,23 @@
+diff -Bbur nagios-4.0.20121116.orig/base/events.c nagios-4.0.20121116/base/events.c
+--- nagios-4.0.20121116.orig/base/events.c	2012-11-26 14:18:49.000000000 +0000
++++ nagios-4.0.20121116/base/events.c	2012-11-27 11:38:28.000000000 +0000
+@@ -358,7 +358,8 @@
+ 
+ 		/* Nagios XI/NDOUtils MOD */
+ 		/* update status of all services (scheduled or not) */
+-		update_service_status(temp_service, FALSE);
++		// Opsview patch: This duplicates the retained data restore
++		// update_service_status(temp_service, FALSE);
+ 
+ 		/* skip most services that shouldn't be scheduled */
+ 		if(temp_service->should_be_scheduled == FALSE) {
+@@ -505,7 +506,8 @@
+ 
+ 		/* Nagios XI/NDOUtils Mod */
+ 		/* update status of all hosts (scheduled or not) */
+-		update_host_status(temp_host, FALSE);
++		// Opsview patch: This duplicates the retained data restore
++		// update_host_status(temp_host, FALSE);
+ 
+ 		/* skip most hosts that shouldn't be scheduled */
+ 		if(temp_host->should_be_scheduled == FALSE) {

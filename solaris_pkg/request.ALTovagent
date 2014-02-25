@@ -1,0 +1,124 @@
+#!/bin/sh
+#
+# If nagios and nagcmd groups do not exist and if nagios user doesn't exist
+# ask the admin what GID's and UID to use in case the sysadmin doesnt want 
+# to use system generated defaults
+
+GID_NAGIOS=""
+GID_NAGCMD=""
+UID_NAGIOS=""
+
+# Check the system to see if the information is already set
+GID_NAGIOS=`/usr/sbin/chroot $BASEDIR /usr/bin/getent group nagios | awk -F: '{print $3}'`
+
+if [ "x$GID_NAGIOS" = "x" ]; then
+	echo "Enter GID for new group 'nagios' (blank means use system default): "
+	read GID_NAGIOS
+else
+	echo "Group 'nagios' GID already set to: $GID_NAGIOS"
+fi
+
+
+GID_NAGCMD=`/usr/sbin/chroot $BASEDIR /usr/bin/getent group nagcmd | awk -F: '{print $3}'`
+
+if [ "x$GID_NAGCMD" = "x" ]; then
+	echo "Enter GID for new group 'nagcmd' (blank means use system default): "
+	read GID_NAGCMD
+else
+	echo "Group 'nagcmd' GID already set to: $GID_NAGCMD"
+fi
+
+UID_NAGIOS=`/usr/sbin/chroot $BASEDIR /usr/bin/getent passwd nagios | awk -F: '{print $3}'`
+
+if [ "x$UID_NAGIOS" = "x" ]; then
+	echo "Enter UID for new user 'nagios' (blank means use system default): "
+	read UID_NAGIOS
+else
+	echo "User 'nagios' UID already set to: $UID_NAGIOS"
+fi
+
+# Make the variables available to the rest of the install
+cat >> $1 << EOT
+GID_NAGIOS=${GID_NAGIOS}
+GID_NAGCMD=${GID_NAGCMD}
+UID_NAGIOS=${UID_NAGIOS}
+EOT
+
+# postinstall script to handle package upgrade
+#
+#
+# Disable package upgrade functionality - not reliable enough
+# Taken from http://dlc.sun.com/pdf/817-0406/817-0406.pdf 'Upgrading' section
+#PATH=/usr/sadm/bin:$PATH
+#UPGR_SCRIPT=/tmp/upgr.$PKGINST
+#PKGADM=/tmp/pkgadm.$PKGINST
+#
+##UPGRADE_MSG="Do you want to upgrade the installed version ?"
+##UPGRADE_HLP="If upgrade is desired, the existing version of the \
+##package will be replaced by this version. If it is not \
+##desired, no further actions will be taken."
+##UPGRADE_NOTICE="Conflict approval questions may be displayed. The \
+##listed files are the ones that will be upgraded. Please \
+##answer \"y\" to these questions if they are presented."
+#
+#pkginfo -q $PKG.\*
+#
+#if [ $? -eq 0 ]; then
+#    # check to see if its the same version as we are installing
+#    # if so, do not set up removal script
+#    pkginfo -v $VERSION -q $PKGINST
+#    if [ $? -eq 0 ]; then
+#	exit 0
+#    fi
+#
+#    # See if upgrade is desired here
+#    response=`ckyorn -p "$UPGRADE_MSG" -h "$UPGRADE_HLP"`
+#
+#    if [ $response = "y" ]; then
+#        oldpkg=`pkginfo -x ${PKG}.\* | nawk "/$PKG/ {print \\$1}" | head -1`
+#        echo "PATH=/usr/sadm/bin:$PATH" > $UPGR_SCRIPT
+#	echo "cat > $PKGADM <<EOF" >> $UPGR_SCRIPT
+#	echo "setuid=nocheck" >> $UPGR_SCRIPT
+#	echo "action=nocheck" >> $UPGR_SCRIPT
+#	echo "partial=nocheck" >> $UPGR_SCRIPT
+#	echo "conflict=nocheck" >> $UPGR_SCRIPT
+#	echo "rdepend=nocheck" >> $UPGR_SCRIPT
+#	echo "idepend=nocheck" >> $UPGR_SCRIPT
+#	echo "runlevel=nocheck" >> $UPGR_SCRIPT
+#	echo "EOF" >> $UPGR_SCRIPT
+#        echo "sleep 3" >> $UPGR_SCRIPT
+#        echo "echo Now removing old instance of $PKG" >> $UPGR_SCRIPT
+#        echo "echo '======================================================='" >> $UPGR_SCRIPT
+#        echo "echo '  If this step fails, please remove <$oldpkg> by hand'" >> $UPGR_SCRIPT
+#        echo "echo '======================================================='" >> $UPGR_SCRIPT
+#
+#        if [ ${PKG_INSTALL_ROOT} ]; then
+#              echo "pkgrm -n -a $PKGADM -R $PKG_INSTALL_ROOT $oldpkg" >> $UPGR_SCRIPT
+#        else
+#              # remove the old package
+#              echo "su - root -c 'pkgrm -n -a $PKGADM $oldpkg'" >> $UPGR_SCRIPT
+#
+#              # restart the agent
+#              echo "su - root -c '/etc/init.d/opsview-agent restart'" >> $UPGR_SCRIPT
+#
+#              # restart opsview
+#              echo "su - root -c '/etc/init.d/opsview restart'" >> $UPGR_SCRIPT
+#        fi
+#
+#        echo "rm $UPGR_SCRIPT" >> $UPGR_SCRIPT
+#        echo "rm $PKGADM" >> $UPGR_SCRIPT
+#        echo "exit $?" >> $UPGR_SCRIPT
+#
+#        puttext -l 5 "$UPGRADE_NOTICE"
+#
+#    else
+#        if [ -f $UPGR_SCRIPT ]; then
+#              rm $UPGR_SCRIPT
+#	      rm $PKGADM
+#        fi
+#        echo "Performing no further actions"
+#        exit 1
+#    fi
+#fi
+
+exit 0

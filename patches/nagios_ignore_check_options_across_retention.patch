@@ -1,0 +1,31 @@
+diff -Bbur nagios-4.0.20121116.orig/xdata/xrddefault.c nagios-4.0.20121116/xdata/xrddefault.c
+--- nagios-4.0.20121116.orig/xdata/xrddefault.c	2012-11-30 17:19:28.000000000 +0000
++++ nagios-4.0.20121116/xdata/xrddefault.c	2012-11-30 17:21:52.000000000 +0000
+@@ -324,7 +324,13 @@
+ 		fprintf(fp, "performance_data=%s\n", (temp_host->perf_data == NULL) ? "" : temp_host->perf_data);
+ 		fprintf(fp, "last_check=%lu\n", temp_host->last_check);
+ 		fprintf(fp, "next_check=%lu\n", temp_host->next_check);
+-		fprintf(fp, "check_options=%d\n", temp_host->check_options);
++        /*
++		 * We disable check_options, so that it is always reset to 0, ignoring
++		 * freshness or forced info This can cause problems as it looks like
++		 * check_options doesn't reset the freshness flag in a distributed
++		 * environment.
++         */
++		// fprintf(fp, "check_options=%d\n", temp_host->check_options);
+ 		fprintf(fp, "current_attempt=%d\n", temp_host->current_attempt);
+ 		fprintf(fp, "max_attempts=%d\n", temp_host->max_attempts);
+ 		fprintf(fp, "normal_check_interval=%f\n", temp_host->check_interval);
+@@ -405,7 +411,11 @@
+ 		fprintf(fp, "performance_data=%s\n", (temp_service->perf_data == NULL) ? "" : temp_service->perf_data);
+ 		fprintf(fp, "last_check=%lu\n", temp_service->last_check);
+ 		fprintf(fp, "next_check=%lu\n", temp_service->next_check);
+-		fprintf(fp, "check_options=%d\n", temp_service->check_options);
++        /*
++		 * We disable check_options, so that it is always reset to 0, ignoring
++		 * freshness or forced info.
++         */
++		// fprintf(fp, "check_options=%d\n", temp_service->check_options);
+ 		fprintf(fp, "notified_on_unknown=%d\n", flag_isset(temp_service->notified_on, OPT_UNKNOWN));
+ 		fprintf(fp, "notified_on_warning=%d\n", flag_isset(temp_service->notified_on, OPT_WARNING));
+ 		fprintf(fp, "notified_on_critical=%d\n", flag_isset(temp_service->notified_on, OPT_CRITICAL));

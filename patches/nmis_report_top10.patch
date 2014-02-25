@@ -1,0 +1,47 @@
+--- /tmp/reports.pl	2012-08-07 18:07:22.000000000 +0100
++++ /usr/local/nagios/nmis/cgi-bin/reports.pl	2012-08-07 18:03:11.000000000 +0100
+@@ -785,7 +786,7 @@
+ 		 	printHeadCell("AVERAGE RESPONSE TIME (msec)","#FFFFFF");
+ 		 	rowEnd;
+ 			my $i=10;
+-			foreach $reportnode ( sort { $reportTable{$b}{response} <=> $reportTable{$a}{response} } keys %reportTable )
++			foreach $reportnode ( sort { $reportTable{$b}{response} <=> $reportTable{$a}{response} || $reportTable{$b}{response} cmp $reportTable{$a}{response} } keys %reportTable )
+ 			{
+ 				if (defined $user) {next unless $user->InGroup($NMIS::nodeTable{$reportnode}{group})}; 
+ 				my $slave_ref = "http://$NMIS::config{nmis_host}$NMIS::config{nmis}?file=$conf";
+@@ -813,7 +815,7 @@
+ 		 	printHeadCell("PERCENT PING LOSS","#FFFFFF",3);
+ 		 	rowEnd;
+ 			my $i=10;
+-			foreach $reportnode ( sort { $reportTable{$b}{loss} <=> $reportTable{$a}{loss} } keys %reportTable )
++			foreach $reportnode ( sort { $reportTable{$b}{loss} <=> $reportTable{$a}{loss} || $reportTable{$b}{loss} cmp $reportTable{$a}{loss} } keys %reportTable )
+ 			{
+ 				last if $reportTable{$reportnode}{loss} == 0;	# early exit if rest are zero.
+ 				if (defined $user) {next unless $user->InGroup($NMIS::nodeTable{$reportnode}{group})}; 
+@@ -847,7 +849,7 @@
+ 		 	printHeadCell("CPU LOAD","#FFFFFF",2);
+ 		 	rowEnd;
+ 			my $i=10;
+-			foreach $reportnode ( sort { $cpuTable{$b}{avgBusy5min} <=> $cpuTable{$a}{avgBusy5min} } keys %cpuTable )
++			foreach $reportnode ( sort { $cpuTable{$b}{avgBusy5min} <=> $cpuTable{$a}{avgBusy5min} || $cpuTable{$b}{avgBusy5min} cmp $cpuTable{$a}{avgBusy5min} } keys %cpuTable )
+ 			{
+ 				if (defined $user) {next unless $user->InGroup($NMIS::nodeTable{$reportnode}{group})}; 
+ 				my $slave_ref = "http://$NMIS::config{nmis_host}$NMIS::config{nmis}?file=$conf";
+@@ -879,7 +881,7 @@
+ 		 	printHeadCell("PROC MEM USED","#FFFFFF",2);
+ 		 	rowEnd;
+ 			my $i=10;
+-			foreach $reportnode ( sort { $cpuTable{$b}{ProcMemUsed} <=> $cpuTable{$a}{ProcMemUsed} } keys %cpuTable )
++			foreach $reportnode ( sort { $cpuTable{$b}{ProcMemUsed} <=> $cpuTable{$a}{ProcMemUsed} || $cpuTable{$b}{ProcMemUsed} cmp $cpuTable{$a}{ProcMemUsed}} keys %cpuTable )
+ 			{
+ 				if (defined $user) {next unless $user->InGroup($NMIS::nodeTable{$reportnode}{group})}; 
+ 				my $slave_ref = "http://$NMIS::config{nmis_host}$NMIS::config{nmis}?file=$conf";
+@@ -911,7 +913,7 @@
+ 		 	printHeadCell("IO MEM USED","#FFFFFF",2);
+ 		 	rowEnd;
+ 			my $i=10;
+-			foreach $reportnode ( sort { $cpuTable{$b}{IOMemUsed} <=> $cpuTable{$a}{IOMemUsed} } keys %cpuTable )
++			foreach $reportnode ( sort { $cpuTable{$b}{IOMemUsed} <=> $cpuTable{$a}{IOMemUsed} || $cpuTable{$b}{IOMemUsed} cmp $cpuTable{$a}{IOMemUsed} } keys %cpuTable )
+ 			{
+ 				if (defined $user) {next unless $user->InGroup($NMIS::nodeTable{$reportnode}{group})}; 
+ 				my $slave_ref = "http://$NMIS::config{nmis_host}$NMIS::config{nmis}?file=$conf";

@@ -1,0 +1,12 @@
+diff -ur ndoutils-1.4b3.original/src/dbhandlers.c ndoutils-1.4b3/src/dbhandlers.c
+--- ndoutils-1.4b3.original/src/dbhandlers.c	2007-10-03 08:35:04.000000000 +0100
++++ ndoutils-1.4b3/src/dbhandlers.c	2007-10-03 10:36:27.063735312 +0100
+@@ -1452,7 +1452,7 @@
+ 	es[3]=ndo2db_db_escape_string(idi,idi->buffered_input[NDO_DATA_PERFDATA]);
+ 
+ 	ts[0]=ndo2db_db_timet_to_sql(idi,start_time.tv_sec);
+-	ts[1]=ndo2db_db_timet_to_sql(idi,start_time.tv_sec);
++	ts[1]=ndo2db_db_timet_to_sql(idi,end_time.tv_sec);
+ 
+ 	/* get the object id */
+ 	result=ndo2db_get_object_id_with_insert(idi,NDO2DB_OBJECTTYPE_SERVICE,idi->buffered_input[NDO_DATA_HOST],idi->buffered_input[NDO_DATA_SERVICE],&object_id);

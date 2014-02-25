@@ -1,0 +1,23 @@
+diff -Naur check_radius_ih-1.1.orig/Makefile.in check_radius_ih-1.1/Makefile.in
+--- check_radius_ih-1.1.orig/Makefile.in	2006-07-09 09:26:42.000000000 +0100
++++ check_radius_ih-1.1/Makefile.in	2006-12-14 13:01:47.000000000 +0000
+@@ -6,6 +6,8 @@
+ OBJS=check_radius_ih.o md5.o
+ BIN=check_radius_ih
+ LIBS=@LIBS@
++EXEC_PREFIX=@exec_prefix@
++# DESTDIR is added to get DESTDIR information from opsview build structure
+ 
+ all: ${OBJS}
+ 	${CC} ${LFLAGS} ${BIN} ${OBJS} ${LIBS}
+@@ -17,8 +18,8 @@
+ 	${CC} ${CFLAGS} md5.c -o md5.o
+ 
+ install: ${OBJS}
+-	cp check_radius_ih /usr/local/bin/check_radius_ih
+-	chmod 755 /usr/local/bin/check_radius_ih
++	cp check_radius_ih $(DESTDIR)$(EXEC_PREFIX)/check_radius_ih
++	chmod 755 $(DESTDIR)$(EXEC_PREFIX)/check_radius_ih
+ 
+ distclean:
+ 	rm -f core ${BIN} *.o config.status config.cache Makefile config.log

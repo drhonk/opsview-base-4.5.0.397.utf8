@@ -1,0 +1,27 @@
+#!/bin/sh
+# NRPE preinstall
+
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+pkill -9 nrpe > /dev/null
+if [ -x /etc/init.d/nrpe ]; then
+	/etc/init.d/nrpe stop
+fi
+
+
+if [ `/usr/bin/grep -c '^nagios:' /etc/group` = 0 ]; then
+	echo "Adding nagios group"
+	groupadd nagios
+else
+	echo "Found nagios group, not adding"
+fi
+
+if [ `/usr/bin/grep -c '^nagios:' /etc/passwd` = 0 ]; then
+	echo "Adding nagios user"
+	useradd -o -g nagios -d /usr/local/nagios -s /usr/bin/bash -m nagios
+	passwd -l nagios
+else
+	echo "Found nagios user, not adding"
+fi
+
+

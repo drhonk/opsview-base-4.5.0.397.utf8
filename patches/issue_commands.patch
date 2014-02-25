@@ -1,0 +1,152 @@
+diff -ur nagios-2.0/cgi/cgiauth.c nagios-2.0.new/cgi/cgiauth.c
+--- nagios-2.0/cgi/cgiauth.c	2005-11-16 08:49:35.000000000 +0000
++++ nagios-2.0.new/cgi/cgiauth.c	2006-02-24 11:42:00.000000000 +0000
+@@ -415,6 +415,10 @@
+ 		/* find the contact */
+ 		temp_contact=find_contact(authinfo->username);
+ 
++		/* reject if contact is not allowed to issue commands */
++		if(temp_contact && temp_contact->can_submit_commands==FALSE)
++			return FALSE;
++
+ 		/* see if this user is a contact for the host */
+ 		if(is_contact_for_host(temp_host,temp_contact)==TRUE)
+ 			return TRUE;
+@@ -461,6 +465,10 @@
+ 		/* find the contact */
+ 		temp_contact=find_contact(authinfo->username);
+ 
++		/* reject if contact is not allowed to issue commands */
++		if(temp_contact && temp_contact->can_submit_commands==FALSE)
++			return FALSE;
++
+ 		/* this user is a contact for the host, so they have permission... */
+ 		if(is_contact_for_host(hst,temp_contact)==TRUE)
+ 			return TRUE;
+diff -ur nagios-2.0/common/objects.c nagios-2.0.new/common/objects.c
+--- nagios-2.0/common/objects.c	2005-12-27 18:55:10.000000000 +0000
++++ nagios-2.0.new/common/objects.c	2006-02-24 10:54:45.000000000 +0000
+@@ -2091,7 +2091,7 @@
+ 
+ 
+ /* add a new contact to the list in memory */
+-contact *add_contact(char *name,char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period,int notify_service_ok,int notify_service_critical,int notify_service_warning, int notify_service_unknown, int notify_service_flapping, int notify_host_up, int notify_host_down, int notify_host_unreachable, int notify_host_flapping){
++contact *add_contact(char *name,char *alias, char *email, char *pager, char **addresses, char *svc_notification_period, char *host_notification_period,int notify_service_ok,int notify_service_critical,int notify_service_warning, int notify_service_unknown, int notify_service_flapping, int notify_host_up, int notify_host_down, int notify_host_unreachable, int notify_host_flapping, int can_submit_commands){
+ 	contact *temp_contact;
+ 	contact *new_contact;
+ 	int x;
+@@ -2367,6 +2367,7 @@
+ 	new_contact->notify_on_host_down=(notify_host_down>0)?TRUE:FALSE;
+ 	new_contact->notify_on_host_unreachable=(notify_host_unreachable>0)?TRUE:FALSE;
+ 	new_contact->notify_on_host_flapping=(notify_host_flapping>0)?TRUE:FALSE;
++	new_contact->can_submit_commands=(can_submit_commands>0)?TRUE:FALSE;
+ 
+ 	new_contact->next=NULL;
+ 	new_contact->nexthash=NULL;
+diff -ur nagios-2.0/html/docs/xodtemplate.html nagios-2.0.new/html/docs/xodtemplate.html
+--- nagios-2.0/html/docs/xodtemplate.html	2005-11-15 04:23:35.000000000 +0000
++++ nagios-2.0.new/html/docs/xodtemplate.html	2006-02-24 10:48:18.000000000 +0000
+@@ -792,6 +792,7 @@
+ <tr><td></td><td class="Required">service_notification_options</td><td class="Required">[w,u,c,r,f,n]</td></tr>
+ <tr><td></td><td class="Required">host_notification_commands</td><td class="Required"><i>command_name</i></td></tr>
+ <tr><td></td><td class="Required">service_notification_commands</td><td class="Required"><i>command_name</i></td></tr>
++<tr><td></td><td class="Optional">can_submit_commands</td><td class="Optional"><i>[0/1]</i></td></tr>
+ <tr><td></td><td class="Optional">email</td><td class="Optional"><i>email_address</i></td></tr>
+ <tr><td></td><td class="Optional">pager</td><td class="Optional"><i>pager_number or pager_email_gateway</i></td></tr>
+ <tr><td></td><td class="Optional">address<i>x</i></td><td class="Optional"><i>additional_contact_address</i></td></tr>
+@@ -881,6 +882,12 @@
+ </td>
+ </tr>
+ <tr>
++<td valign="top"><strong>can_submit_commands</strong>:</td>
++<td>
++This directive is used to define whether this contact can submit commands such as adding comments, schedule downtime or submit passive checks. The default is <b>1</b>, for backwards compatibility, which means that commands can be submitted. Setting to <b>0</b> allows this contact to see all the services that they are authorised for without have "write" access.
++</td>
++</tr>
++<tr>
+ <td valign="top"><strong>email</strong>:</td>
+ <td>
+ This directive is used to define an email address for the contact.  Depending on how you configure your notification commands, it can be used to send out an alert email to the contact.  Under the right circumstances, the $CONTACTEMAIL$
+diff -ur nagios-2.0/include/objects.h nagios-2.0.new/include/objects.h
+--- nagios-2.0/include/objects.h	2005-12-27 18:55:10.000000000 +0000
++++ nagios-2.0.new/include/objects.h	2006-02-24 11:15:09.000000000 +0000
+@@ -272,6 +272,7 @@
+ 	int     notify_on_host_flapping;
+ 	char	*host_notification_period;
+ 	char	*service_notification_period;
++	int	can_submit_commands;
+ 	struct	contact_struct *next;
+ 	struct	contact_struct *nexthash;
+ 	}contact;
+@@ -529,7 +530,7 @@
+ int read_object_config_data(char *,int,int);        /* reads all external configuration data of specific types */
+ 
+ /**** Object Creation Functions ****/
+-contact *add_contact(char *,char *,char *,char *,char **,char *,char *,int,int,int,int,int,int,int,int,int);	/* adds a contact definition */
++contact *add_contact(char *,char *,char *,char *,char **,char *,char *,int,int,int,int,int,int,int,int,int, int);	/* adds a contact definition */
+ commandsmember *add_service_notification_command_to_contact(contact *,char *);				/* adds a service notification command to a contact definition */
+ commandsmember *add_host_notification_command_to_contact(contact *,char *);				/* adds a host notification command to a contact definition */
+ host *add_host(char *,char *,char *,char *,int,int,int,int,int,int,int,char *,int,char *,int,int,char *,int,int,double,double,int,int,int,int,int,char *,int,int,int,int,int);	/* adds a host definition */
+diff -ur nagios-2.0/xdata/xodtemplate.c nagios-2.0.new/xdata/xodtemplate.c
+--- nagios-2.0/xdata/xodtemplate.c	2006-01-12 16:13:08.000000000 +0000
++++ nagios-2.0.new/xdata/xodtemplate.c	2006-02-24 11:33:54.000000000 +0000
+@@ -1179,6 +1179,8 @@
+ 		new_contact->have_host_notification_options=FALSE;
+ 		new_contact->have_service_notification_options=FALSE;
+ 		new_contact->has_been_resolved=FALSE;
++		new_contact->can_submit_commands=TRUE;
++		new_contact->have_can_submit_commands=FALSE;
+ 		new_contact->register_object=TRUE;
+ 		new_contact->_config_file=config_file;
+ 		new_contact->_start_line=start_line;
+@@ -2458,6 +2460,10 @@
+ 				return ERROR;
+ 			        }
+ 		        }
++		else if(!strcmp(variable,"can_submit_commands")){
++			temp_contact->can_submit_commands=(atoi(value)>0)?TRUE:FALSE;
++			temp_contact->have_can_submit_commands=TRUE;
++		        }
+ 		else if(strstr(variable,"address")==variable){
+ 			x=atoi(variable+7);
+ 			if(x<1 || x>MAX_XODTEMPLATE_CONTACT_ADDRESSES){
+@@ -5917,6 +5923,10 @@
+ 		this_contact->notify_on_service_flapping=template_contact->notify_on_service_flapping;
+ 		this_contact->have_service_notification_options=TRUE;
+ 	        }
++	if(this_contact->have_can_submit_commands==FALSE && template_contact->have_can_submit_commands==TRUE){
++		this_contact->can_submit_commands=template_contact->can_submit_commands;
++		this_contact->have_can_submit_commands=TRUE;
++	        }
+ 
+ #ifdef DEBUG0
+ 	printf("xodtemplate_resolve_contact() end\n");
+@@ -7960,7 +7970,7 @@
+ 		return OK;
+ 
+ 	/* add the contact */
+-	new_contact=add_contact(this_contact->contact_name,this_contact->alias,this_contact->email,this_contact->pager,this_contact->address,this_contact->service_notification_period,this_contact->host_notification_period,this_contact->notify_on_service_recovery,this_contact->notify_on_service_critical,this_contact->notify_on_service_warning,this_contact->notify_on_service_unknown,this_contact->notify_on_service_flapping,this_contact->notify_on_host_recovery,this_contact->notify_on_host_down,this_contact->notify_on_host_unreachable,this_contact->notify_on_host_flapping);
++	new_contact=add_contact(this_contact->contact_name,this_contact->alias,this_contact->email,this_contact->pager,this_contact->address,this_contact->service_notification_period,this_contact->host_notification_period,this_contact->notify_on_service_recovery,this_contact->notify_on_service_critical,this_contact->notify_on_service_warning,this_contact->notify_on_service_unknown,this_contact->notify_on_service_flapping,this_contact->notify_on_host_recovery,this_contact->notify_on_host_down,this_contact->notify_on_host_unreachable,this_contact->notify_on_host_flapping,this_contact->can_submit_commands);
+ 
+ 	/* return with an error if we couldn't add the contact */
+ 	if(new_contact==NULL){
+@@ -9433,6 +9443,7 @@
+ 			fprintf(fp,"\temail\t%s\n",temp_contact->email);
+ 		if(temp_contact->pager)
+ 			fprintf(fp,"\tpager\t%s\n",temp_contact->pager);
++		fprintf(fp,"\tcan_submit_commands\t%d\n",temp_contact->can_submit_commands);
+ 		fprintf(fp,"\t}\n\n");
+ 	        }
+ 
+diff -ur nagios-2.0/xdata/xodtemplate.h nagios-2.0.new/xdata/xodtemplate.h
+--- nagios-2.0/xdata/xodtemplate.h	2005-11-16 08:49:35.000000000 +0000
++++ nagios-2.0.new/xdata/xodtemplate.h	2006-02-24 11:09:48.000000000 +0000
+@@ -101,6 +101,8 @@
+ 	char      *email;
+ 	char      *pager;
+ 	char      *address[MAX_XODTEMPLATE_CONTACT_ADDRESSES];
++	int       can_submit_commands;
++	int       have_can_submit_commands;
+ 	char      *host_notification_period;
+ 	char      *host_notification_commands;
+ 	int       notify_on_host_down;

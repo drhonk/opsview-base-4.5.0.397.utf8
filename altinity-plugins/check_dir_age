@@ -1,0 +1,108 @@
+#!/bin/sh
+
+# check the age of the last file in a given directory
+
+# v1.0 (c) 2006 Adrian Bridgett <adrian.bridgett@opsview.com>
+
+PROGNAME=`basename $0`
+REVISION=1.0
+
+# get return codes
+. /usr/local/nagios/libexec/utils.sh
+
+usage()
+{
+  cat <<EOF
+  Usage: `basename $0` -w warning -c critical -d dir [-g glob]
+  
+  Checks for files in "dir" matching "glob" (defaults to *)
+  
+  warn if the last file was more than "warning" seconds ago
+  error if the last file was more than "critical" seconds ago
+EOF
+  exit 0
+}
+
+die()
+{
+  echo "$@" >&2
+  echo CHECK_DIR `status_msg $STATE_UNKNOWN` - "$@"
+  exit $STATE_UNKNOWN
+}
+
+parse_arguments()
+{
+  # 86400 = 3600*24
+  warning=86400
+  critical=86400
+  glob="*"
+  hostname=""
+  while getopts "hvw:c:d:g:" opt; do
+    case "$opt" in
+      h) usage;;
+      v) print_revision $PROGNAME $REVISION;
+         exit 0;;
+      w) warning=$OPTARG;;
+      c) critical=$OPTARG;;
+      d) dir=$OPTARG;;
+      g) glob=$OPTARG;;
+    esac
+  done
+
+  shift `expr $OPTIND - 1`
+  [ "$#" -gt 0 ] && die "Unknown arguments \"$@\""
+  [ "$dir" ] || die "You must specify a dir"
+}
+
+check_dir_age()
+{
+  export warning critical dir glob
+  perl -e 'do "/usr/lib/nagios/plugins/utils.pm";
+           my $path = "$ENV{dir}/$ENV{glob}";
+	   my $file;
+	   $file = glob $path;
+	   if (! defined ($file))
+	   {
+	     print "No file matching $path";
+	     exit $utils::ERRORS{UNKNOWN};
+	   }
+	   my $newest = (-M $file);
+	   my $newfile = $file;
+           while ($file = glob $path)
+	   {
+	     if ($newest > -M $file)
+	     {
+	       $newest = -M $file;
+	       $newfile = $file;
+	     }
+	   }
+	   $newest = $newest * 86400;  # days into seconds
+	   print "\"$newfile\" is ${newest}s old\n";
+	   exit $utils::ERRORS{CRITICAL} if ($newest >= $ENV{"critical"});
+	   exit $utils::ERRORS{WARNING} if ($newest >= $ENV{"warning"});
+	   exit $utils::ERRORS{OK};'
+}
+
+main()
+{
+  msg=`check_dir_age $tmpfile`
+  rc=$?
+  
+  echo CHECK_DIR `status_msg $rc` - "$msg"
+  exit $rc
+}
+
+# translates argument into English
+status_msg()
+{
+  case "$1" in
+    $STATE_OK) echo "OK";;
+    $STATE_WARNING) echo "WARNING";;
+    $STATE_CRITICAL) echo "CRITICAL";;
+    $STATE_UNKNOWN) echo "UNKNOWN";;
+    *) echo "ERROR - bad value ($1)";;
+  esac
+}
+
+parse_arguments "$@"
+main "$@"

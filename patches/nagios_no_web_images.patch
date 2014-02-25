@@ -1,0 +1,23 @@
+diff -Bbur nagios-4.0.20121116.orig/html/Makefile.in nagios-4.0.20121116/html/Makefile.in
+--- nagios-4.0.20121116.orig/html/Makefile.in	2012-12-04 16:44:56.000000000 +0000
++++ nagios-4.0.20121116/html/Makefile.in	2012-12-04 18:24:42.000000000 +0000
+@@ -77,8 +77,6 @@
+ #	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
+ #	for file in images/*.ico; \
+ #	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images; done
+-	for file in images/logos/*.*; \
+-	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/images/logos; done
+ 	for file in includes/*.*; \
+ 	do $(INSTALL) -m 664 $(INSTALL_OPTS) $$file $(DESTDIR)$(HTMLDIR)/includes; done
+ 	for file in includes/rss/*.*; \
+diff -Bbur nagios-4.0.20121116.orig/Makefile.in nagios-4.0.20121116/Makefile.in
+--- nagios-4.0.20121116.orig/Makefile.in	2012-12-04 16:44:56.000000000 +0000
++++ nagios-4.0.20121116/Makefile.in	2012-12-04 18:24:42.000000000 +0000
+@@ -292,7 +292,6 @@
+ 	
+ install-exfoliation:
+ 	cp -rf contrib/exfoliation/stylesheets/* $(DESTDIR)$(HTMLDIR)/stylesheets
+-	cp -rf contrib/exfoliation/images/* $(DESTDIR)$(HTMLDIR)/images
+ 
+ 	@echo ""
+ 	@echo "*** Exfoliation theme installed ***"

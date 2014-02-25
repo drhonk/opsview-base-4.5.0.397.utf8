@@ -1,0 +1,21 @@
+--- nagios-4.0.20130107.original/base/Makefile.in	Mon Dec 24 15:29:58 2012
++++ nagios-4.0.20130107/base/Makefile.in	Mon Jan  7 17:03:00 2013
+@@ -118,7 +118,7 @@
+ DDATADEPS=$(DDATALIBS)
+ 
+ 
+-OBJS=$(BROKER_O) $(SRC_COMMON)/shared.o nerd.o query-handler.o workers.o checks.o config.o commands.o events.o flapping.o logging.o macros-base.o netutils.o notifications.o sehandlers.o utils.o $(RDATALIBS) $(CDATALIBS) $(ODATALIBS) $(SDATALIBS) $(PDATALIBS) $(DDATALIBS) $(BASEEXTRALIBS)
++OBJS=sunos.o $(BROKER_O) $(SRC_COMMON)/shared.o nerd.o query-handler.o workers.o checks.o config.o commands.o events.o flapping.o logging.o macros-base.o netutils.o notifications.o sehandlers.o utils.o $(RDATALIBS) $(CDATALIBS) $(ODATALIBS) $(SDATALIBS) $(PDATALIBS) $(DDATALIBS) $(BASEEXTRALIBS)
+ OBJDEPS=$(ODATADEPS) $(ODATADEPS) $(RDATADEPS) $(CDATADEPS) $(SDATADEPS) $(PDATADEPS) $(DDATADEPS) $(BROKER_H)
+ 
+ all: nagios nagiostats
+--- nagios-4.0.20130107.original/base/nagios.c	Mon Jan  7 16:50:38 2013
++++ nagios-4.0.20130107/base/nagios.c	Mon Jan  7 17:00:40 2013
+@@ -46,6 +46,7 @@
+ #include "../include/nebmods.h"
+ #include "../include/nebmodules.h"
+ #include "../include/workers.h"
++#include "../include/sunos.h"
+ 
+ /*#define DEBUG_MEMORY 1*/
+ #ifdef DEBUG_MEMORY
